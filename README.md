@@ -17,7 +17,7 @@ A especificação completa está em `PROMPT_CMD_ALL_IN_ONE.md`.
 - [x] Fase 1 — E-mail (IMAP)
 - [x] Fase 2 — Milldesk
 - [x] Fase 3 — validação do Milldesk (`amount` é histórico; painel usa `showTicketsByStatus`)
-- [ ] Fase 4 — ChatPanel (Playwright)
+- [x] Fase 4 — ChatPanel (Playwright, Estratégia A; teste de sessão concorrente pendente)
 - [ ] Fase 5 — polimento
 
 ## Requisitos
@@ -37,7 +37,7 @@ python -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 
-# 3. (necessário só a partir da Fase 4) baixar o Chromium do Playwright
+# 3. baixar o Chromium do Playwright (~150 MB, uma vez)
 playwright install chromium
 ```
 
@@ -110,6 +110,54 @@ verticalmente.
   `Guilherme P.` não casa com `Guilherme Anderson dos Santos`.
 - Só rotas de leitura são usadas. `addTicket`, `updateTicketStatus` e
   `sendCommunication` nunca são chamadas.
+
+## ChatPanel (WhatsApp)
+
+O ChatPanel não tem API. O app usa a **Estratégia A** da spec: um Chromium headless
+(Playwright) com perfil persistente fica com o painel aberto e, a cada
+`CHATPANEL_REFRESH_SECONDS`, lê o HTML e extrai as conversas com BeautifulSoup. A página
+não é recarregada a cada ciclo: o socket.io do painel já atualiza o DOM.
+
+### Primeiro login (uma vez)
+
+```powershell
+.venv\Scripts\Activate.ps1
+python scripts\chatpanel_login.py
+```
+
+Abre um Chromium visível. Faça o login normalmente; a janela fecha sozinha quando o
+painel carregar e a sessão fica salva em `CHATPANEL_PROFILE_DIR` (`.chatpanel-profile/`,
+ignorado pelo git). Feche o app antes de rodar o login: o Chromium não abre o mesmo
+perfil em dois processos.
+
+### O que o painel mostra
+
+- Conversas em `#box-atende-chats` ("SUAS CONVERSAS") contam como suas sempre; as de
+  `#box-atendeothers-chats` ("EM ATENDIMENTO") contam quando o badge de pessoa é igual a
+  `TECH_NAME`. Números repetidos são deduplicados.
+- Por conversa: online, hora, contato, tag, departamento, última mensagem, não lidas.
+- Rodapé: quantas estão com outros técnicos e o total de não lidas da aba Atende.
+- Sem sessão válida o painel fica vermelho com "sessão expirada — rode
+  scripts/chatpanel_login.py". O app tenta um reload antes de declarar isso.
+
+### Validações feitas em 14/09/2026
+
+- Parser testado contra o HTML real (`tests/fixtures/chatpanel_chat.html`): com
+  `SINO Admin` retorna 2 conversas, com `Fabio` 1, com `Guilherme` 0, como a spec previa.
+- Chromium headless abre a URL do painel nesta máquina; sem login o app reporta
+  "sessão expirada" em vez de travar.
+- **Pendente (depende do usuário):** rodar o login e confirmar que a sessão headless
+  **não derruba** a sessão do navegador normal do técnico. Se derrubar, a spec prevê a
+  Estratégia B (userscript Tampermonkey + servidor HTTP local).
+- **Pendente:** confirmar em produção se as conversas do próprio usuário aparecem em
+  `#box-atende-chats` ou só com badge em `#box-atendeothers-chats`. O parser trata os
+  dois casos.
+
+### Modo offline do parser
+
+```powershell
+python -m app.sources.chatpanel tests\fixtures\chatpanel_chat.html
+```
 
 ## Modo debug por fonte
 

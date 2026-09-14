@@ -1,0 +1,98 @@
+/* Layout geral ------------------------------------------------------------ */
+
+Screen {
+    layout: vertical;
+}
+
+#header {
+    height: 1;
+    background: $primary;
+    color: $text;
+    padding: 0 1;
+}
+
+#header #title {
+    width: 1fr;
+    text-style: bold;
+}
+
+#header #clock {
+    width: auto;
+}
+
+#main {
+    height: 1fr;
+    padding: 0 1;
+}
+
+#top-row {
+    height: auto;
+}
+
+#top-row > BasePanel {
+    width: 1fr;
+}
+
+#chatpanel {
+    height: 1fr;
+}
+
+/* Terminal estreito (< 100 colunas): empilha os painéis de cima */
+#main.narrow #top-row {
+    layout: vertical;
+}
+
+#main.narrow #top-row > BasePanel {
+    width: 1fr;
+}
+
+/* Painéis ----------------------------------------------------------------- */
+
+BasePanel {
+    border: round $primary;
+    border-title-color: $text;
+    border-title-style: bold;
+    border-subtitle-color: $text-muted;
+    padding: 0 1;
+    height: auto;
+    min-height: 7;
+}
+
+BasePanel.error {
+    border: round $error;
+    border-title-color: $error;
+}
+
+BasePanel.unconfigured {
+    border: round $warning;
+}
+
+BasePanel .panel-body {
+    height: auto;
+}
+
+BasePanel .panel-error {
+    color: $error;
+    height: auto;
+    display: none;
+}
+
+/* Barra de status --------------------------------------------------------- */
+
+#status-bar {
+    dock: bottom;
+    height: 1;
+    background: $surface;
+    color: $text-muted;
+    padding: 0 1;
+}
+
+#status-shortcuts {
+    width: auto;
+}
+
+#status-message {
+    width: 1fr;
+    text-align: right;
+    color: $accent;
+}

@@ -1,0 +1,16 @@
+# segredos e sessão
+.env
+.chatpanel-profile/
+
+# logs
+logs/
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/

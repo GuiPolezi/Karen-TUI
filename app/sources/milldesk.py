@@ -156,11 +156,12 @@ class MilldeskSource(Source[MilldeskState]):
 
 async def _debug_main() -> int:
     from app.config import ConfigError, load_settings
+    from app.logging_setup import setup_debug_logging
     from app.main import force_utf8_console
     from app.state import to_json
 
     force_utf8_console()
-    logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(levelname)s %(name)s: %(message)s")
+    setup_debug_logging()
     try:
         settings = load_settings()
     except ConfigError as exc:

@@ -171,6 +171,12 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
     if problems:
         raise ConfigError("\n".join(problems) + f"\n\nArquivo lido: {env_path}")
 
+    # segredos nunca aparecem em log, mesmo em mensagens de bibliotecas (URL do httpx etc.)
+    from app.logging_setup import register_secret
+
+    register_secret(milldesk.api_key, milldesk.masked_key)
+    register_secret(email.password, "********")
+
     return Settings(
         tech_name=tech_name,
         email=email,

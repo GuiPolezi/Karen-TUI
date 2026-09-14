@@ -85,3 +85,20 @@ def test_invalid_values_are_reported(clean_env):
     message = str(info.value)
     assert "EMAIL_IMAP_PORT" in message
     assert "EMAIL_REFRESH_SECONDS" in message
+
+
+def test_secrets_are_masked_in_logs(clean_env, tmp_path: Path, caplog):
+    import logging
+
+    from app.logging_setup import SecretMaskFilter
+
+    for key, value in MINIMAL_ENV.items():
+        clean_env.setenv(key, value)
+    clean_env.setenv("MILLDESK_API_KEY", "abcdef1776")
+    clean_env.setenv("EMAIL_APP_PASSWORD", "senha-secreta")
+    load_settings(Path("nao-existe.env"))
+
+    record = logging.LogRecord("httpx", logging.INFO, __file__, 1,
+                               "GET https://x/api/%s/ticketsByAgent senha=%s", ("abcdef1776", "senha-secreta"), None)
+    assert SecretMaskFilter().filter(record) is True
+    assert record.getMessage() == "GET https://x/api/****1776/ticketsByAgent senha=********"

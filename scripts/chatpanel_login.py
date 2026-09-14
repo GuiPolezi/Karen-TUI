@@ -52,7 +52,8 @@ def main() -> int:
         page = context.pages[0] if context.pages else context.new_page()
         page.goto(settings.chatpanel.url, wait_until="domcontentloaded")
         try:
-            page.wait_for_selector("#int_username", timeout=0)  # espera indefinidamente
+            # o input é type="hidden": esperar por presença no DOM, não por visibilidade
+            page.wait_for_selector("#int_username", state="attached", timeout=0)
         except Exception as exc:  # navegador fechado pelo usuário, por exemplo
             print(f"Não foi possível confirmar o login: {exc}", file=sys.stderr)
             return 1

@@ -252,10 +252,12 @@ class ChatPanelSource(Source[ChatPanelState]):
             await page.wait_for_selector(LOGGED_OR_LOGIN_SELECTOR, state="attached", timeout=15000)
         except Exception:
             self.log.warning("nem painel nem tela de login apareceram em 15 s (%s)", page.url)
+        if await page.query_selector("#int_username"):
+            await page.wait_for_timeout(2000)  # deixa o XHR/socket preencher as listas
+            return
+        # chat.php também tem um input de senha (modal); só é tela de login sem #int_username
         if await page.query_selector(LOGIN_FORM_SELECTOR):
             self.log.info("tela de login detectada em %s", page.url)
-            return
-        await page.wait_for_timeout(2000)  # deixa o XHR/socket preencher as listas
 
     async def _teardown(self) -> None:
         context, self._context = self._context, None

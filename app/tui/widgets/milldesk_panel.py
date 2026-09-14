@@ -25,6 +25,9 @@ class MilldeskPanel(BasePanel):
     ICON = "🎫"
     TITLE = "MILLDESK"
 
+    def counters(self, state: MilldeskState) -> dict[str, int]:
+        return {"abertos": state.my_tickets}
+
     def show_state(self, state: MilldeskState) -> None:
         count_style = "bold yellow" if state.my_tickets else "bold green"
         headline = _line()

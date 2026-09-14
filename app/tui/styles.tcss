@@ -70,6 +70,11 @@ BasePanel.unconfigured {
     border: round $warning;
 }
 
+BasePanel.changed {
+    border: heavy $warning;
+    border-title-color: $warning;
+}
+
 BasePanel .panel-body {
     height: auto;
     text-wrap: nowrap;
@@ -100,4 +105,49 @@ BasePanel .panel-error {
     width: 1fr;
     text-align: right;
     color: $accent;
+}
+
+/* Painel de log (tecla l) ------------------------------------------------- */
+
+#log-panel {
+    height: 14;
+    border: round $secondary;
+    border-title-color: $text-muted;
+    padding: 0 1;
+}
+
+#log-panel Log {
+    height: 1fr;
+    scrollbar-size: 1 1;
+}
+
+/* Detalhe do e-mail (tecla e) ---------------------------------------------- */
+
+EmailDetailScreen {
+    align: center middle;
+    background: $background 60%;
+}
+
+#email-detail {
+    width: 90%;
+    height: 90%;
+    border: round $primary;
+    border-title-color: $text;
+    background: $surface;
+    padding: 1 2;
+}
+
+#email-detail-header {
+    height: auto;
+    margin-bottom: 1;
+    border-bottom: solid $secondary;
+}
+
+#email-detail-body {
+    height: auto;
+}
+
+#email-detail-footer {
+    height: auto;
+    margin-top: 1;
 }

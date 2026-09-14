@@ -34,6 +34,9 @@ class EmailPanel(BasePanel):
     ICON = "📧"
     TITLE = "E-MAIL"
 
+    def counters(self, state: EmailState) -> dict[str, int]:
+        return {"total": state.total, "não lidos": state.unseen}
+
     def show_state(self, state: EmailState) -> None:
         unseen_style = "bold yellow" if state.unseen else "bold"
         spam_text = "-" if state.spam is None else str(state.spam)

@@ -13,6 +13,9 @@ class ChatPanelPanel(BasePanel):
     ICON = "💬"
     TITLE = "CHATPANEL"
 
+    def counters(self, state: ChatPanelState) -> dict[str, int]:
+        return {"conversas": len(state.mine), "não lidas": state.mine_unread}
+
     def show_state(self, state: ChatPanelState) -> None:
         unread_style = "bold yellow" if state.mine_unread else "bold"
         title = Text()

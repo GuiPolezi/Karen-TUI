@@ -44,7 +44,9 @@ LOGGED_OR_LOGIN_SELECTOR = f"#int_username, {LOGIN_FORM_SELECTOR}"
 
 
 class SessionExpiredError(Exception):
-    """A página não tem o usuário logado (redirecionou para o login)."""
+    """A página não tem o usuário logado (redirecionou para o login). Não é retentada."""
+
+    retry_after = 120.0  # segundos até tentar de novo (dá tempo de rodar o login)
 
 
 # --- parser puro -------------------------------------------------------------------

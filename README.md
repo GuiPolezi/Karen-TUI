@@ -17,8 +17,10 @@ A especificação completa está em `PROMPT_CMD_ALL_IN_ONE.md`.
 - [x] Fase 1 — E-mail (IMAP)
 - [x] Fase 2 — Milldesk
 - [x] Fase 3 — validação do Milldesk (`amount` é histórico; painel usa `showTicketsByStatus`)
-- [x] Fase 4 — ChatPanel (Playwright, Estratégia A; teste de sessão concorrente pendente)
-- [ ] Fase 5 — polimento
+- [x] Fase 4 — ChatPanel (Playwright, Estratégia A). **Bloqueio:** o painel só aceita
+  uma sessão por usuário; ver a seção ChatPanel.
+- [x] Fase 5 — polimento (destaque + bell, painel de log, detalhe do e-mail, coleta
+  incremental do Milldesk por causa do limite de requisições)
 
 ## Requisitos
 
@@ -72,7 +74,12 @@ python -m app
 ```
 
 Atalhos: `q` sair · `r` atualizar tudo · `1`/`2`/`3` atualizar um painel · `e` abrir o
-e-mail mais recente · `l` painel de log · `Esc` voltar.
+e-mail mais recente em tela cheia · `l` mostrar/esconder as últimas 50 linhas do log ·
+`Esc` voltar.
+
+Quando um contador aumenta entre dois ciclos (não lidos, chamados abertos, conversas ou
+não lidas do ChatPanel), o painel ganha borda grossa amarela por 3 segundos e o terminal
+toca o bell. `NOTIFY_BELL=false` no `.env` desliga o som, mantendo o destaque.
 
 Em terminais com menos de 100 colunas, os painéis de E-mail e Milldesk empilham
 verticalmente.
@@ -111,6 +118,20 @@ verticalmente.
 - Só rotas de leitura são usadas. `addTicket`, `updateTicketStatus` e
   `sendCommunication` nunca são chamadas.
 
+**Limite de requisições (descoberto na Fase 5):** a API responde `HTTP 429` com cerca de
+dez chamadas por minuto. Por isso a coleta é incremental:
+
+- todo ciclo faz só uma chamada, `ticketsByStatus`, e compara as quantidades por status
+  com o ciclo anterior;
+- `showTicketsByStatus` só é chamada para os status cuja quantidade mudou;
+- `ticketsByAgent` e uma recarga completa acontecem a cada 10 minutos;
+- as chamadas são sequenciais, com 0,4 s entre elas;
+- um `429` não é retentado: o painel mostra o erro e espera 3 minutos, mantendo os
+  últimos dados na tela.
+
+Medido em 14/09/2026: primeiro ciclo com 10 chamadas em 6 s, ciclos seguintes com uma
+chamada em 0,6 s.
+
 ## ChatPanel (WhatsApp)
 
 O ChatPanel não tem API. O app usa a **Estratégia A** da spec: um Chromium headless
@@ -146,9 +167,18 @@ perfil em dois processos.
   `SINO Admin` retorna 2 conversas, com `Fabio` 1, com `Guilherme` 0, como a spec previa.
 - Chromium headless abre a URL do painel nesta máquina; sem login o app reporta
   "sessão expirada" em vez de travar.
-- **Pendente (depende do usuário):** rodar o login e confirmar que a sessão headless
-  **não derruba** a sessão do navegador normal do técnico. Se derrubar, a spec prevê a
-  Estratégia B (userscript Tampermonkey + servidor HTTP local).
+- **Teste de sessão concorrente (14/09/2026): FALHOU.** O ChatPanel permite **uma sessão
+  por usuário**. Depois do login manual, a leitura headless funcionou; quando o técnico
+  abriu o painel no navegador normal, o site pediu login de novo, e esse novo login
+  derrubou a sessão headless. Ou seja, a Estratégia A só funciona se o técnico não usar
+  o ChatPanel no navegador, o que não é o caso. Alternativas em aberto:
+  1. **Estratégia B** da spec: userscript Tampermonkey que lê o DOM no navegador do
+     técnico e faz `POST` para um servidor HTTP local do app (`127.0.0.1:8765`). Zero
+     risco de sessão; depende da aba do ChatPanel estar aberta.
+  2. **Usuário dedicado:** criar um segundo usuário no ChatPanel só para o dashboard e
+     logar o Chromium headless com ele. A Estratégia A fica como está e o painel filtra
+     as conversas pelo badge `Guilherme` em "EM ATENDIMENTO". Depende de o
+     administrador do ChatPanel poder criar o usuário.
 - **Pendente:** confirmar em produção se as conversas do próprio usuário aparecem em
   `#box-atende-chats` ou só com badge em `#box-atendeothers-chats`. O parser trata os
   dois casos.
@@ -183,5 +213,45 @@ python -m pytest
 
 ## Troubleshooting
 
-Esta seção será completada na Fase 5 (sessão expirada do ChatPanel, IMAP sem TLS,
-técnico não encontrado).
+**"sessão expirada — rode scripts/chatpanel_login.py"** no painel do ChatPanel
+: A sessão salva no perfil headless não vale mais. Causa mais comum: alguém fez login com o
+  mesmo usuário em outro navegador (o ChatPanel aceita uma sessão por usuário). Feche o
+  app, rode `python scripts\chatpanel_login.py`, faça o login e abra o app de novo. O app
+  tenta de novo sozinho a cada 2 minutos.
+
+**"não configurado" no painel do ChatPanel**
+: A pasta `.chatpanel-profile/` não existe. Rode o login manual uma vez.
+
+**"limite de requisições da API (HTTP 429 ...)"** no painel do Milldesk
+: A API do Milldesk recusou por excesso de chamadas. O painel mantém os últimos dados e
+  espera 3 minutos. Se acontecer com frequência, aumente `MILLDESK_REFRESH_SECONDS` ou
+  verifique se outro programa usa a mesma chave.
+
+**"técnico não encontrado na resposta"** no painel do Milldesk
+: `MILLDESK_AGENT_NAME` (ou `TECH_NAME`, se aquele estiver vazio) não bate com nenhum
+  `agent` da API e você não tem chamado aberto. Rode `python -m app.sources.milldesk` e
+  confira a grafia exata no Milldesk (ex.: `Guilherme P.`).
+
+**"porta 143 sem STARTTLS enviaria a senha em texto puro"** no painel de e-mail
+: `EMAIL_IMAP_STARTTLS=false` com `EMAIL_IMAP_PORT=143`. Use `true`, ou porta `993`.
+
+**"STARTTLS ... falhou; tentando SSL direto na porta 993"** em `logs/app.log`
+: Aviso, não erro: o servidor recusou STARTTLS e o app caiu para SSL. Se preferir, deixe
+  `EMAIL_IMAP_PORT=993` e `EMAIL_IMAP_STARTTLS=false` para evitar a tentativa.
+
+**"LOGIN failed" ou "AUTHENTICATIONFAILED"** no painel de e-mail
+: Senha errada em `EMAIL_APP_PASSWORD`. Se a senha tem `#` ou `*`, deixe entre aspas
+  simples no `.env`.
+
+**Acentos quebrados no terminal**
+: Use o Windows Terminal. No CMD antigo, rode `chcp 65001` antes de `python -m app`.
+
+**Painéis empilhados**
+: O terminal tem menos de 100 colunas. Alargue a janela; o layout volta sozinho.
+
+**A TUI abriu, mas o Chromium não**
+: Rode `playwright install chromium` dentro do venv. O download é de ~150 MB.
+
+**Quero ver o que está acontecendo**
+: Tecla `l` mostra as últimas 50 linhas de `logs/app.log` dentro da TUI. `LOG_LEVEL=DEBUG`
+  no `.env` registra também cada ciclo de coleta.

@@ -4,6 +4,10 @@ Cada fonte implementa fetch() e devolve um estado (dataclass de app.state).
 fetch_with_retry() aplica timeout e retry com backoff (3 tentativas, 2/4/8 s)
 e, se tudo falhar, levanta SourceError com a última mensagem. Quem chama
 (o worker da TUI) decide como exibir sem derrubar os outros painéis.
+
+Exceções com atributo `retry_after` (segundos) NÃO são retentadas: viram
+SourceError imediatamente e o worker espera esse tempo antes do próximo ciclo.
+É o caso de HTTP 429 (limite de requisições) e de sessão expirada.
 """
 
 from __future__ import annotations
@@ -20,6 +24,10 @@ RETRY_DELAYS = (2, 4, 8)
 
 class SourceError(Exception):
     """Falha definitiva de uma fonte após todas as tentativas."""
+
+    def __init__(self, message: str, retry_after: float | None = None) -> None:
+        super().__init__(message)
+        self.retry_after = retry_after
 
 
 class Source(ABC, Generic[S]):
@@ -48,6 +56,12 @@ class Source(ABC, Generic[S]):
                 raise
             except Exception as exc:  # qualquer falha vira erro da fonte
                 last_error = exc
+                retry_after = getattr(exc, "retry_after", None)
+                if retry_after is not None:
+                    self.log.warning(
+                        "%s; sem retentativa, próximo ciclo em %ds", describe_error(exc), retry_after
+                    )
+                    raise SourceError(describe_error(exc), retry_after=float(retry_after)) from exc
                 self.log.warning("tentativa %d falhou: %s", attempt, describe_error(exc))
                 if delay is None:
                     break

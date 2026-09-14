@@ -45,11 +45,27 @@ class EmailState:
 
 
 @dataclass
+class MilldeskTicket:
+    id: int
+    subject: str
+    status: str
+    stage: str
+    requester: str
+    start: str      # dd/mm/aaaa
+    starttime: str  # HH:MM
+    sla_expiration: str | None = None
+
+
+@dataclass
 class MilldeskState:
-    my_tickets: int = 0
-    my_percentage: float = 0.0
-    total_all_agents: int = 0
-    note: str | None = None  # ex.: "técnico não encontrado na resposta"
+    my_tickets: int = 0                      # abertos no meu nome (destaque do painel)
+    my_open_by_status: dict[str, int] = field(default_factory=dict)
+    tickets: list[MilldeskTicket] = field(default_factory=list)
+    open_total: int = 0                      # abertos de todos os técnicos
+    my_history: int = 0                      # amount de ticketsByAgent (histórico)
+    my_percentage: float = 0.0               # percentage de ticketsByAgent (histórico)
+    total_all_agents: int = 0                # soma de amount de todos (histórico)
+    note: str | None = None                  # ex.: "técnico não encontrado na resposta"
     updated_at: datetime = field(default_factory=datetime.now)
     error: str | None = None
 

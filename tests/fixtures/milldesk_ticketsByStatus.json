@@ -1,0 +1,7 @@
+[
+  {"status": "Fechado", "amount": "4778", "percentage": "93.94"},
+  {"status": "Em atendimento", "amount": "2", "percentage": "0.67"},
+  {"status": "Em Análise", "amount": "2", "percentage": "0.04"},
+  {"status": "Aguardando Testes", "amount": "1", "percentage": "0.14"},
+  {"status": "Aguardando Deploy", "amount": "0", "percentage": "0.00"}
+]

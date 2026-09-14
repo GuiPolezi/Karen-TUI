@@ -1,0 +1,20 @@
+{
+  "Em atendimento": [
+    {"id": "7001", "ticket": "Impressora não imprime", "requester": "Maria", "agent": "Adriano",
+     "status": "Em atendimento", "stage": "Atendimento", "start": "14/09/2026", "starttime": "09:10",
+     "slasexpirationdate": "15/09/2026 09:10", "description": "..."},
+    {"id": "7002", "ticket": "Erro ao gerar relatório", "requester": "João", "agent": "Guilherme P.",
+     "status": "Em atendimento", "stage": "Atendimento", "start": "13/09/2026", "starttime": "16:40",
+     "slasexpirationdate": "", "description": "..."}
+  ],
+  "Em Análise": [
+    {"id": "7003", "ticket": "Desenvolvimento de Site", "requester": "Câmara X", "agent": "guilherme p.",
+     "status": "Em Análise", "stage": "Triagem Inicial", "start": "14/09/2026", "starttime": "14:34"},
+    {"id": "7004", "ticket": "Outro chamado", "requester": "Alguém", "agent": "Guilherme Anderson dos Santos",
+     "status": "Em Análise", "stage": "Triagem Inicial", "start": "14/09/2026", "starttime": "10:00"}
+  ],
+  "Aguardando Testes": [
+    {"id": "7005", "ticket": "Configuração de Parâmetros", "requester": "Ana", "agent": "Guilherme P.",
+     "status": "Aguardando Testes", "stage": "Validação em Ambiente de Teste", "start": "14/09/2026", "starttime": "14:43"}
+  ]
+}

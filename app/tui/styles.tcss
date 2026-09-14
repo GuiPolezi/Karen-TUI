@@ -26,11 +26,12 @@ Screen {
 }
 
 #top-row {
-    height: auto;
+    height: 11;
 }
 
 #top-row > BasePanel {
     width: 1fr;
+    height: 100%;
 }
 
 #chatpanel {
@@ -40,10 +41,12 @@ Screen {
 /* Terminal estreito (< 100 colunas): empilha os painéis de cima */
 #main.narrow #top-row {
     layout: vertical;
+    height: auto;
 }
 
 #main.narrow #top-row > BasePanel {
     width: 1fr;
+    height: auto;
 }
 
 /* Painéis ----------------------------------------------------------------- */

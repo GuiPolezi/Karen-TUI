@@ -43,6 +43,7 @@ class MilldeskSettings:
     api_key: str
     base_url: str
     refresh_seconds: int
+    agent_name: str = ""  # nome do técnico no Milldesk; vazio = usar TECH_NAME
 
     @property
     def configured(self) -> bool:
@@ -139,6 +140,7 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
         api_key=env.str("MILLDESK_API_KEY", required=False),
         base_url=env.str("MILLDESK_BASE_URL", "https://v1.milldesk.com/api").rstrip("/"),
         refresh_seconds=env.int("MILLDESK_REFRESH_SECONDS", 60),
+        agent_name=env.str("MILLDESK_AGENT_NAME", "", required=False) or tech_name,
     )
 
     profile_dir = Path(env.str("CHATPANEL_PROFILE_DIR", ".chatpanel-profile"))

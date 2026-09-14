@@ -1,9 +1,14 @@
 """Fonte 2: Milldesk via API REST (somente leitura).
 
-Rota usada: GET {base_url}/{api_key}/ticketsByAgent
-Resposta:   [ {"agent": "Nome", "amount": "12", "percentage": "8.5"}, ... ]
-Erros chegam com HTTP 200 e corpo {"error": "invalidApiKey"}: tratados como falha.
+Validação da Fase 3 (14/09/2026): `ticketsByAgent.amount` é o HISTÓRICO de chamados
+do técnico, não os abertos. Por isso o painel usa:
 
+1. GET /:key/ticketsByStatus            → quais status têm chamados (agregado, leve)
+2. GET /:key/showTicketsByStatus?status= → chamados de cada status "aberto", com `agent`
+3. GET /:key/ticketsByAgent             → histórico e percentual (linha secundária)
+
+"Fechado" nunca é consultado (a rota devolve vazio para ele mesmo assim).
+Erros chegam com HTTP 200 e corpo {"error": "invalidApiKey"|"invalidStatus"}.
 A api_key nunca aparece em logs nem em mensagens de erro (mascarada como ****1776).
 
 Modo debug: `python -m app.sources.milldesk` imprime o MilldeskState em JSON.
@@ -12,7 +17,6 @@ Modo debug: `python -m app.sources.milldesk` imprime o MilldeskState em JSON.
 from __future__ import annotations
 
 import asyncio
-import logging
 import sys
 import unicodedata
 from datetime import datetime
@@ -22,9 +26,11 @@ import httpx
 
 from app.config import MilldeskSettings
 from app.sources.base import Source
-from app.state import MilldeskState
+from app.state import MilldeskState, MilldeskTicket
 
 NOT_FOUND_NOTE = "técnico não encontrado na resposta"
+CLOSED_STATUSES = {"Fechado"}
+MAX_CONCURRENT_REQUESTS = 3
 
 
 class MilldeskApiError(Exception):
@@ -53,42 +59,101 @@ def _to_float(value: Any) -> float:
     return float(str(value).replace(",", "."))
 
 
-def check_api_error(data: Any) -> None:
+def check_api_error(data: Any, route: str = "") -> None:
     """Levanta MilldeskApiError se o corpo for {"error": "..."} (vem com HTTP 200)."""
     if isinstance(data, dict) and "error" in data:
-        raise MilldeskApiError(f"API Milldesk: {data['error']}")
+        where = f" em {route}" if route else ""
+        raise MilldeskApiError(f"API Milldesk{where}: {data['error']}")
 
 
-def parse_tickets_by_agent(data: Any, tech_name: str) -> MilldeskState:
-    check_api_error(data)
+def _ensure_list(data: Any, route: str) -> list[dict[str, Any]]:
+    check_api_error(data, route)
     if not isinstance(data, list):
-        raise MilldeskApiError(f"resposta inesperada de ticketsByAgent: {type(data).__name__}")
+        raise MilldeskApiError(f"resposta inesperada de {route}: {type(data).__name__}")
+    return [item for item in data if isinstance(item, dict)]
 
-    wanted = normalize_name(tech_name)
-    total = 0
-    mine: dict[str, Any] | None = None
-    for item in data:
-        if not isinstance(item, dict):
-            continue
-        total += _to_int(item.get("amount"))
-        if mine is None and normalize_name(str(item.get("agent", ""))) == wanted:
-            mine = item
 
-    if mine is None:
-        return MilldeskState(
-            my_tickets=0,
-            my_percentage=0.0,
-            total_all_agents=total,
-            note=NOT_FOUND_NOTE,
-            updated_at=datetime.now(),
-        )
+def open_statuses(tickets_by_status: Any) -> list[str]:
+    """Status com pelo menos um chamado, excluindo os encerrados."""
+    result: list[str] = []
+    for item in _ensure_list(tickets_by_status, "ticketsByStatus"):
+        status = str(item.get("status", "")).strip()
+        if status and status not in CLOSED_STATUSES and _to_int(item.get("amount")) > 0:
+            result.append(status)
+    return result
+
+
+def _time_only(value: Any) -> str:
+    """A API às vezes manda "14/09/2026 13:09" em starttime; fica só "13:09"."""
+    text = str(value or "").strip()
+    return text.rsplit(" ", 1)[-1] if " " in text else text
+
+
+def ticket_from_api(item: dict[str, Any]) -> MilldeskTicket:
+    return MilldeskTicket(
+        id=_to_int(item.get("id")),
+        subject=str(item.get("ticket") or "").strip() or "(sem assunto)",
+        status=str(item.get("status") or "").strip(),
+        stage=str(item.get("stage") or "").strip(),
+        requester=str(item.get("requester") or "").strip(),
+        start=str(item.get("start") or "").strip(),
+        starttime=_time_only(item.get("starttime")),
+        sla_expiration=(str(item["slasexpirationdate"]).strip() or None)
+        if item.get("slasexpirationdate") else None,
+    )
+
+
+def build_state(
+    tickets_per_status: dict[str, Any],
+    tickets_by_agent: Any,
+    agent_name: str,
+) -> MilldeskState:
+    """Monta o estado a partir das respostas cruas das rotas."""
+    wanted = normalize_name(agent_name)
+
+    mine: list[MilldeskTicket] = []
+    by_status: dict[str, int] = {}
+    open_total = 0
+    for status, raw in tickets_per_status.items():
+        items = _ensure_list(raw, f"showTicketsByStatus?status={status}")
+        open_total += len(items)
+        for item in items:
+            if normalize_name(str(item.get("agent") or "")) == wanted:
+                ticket = ticket_from_api(item)
+                ticket.status = ticket.status or status
+                mine.append(ticket)
+                by_status[status] = by_status.get(status, 0) + 1
+    mine.sort(key=_ticket_sort_key, reverse=True)
+
+    history = 0
+    percentage = 0.0
+    total_all = 0
+    found_in_history = False
+    for item in _ensure_list(tickets_by_agent, "ticketsByAgent"):
+        total_all += _to_int(item.get("amount"))
+        if not found_in_history and normalize_name(str(item.get("agent", ""))) == wanted:
+            history = _to_int(item.get("amount"))
+            percentage = _to_float(item.get("percentage"))
+            found_in_history = True
+
     return MilldeskState(
-        my_tickets=_to_int(mine.get("amount")),
-        my_percentage=_to_float(mine.get("percentage")),
-        total_all_agents=total,
-        note=None,
+        my_tickets=len(mine),
+        my_open_by_status=by_status,
+        tickets=mine,
+        open_total=open_total,
+        my_history=history,
+        my_percentage=percentage,
+        total_all_agents=total_all,
+        note=None if (found_in_history or mine) else NOT_FOUND_NOTE,
         updated_at=datetime.now(),
     )
+
+
+def _ticket_sort_key(ticket: MilldeskTicket) -> tuple[str, str, int]:
+    """Mais recente primeiro: data dd/mm/aaaa vira aaaa-mm-dd para ordenar como texto."""
+    parts = ticket.start.split("/")
+    iso = "-".join(reversed(parts)) if len(parts) == 3 else ticket.start
+    return (iso, ticket.starttime, ticket.id)
 
 
 # --- fonte -----------------------------------------------------------------------
@@ -102,14 +167,14 @@ class MilldeskSource(Source[MilldeskState]):
     def __init__(
         self,
         settings: MilldeskSettings,
-        tech_name: str,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        super().__init__(interval=settings.refresh_seconds, timeout=20.0)
+        super().__init__(interval=settings.refresh_seconds, timeout=40.0)
         self.settings = settings
-        self.tech_name = tech_name
+        self.agent_name = settings.agent_name
         self._client = client
         self._owns_client = client is None
+        self._semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
 
     @property
     def configured(self) -> bool:
@@ -126,11 +191,11 @@ class MilldeskSource(Source[MilldeskState]):
     async def _get_json(self, route: str, params: dict[str, Any] | None = None) -> Any:
         if self._client is None:
             self._client = httpx.AsyncClient(timeout=self.timeout)
-        self.log.debug("GET %s", self._mask(self._url(route)))
-        try:
-            response = await self._client.get(self._url(route), params=params)
-        except httpx.HTTPError as exc:
-            raise RuntimeError(self._mask(f"{type(exc).__name__}: {exc}")) from None
+        async with self._semaphore:
+            try:
+                response = await self._client.get(self._url(route), params=params)
+            except httpx.HTTPError as exc:
+                raise RuntimeError(self._mask(f"{type(exc).__name__}: {exc}")) from None
         if response.status_code != 200:
             raise RuntimeError(f"HTTP {response.status_code} em {route}")
         try:
@@ -139,10 +204,19 @@ class MilldeskSource(Source[MilldeskState]):
             raise RuntimeError(f"resposta de {route} não é JSON") from None
 
     async def fetch(self) -> MilldeskState:
-        data = await self._get_json("ticketsByAgent")
-        state = parse_tickets_by_agent(data, self.tech_name)
+        by_status_agg = await self._get_json("ticketsByStatus")
+        statuses = open_statuses(by_status_agg)
+        self.log.debug("status com chamados abertos: %s", statuses)
+
+        per_status_raw, by_agent = await asyncio.gather(
+            asyncio.gather(*(self._get_json("showTicketsByStatus", {"status": s}) for s in statuses)),
+            self._get_json("ticketsByAgent"),
+        )
+        tickets_per_status = dict(zip(statuses, per_status_raw))
+
+        state = build_state(tickets_per_status, by_agent, self.agent_name)
         if state.note:
-            self.log.warning("%s (TECH_NAME=%r)", state.note, self.tech_name)
+            self.log.warning("%s (MILLDESK_AGENT_NAME=%r)", state.note, self.agent_name)
         return state
 
     async def close(self) -> None:
@@ -167,7 +241,7 @@ async def _debug_main() -> int:
     except ConfigError as exc:
         print(exc, file=sys.stderr)
         return 2
-    source = MilldeskSource(settings.milldesk, settings.tech_name)
+    source = MilldeskSource(settings.milldesk)
     if not source.configured:
         print(source.config_hint, file=sys.stderr)
         return 2

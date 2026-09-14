@@ -39,7 +39,7 @@ def build_default_sources(settings: Settings) -> dict[str, Source[Any]]:
 
     return {
         "email": EmailSource(settings.email),
-        "milldesk": MilldeskSource(settings.milldesk, settings.tech_name),
+        "milldesk": MilldeskSource(settings.milldesk),
     }
 
 

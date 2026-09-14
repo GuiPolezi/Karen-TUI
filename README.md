@@ -16,7 +16,7 @@ A especificação completa está em `PROMPT_CMD_ALL_IN_ONE.md`.
 - [x] Fase 0 — bootstrap (config, skeleton da TUI, testes)
 - [x] Fase 1 — E-mail (IMAP)
 - [x] Fase 2 — Milldesk
-- [ ] Fase 3 — validação do Milldesk (`amount` = abertos ou histórico?)
+- [x] Fase 3 — validação do Milldesk (`amount` é histórico; painel usa `showTicketsByStatus`)
 - [ ] Fase 4 — ChatPanel (Playwright)
 - [ ] Fase 5 — polimento
 
@@ -55,6 +55,7 @@ Preencha pelo menos:
 - `TECH_NAME` exatamente como aparece no ChatPanel e no Milldesk
 - `EMAIL_APP_PASSWORD` (se tiver `#` ou `*`, deixe entre aspas simples)
 - `MILLDESK_API_KEY`
+- `MILLDESK_AGENT_NAME` se o seu nome no Milldesk for diferente do `TECH_NAME`
 
 Regras de validação:
 
@@ -87,6 +88,28 @@ verticalmente.
 - A conexão fica aberta entre ciclos e reconecta sozinha se cair.
 - A caixa `suporte@` é compartilhada (confirmado em 14/09/2026), então "não lidos"
   reflete a equipe toda, não só o técnico. Comportamento aceito.
+
+## Milldesk
+
+**Validação da Fase 3 (14/09/2026, chamada real à API):**
+
+- `ticketsByAgent.amount` é o **histórico** de chamados do técnico, não os abertos.
+  Exemplo real: o técnico tinha 168 no `amount` e apenas 3 chamados abertos.
+- Para contar os abertos, o app usa `ticketsByStatus` (agregado leve) para descobrir
+  quais status têm chamados e chama `showTicketsByStatus?status=...` só para esses,
+  filtrando pelo campo `agent`. `Fechado` nunca é consultado (a rota devolve vazio para
+  ele mesmo assim). São cerca de 10 GETs por ciclo, 0,2 s cada, no máximo 3 em paralelo.
+- O painel mostra **"Abertos no meu nome"** como destaque, a quebra por status, até 3
+  chamados (mais recentes primeiro) e o histórico de `ticketsByAgent` como linha secundária.
+- Peculiaridades da API vistas em produção: `starttime` às vezes vem com a data junto
+  (`14/09/2026 13:09`), `slasexpirationdate` pode ser texto (`Em pausa`), e erros vêm com
+  HTTP 200 e corpo `{"error": "invalidApiKey"}` ou `{"error": "invalidStatus"}`.
+- O nome no Milldesk pode ser diferente do nome no ChatPanel. Use `MILLDESK_AGENT_NAME`
+  no `.env` (ex.: `Guilherme P.`); vazio significa usar `TECH_NAME`. Cuidado com
+  homônimos: a comparação é exata (ignorando acentos e maiúsculas), então
+  `Guilherme P.` não casa com `Guilherme Anderson dos Santos`.
+- Só rotas de leitura são usadas. `addTicket`, `updateTicketStatus` e
+  `sendCommunication` nunca são chamadas.
 
 ## Modo debug por fonte
 

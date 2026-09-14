@@ -15,7 +15,7 @@ A especificação completa está em `PROMPT_CMD_ALL_IN_ONE.md`.
 
 - [x] Fase 0 — bootstrap (config, skeleton da TUI, testes)
 - [x] Fase 1 — E-mail (IMAP)
-- [ ] Fase 2 — Milldesk
+- [x] Fase 2 — Milldesk
 - [ ] Fase 3 — validação do Milldesk (`amount` = abertos ou histórico?)
 - [ ] Fase 4 — ChatPanel (Playwright)
 - [ ] Fase 5 — polimento
@@ -85,8 +85,8 @@ verticalmente.
 - Validado em 14/09/2026 contra `imap.sinoinformatica.com.br`: STARTTLS na 143 aceito,
   pasta `Junk E-Mail` lida, datas convertidas para o fuso local.
 - A conexão fica aberta entre ciclos e reconecta sozinha se cair.
-- A caixa `suporte@` é compartilhada, então "não lidos" reflete a equipe toda, não só o
-  técnico (a confirmar com o usuário).
+- A caixa `suporte@` é compartilhada (confirmado em 14/09/2026), então "não lidos"
+  reflete a equipe toda, não só o técnico. Comportamento aceito.
 
 ## Modo debug por fonte
 

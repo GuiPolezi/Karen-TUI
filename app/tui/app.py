@@ -35,8 +35,12 @@ SOURCE_PANELS: dict[str, tuple[str, str, int]] = {
 def build_default_sources(settings: Settings) -> dict[str, Source[Any]]:
     """Fontes reais, uma por painel. Fontes de fases futuras ainda não entram aqui."""
     from app.sources.email_imap import EmailSource
+    from app.sources.milldesk import MilldeskSource
 
-    return {"email": EmailSource(settings.email)}
+    return {
+        "email": EmailSource(settings.email),
+        "milldesk": MilldeskSource(settings.milldesk, settings.tech_name),
+    }
 
 
 class CmdAllInOneApp(App[None]):

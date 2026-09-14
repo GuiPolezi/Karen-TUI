@@ -1,36 +1,16 @@
 """Smoke test da TUI: monta o app sem terminal real e verifica o skeleton."""
 
-from pathlib import Path
-
-import pytest
-
-from app.config import ChatPanelSettings, EmailSettings, MilldeskSettings, Settings
 from app.tui.app import CmdAllInOneApp
 from app.tui.widgets.base_panel import BasePanel
 from app.tui.widgets.status_bar import StatusBar
 from textual.containers import Container
 from textual.widgets import Static
 
-
-def fake_settings() -> Settings:
-    return Settings(
-        tech_name="Guilherme",
-        email=EmailSettings(
-            host="imap.example.com", port=143, starttls=True, user="x@example.com",
-            password="", inbox_folder="INBOX", spam_folder=None, refresh_seconds=30,
-        ),
-        milldesk=MilldeskSettings(api_key="", base_url="https://example.com/api", refresh_seconds=60),
-        chatpanel=ChatPanelSettings(
-            url="https://example.com/chat.php", profile_dir=Path(".p"), refresh_seconds=15, headless=True,
-        ),
-        notify_bell=False,
-        log_level="INFO",
-        log_dir=Path("logs"),
-    )
+from tests.helpers import fake_settings
 
 
 async def test_three_panels_waiting_and_clock_running():
-    app = CmdAllInOneApp(fake_settings())
+    app = CmdAllInOneApp(fake_settings(), sources={})
     async with app.run_test(size=(120, 40)) as pilot:
         panels = app.query(BasePanel)
         assert len(panels) == 3
@@ -47,13 +27,13 @@ async def test_three_panels_waiting_and_clock_running():
 
 
 async def test_narrow_terminal_stacks_top_row():
-    app = CmdAllInOneApp(fake_settings())
+    app = CmdAllInOneApp(fake_settings(), sources={})
     async with app.run_test(size=(80, 40)):
         assert app.query_one("#main", Container).has_class("narrow")
 
 
 async def test_panel_error_keeps_body_and_marks_border():
-    app = CmdAllInOneApp(fake_settings())
+    app = CmdAllInOneApp(fake_settings(), sources={})
     async with app.run_test(size=(120, 40)) as pilot:
         panel = app.panel("email")
         panel.set_body("Inbox: 10")

@@ -30,6 +30,10 @@ class BasePanel(Vertical):
 
     # --- API usada pelos workers -------------------------------------------
 
+    def show_state(self, state: object) -> None:
+        """Renderiza um estado publicado pela fonte. Subclasses sobrescrevem."""
+        self.set_body(str(state))
+
     def set_waiting(self, text: str = WAITING_TEXT) -> None:
         self.query_one(".panel-body", Static).update(text)
 

@@ -9,7 +9,7 @@ from app.config import ConfigError, load_settings
 from app.logging_setup import setup_logging
 
 
-def _force_utf8_console() -> None:
+def force_utf8_console() -> None:
     """Consoles do Windows podem estar em cp1252; garante acentos legíveis nas mensagens."""
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, "reconfigure", None)
@@ -21,7 +21,7 @@ def _force_utf8_console() -> None:
 
 
 def main() -> int:
-    _force_utf8_console()
+    force_utf8_console()
     try:
         settings = load_settings()
     except ConfigError as exc:

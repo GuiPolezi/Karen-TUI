@@ -69,6 +69,8 @@ BasePanel.unconfigured {
 
 BasePanel .panel-body {
     height: auto;
+    text-wrap: nowrap;
+    text-overflow: ellipsis;
 }
 
 BasePanel .panel-error {

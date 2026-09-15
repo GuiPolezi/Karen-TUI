@@ -88,7 +88,7 @@ A TUI tem seis telas; os workers de coleta continuam rodando em qualquer uma del
 | `F7` | Eventos: linha do tempo do dia (e-mail novo, chamado que entrou/saiu do seu nome, conversa transferida, mensagem nova); `x` limpa a tela. Persistido em `logs/events-AAAA-MM-DD.jsonl` |
 | `F8` | Saúde: status de cada fonte, última coleta, duração, próximo ciclo, chamadas do Milldesk no último minuto e cooldown de 429, sessão do ChatPanel, tamanho do log, versões |
 | `↑` `↓` `j` `k` `PgUp` `PgDn` `Home` `End` | mover o cursor na lista |
-| `Enter` | abrir o item selecionado: e-mail completo ou detalhe do chamado (descrição, SLA regressivo, resolução, histórico de comunicações); conversa chega na fase 6.3 |
+| `Enter` | abrir o item selecionado: e-mail completo, detalhe do chamado (descrição, SLA regressivo, resolução, comunicações) ou a conversa do WhatsApp (mensagens, sem marcar como lida) |
 | `Esc` | fechar o detalhe, limpar o filtro ou voltar ao Dashboard |
 | `Tab` / `Shift+Tab` | trocar o painel focado no Dashboard |
 | `/` | filtro incremental na lista (nome, assunto, número, status) |
@@ -265,6 +265,18 @@ sozinha (aviso no log) para não apagar as listas, e vale o comportamento acima.
 `logs/chatpanel_diag/` o DOM da carga, as respostas cruas dos endpoints de lista e, pelo
 tempo indicado, os eventos do socket e as mutações das listas. Foi assim que o comportamento
 acima foi medido.
+
+### Ler uma conversa (Enter)
+
+`Enter` numa conversa abre as mensagens (contato à esquerda em ciano, empresa em verde,
+marcos do atendimento em cinza). O app faz, dentro da página do usuário dedicado, a mesma
+requisição que o painel usa para mostrar a conversa, **sem** clicar nela: medido em
+15/09/2026 (`docs/CHATPANEL_CONVERSA.md`), isso não marca a conversa como lida no
+servidor nem gera evento para as outras sessões. Enquanto a tela está aberta, uma
+mensagem nova recarrega a conversa sozinha. `r` recarrega, `o` abre o ChatPanel, `y`
+copia o número. Mensagens antigas além das que o painel mostra de início não são
+carregadas. `CHATPANEL_READ_CONVERSATIONS=false` desliga a leitura (o `Enter` passa a
+só avisar).
 
 ### O que o painel mostra
 

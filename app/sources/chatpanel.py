@@ -31,6 +31,11 @@ fechar: o socket do headless vira o atual e a queda do socket da janela não des
 Consequência: fechar a TUI desloga o usuário dedicado; ao abrir de novo, a janela de
 login aparece (uma vez por execução).
 
+Leitura de conversa (Fase 6.3, medido em 15/09/2026 — docs/CHATPANEL_CONVERSA.md): o app
+faz `POST inc_chat_view.php {number}` dentro da página, SEM changeTheInfo, e parseia a
+resposta (`parse_conversation_html`). Na sessão do usuário dedicado isso não marca a
+conversa como lida no servidor nem gera evento de socket.
+
 Atenção: o ChatPanel aceita UMA sessão por usuário. Logar aqui derruba a sessão do
 navegador normal (e vice-versa). Com o mesmo usuário do técnico isso vira pingue-pongue;
 o ideal é um usuário dedicado ao dashboard.
@@ -57,7 +62,7 @@ from bs4 import BeautifulSoup, SoupStrainer, Tag
 
 from app.config import ChatPanelSettings
 from app.sources.base import Source, SourceError, describe_error
-from app.state import ChatItem, ChatPanelState
+from app.state import ChatItem, ChatMessage, ChatPanelState, ConversationDetail
 
 SESSION_EXPIRED = "sessão expirada — pressione c para fazer login (ou rode scripts/chatpanel_login.py)"
 LOGIN_HINT = "pressione c (ou rode scripts/chatpanel_login.py) para salvar a sessão"
@@ -272,6 +277,81 @@ def parse_chatpanel_html(html: str, tech_name: str) -> ChatPanelState:
     )
 
 
+# --- parser da conversa ---------------------------------------------------------------
+
+MEDIA_LABELS = {"img": "[imagem]", "audio": "[áudio]", "video": "[vídeo]", "iframe": "[anexo]"}
+
+
+def _message_text(container: Tag) -> tuple[str, str]:
+    """(texto, tipo) de uma mensagem: junta parágrafos, <br> vira quebra, mídia vira rótulo."""
+    parts: list[str] = []
+    kind = "text"
+    for media in container.find_all(["img", "audio", "video", "iframe"]):
+        parts.append(MEDIA_LABELS.get(media.name, "[mídia]"))
+        kind = "media"
+        media.decompose()
+    for link in container.find_all("a", href=True):
+        href = str(link.get("href", ""))
+        if re.search(r"\.(pdf|docx?|xlsx?|zip|rar|csv|txt|jpe?g|png|mp3|ogg|mp4)(\?|$)", href, re.I):
+            parts.append(f"[arquivo: {_collapse(link.get_text(' ')) or href.rsplit('/', 1)[-1]}]")
+            kind = "media"
+            link.decompose()
+    for br in container.find_all("br"):
+        br.replace_with("\n")
+    text = container.get_text()
+    text = "\n".join(line.strip() for line in text.split("\n"))
+    text = re.sub(r"\n{3,}", "\n\n", text).strip()
+    if text:
+        parts.append(text)
+    return "\n".join(parts).strip(), kind
+
+
+def parse_conversation_html(html: str, number: str = "", contact_name: str = "") -> ConversationDetail:
+    """Resposta de inc_chat_view.php -> ConversationDetail (ordem cronológica, como o painel)."""
+    soup = BeautifulSoup(html, "html.parser")
+    main = soup.find(id="main-chat-content") or soup
+    head = soup.find("div", class_="main-chat-head")
+    name = contact_name
+    if head is not None:
+        person = head.select_one(".chatnameperson")
+        if person is not None:
+            name = _collapse(person.get_text(" ")) or name
+    messages: list[ChatMessage] = []
+    has_more = main.find(id="but-seemore") is not None
+    items = main.select("ul > li") if main.find("ul") else main.find_all("li", recursive=False)
+    for li in items:
+        classes = li.get("class") or []
+        if li.get("id") == "but-seemore":
+            has_more = True
+            continue
+        if "chat-day-label" in classes:
+            label = _collapse(li.get_text(" "))
+            if label:
+                messages.append(ChatMessage(when="", author="", text=label, mine=False, kind="system"))
+            continue
+        mine = "chat-item-end" in classes
+        if not mine and "chat-item-start" not in classes:
+            continue
+        time_span = li.select_one("span.msg-sent-time")
+        when = _collapse(time_span.get_text(" ")) if time_span is not None else ""
+        author_span = li.select_one("span.chatnameperson")
+        author = _collapse(author_span.get_text(" ")) if author_span is not None else ("técnico" if mine else name)
+        body = li.select_one(".main-chat-msg")
+        text, kind = _message_text(body) if body is not None else ("", "text")
+        messages.append(ChatMessage(when=when, author=author, text=text, mine=mine, kind=kind))
+    return ConversationDetail(number=number, name=name, messages=messages, has_more=has_more,
+                              fetched_at=datetime.now())
+
+
+CONVERSATION_JS = """
+async (number) => new Promise((resolve, reject) => $.ajax({
+  type: "POST", url: "inc_chat_view.php", data: {number: number}, timeout: 20000,
+  success: (html) => resolve(String(html)),
+  error: (xhr) => reject(new Error("inc_chat_view.php: HTTP " + (xhr && xhr.status))),
+}))
+"""
+
+
 # --- fonte (Playwright) ------------------------------------------------------------
 
 
@@ -326,6 +406,17 @@ class ChatPanelSource(Source[ChatPanelState]):
 
     async def close(self) -> None:
         await self._teardown()
+
+    async def fetch_conversation(self, number: str, contact_name: str = "") -> ConversationDetail:
+        """Mensagens de uma conversa, lidas dentro da página aberta (sem clicar em nada)."""
+        if not self.settings.read_conversations:
+            raise RuntimeError("leitura de conversas desligada (CHATPANEL_READ_CONVERSATIONS=false)")
+        page = await self._ensure_page()
+        html = await asyncio.wait_for(page.evaluate(CONVERSATION_JS, number), timeout=30)
+        detail = parse_conversation_html(html, number=number, contact_name=contact_name)
+        self.log.debug("conversa %s: %d mensagens%s", number, len(detail.messages),
+                       " (há mais antigas)" if detail.has_more else "")
+        return detail
 
     # --- navegador -------------------------------------------------------------
 
@@ -645,6 +736,13 @@ async def _debug_main() -> int:
         print(exc, file=sys.stderr)
         return 2
 
+    if len(sys.argv) > 2 and sys.argv[1] == "--conversation":  # python -m app.sources.chatpanel --conversation 5511...
+        source = ChatPanelSource(settings.chatpanel, settings.tech_name)
+        try:
+            print(to_json(await source.fetch_conversation(sys.argv[2])))
+        finally:
+            await source.close()
+        return 0
     if len(sys.argv) > 1:  # modo offline: python -m app.sources.chatpanel arquivo.html
         html = open(sys.argv[1], encoding="utf-8", errors="replace").read()
         print(to_json(parse_chatpanel_html(html, settings.tech_name)))

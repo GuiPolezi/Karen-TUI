@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from app.tui.screens.base import ModeScreen
 from app.tui.screens.chatpanel import ChatPanelScreen
+from app.tui.screens.conversation_detail import ConversationDetailScreen
 from app.tui.screens.dashboard import DashboardScreen
 from app.tui.screens.email import EmailScreen
 from app.tui.screens.email_detail import EmailDetailScreen
@@ -30,5 +31,5 @@ MODE_SCREENS: dict[str, type[ModeScreen]] = {
 __all__ = [
     "MODE_SCREENS", "ModeScreen", "DashboardScreen", "EmailScreen", "MilldeskScreen",
     "ChatPanelScreen", "LogScreen", "NotesScreen", "EmailDetailScreen", "TicketDetailScreen",
-    "LauncherScreen", "HelpScreen", "EventsScreen", "HealthScreen",
+    "LauncherScreen", "HelpScreen", "EventsScreen", "HealthScreen", "ConversationDetailScreen",
 ]

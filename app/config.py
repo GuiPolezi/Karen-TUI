@@ -69,6 +69,7 @@ class ChatPanelSettings:
     password: str = ""           # opcional: pré-preenche a senha; nunca aparece em log
     login_on_start: bool = True  # abre a janela de login sozinho (1x por execução) se a sessão expirou
     resync_seconds: int = 60     # recarrega as listas a cada N s (0 desliga); requer usuário dedicado
+    read_conversations: bool = True  # Enter lê a conversa (inc_chat_view.php); medido como somente leitura
 
     @property
     def prefill_login(self) -> bool:
@@ -179,6 +180,7 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
         password=env.str("CHATPANEL_PASSWORD", "", required=False),
         login_on_start=env.bool("CHATPANEL_LOGIN_ON_START", True),
         resync_seconds=env.int("CHATPANEL_RESYNC_SECONDS", 60),
+        read_conversations=env.bool("CHATPANEL_READ_CONVERSATIONS", True),
     )
 
     notify_bell = env.bool("NOTIFY_BELL", True)

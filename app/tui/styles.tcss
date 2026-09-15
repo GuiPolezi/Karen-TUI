@@ -216,6 +216,36 @@ HelpScreen {
     color: $text;
 }
 
+/* Detalhe da conversa (Enter no ChatPanel) --------------------------------- */
+
+ConversationDetailScreen {
+    align: center middle;
+    background: $background 60%;
+}
+
+#conversation {
+    width: 92%;
+    height: 92%;
+    border: round $primary;
+    background: $surface;
+    padding: 1 2;
+}
+
+#conversation-header {
+    height: auto;
+    margin-bottom: 1;
+    border-bottom: solid $secondary;
+}
+
+#conversation-messages {
+    height: auto;
+}
+
+#conversation-footer {
+    height: auto;
+    margin-top: 1;
+}
+
 /* Detalhe do chamado (Enter no Milldesk) ----------------------------------- */
 
 TicketDetailScreen {

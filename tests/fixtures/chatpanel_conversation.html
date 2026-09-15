@@ -1,0 +1,284 @@
+
+<div class="d-flex align-items-center border-bottom main-chat-head flex-wrap">
+<span class="avatar avatar-md chatstatusperson me-2 lh-1">
+<a aria-controls="offcanvasRight" class="chatnameperson responsive-userinfo-open" data-bs-target="#offcanvasRight" data-bs-toggle="offcanvas" href="javascript:void(0);" onclick="javascript:chatUserDetails();"><img alt="img" class="chatimageperson" src="avatar.jpg"/></a>
+</span>
+<div class="flex-fill">
+<a aria-controls="offcanvasRight" class="chatnameperson responsive-userinfo-open" data-bs-target="#offcanvasRight" data-bs-toggle="offcanvas" href="javascript:void(0);" onclick="javascript:chatUserDetails();"><p class="mb-0 fw-medium fs-14 lh-1">
+
+                                    Contato Contato - Contato TI                                </p>
+<p class="text-muted mb-0 chatpersonstatus">5519900000000</p></a>
+</div>
+<div class="d-flex flex-wrap rightIcons gap-2">
+<button aria-label="button" class="btn btn-icon btn-outline-light responsive-userinfo-open btn-sm" type="button">
+<i class="ti ti-user-circle" id="responsive-chat-close"></i>
+</button>
+<div class="dropdown">
+<button aria-expanded="false" aria-label="button" class="btn btn-icon btn-primary3-light btn-wave waves-light btn-sm waves-effect waves-light" data-bs-toggle="dropdown" type="button">
+<i class="ti ti-dots-vertical"></i>
+</button>
+<ul class="dropdown-menu">
+<li><a aria-controls="offcanvasRight" class="dropdown-item" data-bs-target="#offcanvasRight" data-bs-toggle="offcanvas" href="javascript:void(0);" onclick="javascript:chatUserDetails();"><i class="ri-user-3-line me-1"></i>Contato</a></li>
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="atendeTransfer();"><i class="ri-user-shared-line me-1"></i>Contato</a></li>
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="chatEnd();"><i class="ri-door-closed-line me-1"></i>Contato</a></li>
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="chatMarkRead();"><i class="ri-chat-check-line me-1"></i>Contato Contato</a></li>
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="sendCall();"><i class="ri-phone-line me-1"></i>Contato Contato</a></li>
+</ul>
+</div>
+<button aria-label="button" class="btn btn-icon btn-primary-light my-0 responsive-chat-close btn-sm" type="button">
+<i class="ri-close-line"></i>
+</button>
+</div>
+</div>
+<div class="chat-content js-scroll-to-end" id="main-chat-content">
+<ul class="list-unstyled" id="box-main-chat">
+<li id="but-seemore" style="text-align:center"><a href="javascript:void(0);" onclick="void(0)"><i class="bi bi-plus-square-dotted"></i> Ver Mais</a></li> <li class="chat-item-start" id="msg_3A4EC4E6789F69B7153F">
+<div class="chat-list-inner">
+<div class="ms-3">
+<div class="main-chat-msg">
+<div>
+<p class="mb-0">Mensagem 1 do contato (anonimizada).</p> </div>
+</div>
+<span class="chatting-user-info">
+<span class="chatnameperson">Contato Teste - CM Exemplo</span> <span id="reac_XXXXXXXX" style="font-size: 16px; margin-right: 5px;"></span><span class="msg-sent-time">03/09/2026 13:39</span>
+</span> <span class="dropdown" id="dropdown_XXXXXXXX">
+<a aria-label="anchor" class="btn btn-icon btn-sm btn-outline-light" data-bs-toggle="dropdown" href="javascript:void(0);">
+<i class="ri-more-2-fill"></i>
+</a>
+<ul class="dropdown-menu" role="menu">
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="ri-corner-up-right-double-line me-2"></i>Encaminhar</a></li> <li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="bi bi-reply me-2"></i>Responder</a></li>
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="bi bi-emoji-smile me-2"></i>Reação</a></li>
+</ul>
+</span>
+</div>
+</div>
+</li>
+<li class="chat-item-end" id="msg_5d34e3bd804a6d69dab934fb90f991fc">
+<div class="chat-list-inner">
+<div class="me-3">
+<div class="main-chat-msg">
+<div id="content_XXXXXXXX"><p class="mb-0">Resposta 1 do técnico (anonimizada).</p></div>
+</div>
+<span class="chatting-user-info">
+<span id="reac_XXXXXXXX" style="font-size: 16px; margin-right: 5px;"></span><span class="msg-sent-time">03/09/2026 13:39</span> <span class="dropdown">
+<a aria-label="anchor" class="btn btn-icon btn-sm btn-outline-light" data-bs-toggle="dropdown" href="javascript:void(0);">
+<i class="ri-more-2-fill"></i>
+</a>
+<ul class="dropdown-menu" role="menu">
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="ri-delete-bin-line me-2"></i>Remover</a></li>
+</ul>
+</span>
+</span>
+</div>
+</div>
+</li>
+<li class="chat-item-end" id="msg_be99e92ed5b0ec225f7ad54d86afdedd">
+<div class="chat-list-inner">
+<div class="me-3">
+<div class="main-chat-msg">
+<div id="content_XXXXXXXX"><p>Resposta 2 do técnico (anonimizada).<br/>Segunda linha da resposta.</p></div>
+</div>
+<span class="chatting-user-info">
+<span id="reac_XXXXXXXX" style="font-size: 16px; margin-right: 5px;"></span><span class="msg-sent-time">03/09/2026 13:39</span> <span class="dropdown">
+<a aria-label="anchor" class="btn btn-icon btn-sm btn-outline-light" data-bs-toggle="dropdown" href="javascript:void(0);">
+<i class="ri-more-2-fill"></i>
+</a>
+<ul class="dropdown-menu" role="menu">
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="ri-delete-bin-line me-2"></i>Remover</a></li>
+</ul>
+</span>
+</span>
+</div>
+</div>
+</li>
+<li class="chat-item-start" id="msg_3AA75FC82A5D74C271B3">
+<div class="chat-list-inner">
+<div class="ms-3">
+<div class="main-chat-msg">
+<div>
+<p class="mb-0">Mensagem 2 do contato (anonimizada).</p> </div>
+</div>
+<span class="chatting-user-info">
+<span class="chatnameperson">Contato Teste - CM Exemplo</span> <span id="reac_XXXXXXXX" style="font-size: 16px; margin-right: 5px;"></span><span class="msg-sent-time">03/09/2026 13:39</span>
+</span> <span class="dropdown" id="dropdown_XXXXXXXX">
+<a aria-label="anchor" class="btn btn-icon btn-sm btn-outline-light" data-bs-toggle="dropdown" href="javascript:void(0);">
+<i class="ri-more-2-fill"></i>
+</a>
+<ul class="dropdown-menu" role="menu">
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="ri-corner-up-right-double-line me-2"></i>Encaminhar</a></li> <li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="bi bi-reply me-2"></i>Responder</a></li>
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="bi bi-emoji-smile me-2"></i>Reação</a></li>
+</ul>
+</span>
+</div>
+</div>
+</li>
+<li class="chat-day-label">
+<span>Conversa transferida 03/09/2026 13:40</span>
+</li>
+<li class="chat-item-end" id="msg_66b5bb2fb2da593f9684ea6bd343d916">
+<div class="chat-list-inner">
+<div class="me-3">
+<div class="main-chat-msg">
+<div id="content_XXXXXXXX"><p class="mb-0">Resposta 3 do técnico (anonimizada).</p></div>
+</div>
+<span class="chatting-user-info">
+<span id="reac_XXXXXXXX" style="font-size: 16px; margin-right: 5px;"></span><span class="msg-sent-time">03/09/2026 13:39</span> <span class="dropdown">
+<a aria-label="anchor" class="btn btn-icon btn-sm btn-outline-light" data-bs-toggle="dropdown" href="javascript:void(0);">
+<i class="ri-more-2-fill"></i>
+</a>
+<ul class="dropdown-menu" role="menu">
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="ri-delete-bin-line me-2"></i>Remover</a></li>
+</ul>
+</span>
+</span>
+</div>
+</div>
+</li>
+<li class="chat-item-start" id="msg_3A817EF296471AB13646">
+<div class="chat-list-inner">
+<div class="ms-3">
+<div class="main-chat-msg">
+<div>
+<p class="mb-0">Mensagem 3 do contato (anonimizada).</p> </div>
+</div>
+<span class="chatting-user-info">
+<span class="chatnameperson">Contato Teste - CM Exemplo</span> <span id="reac_XXXXXXXX" style="font-size: 16px; margin-right: 5px;"></span><span class="msg-sent-time">03/09/2026 13:39</span>
+</span> <span class="dropdown" id="dropdown_XXXXXXXX">
+<a aria-label="anchor" class="btn btn-icon btn-sm btn-outline-light" data-bs-toggle="dropdown" href="javascript:void(0);">
+<i class="ri-more-2-fill"></i>
+</a>
+<ul class="dropdown-menu" role="menu">
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="ri-corner-up-right-double-line me-2"></i>Encaminhar</a></li> <li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="bi bi-reply me-2"></i>Responder</a></li>
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="bi bi-emoji-smile me-2"></i>Reação</a></li>
+</ul>
+</span>
+</div>
+</div>
+</li>
+<li class="chat-item-start" id="msg_3AB3AE884E5E9F1E6476">
+<div class="chat-list-inner">
+<div class="ms-3">
+<div class="main-chat-msg">
+<div>
+<p class="mb-0">Mensagem 4 do contato (anonimizada).</p> </div>
+</div>
+<span class="chatting-user-info">
+<span class="chatnameperson">Contato Teste - CM Exemplo</span> <span id="reac_XXXXXXXX" style="font-size: 16px; margin-right: 5px;"></span><span class="msg-sent-time">03/09/2026 13:40</span>
+</span> <span class="dropdown" id="dropdown_XXXXXXXX">
+<a aria-label="anchor" class="btn btn-icon btn-sm btn-outline-light" data-bs-toggle="dropdown" href="javascript:void(0);">
+<i class="ri-more-2-fill"></i>
+</a>
+<ul class="dropdown-menu" role="menu">
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="ri-corner-up-right-double-line me-2"></i>Encaminhar</a></li> <li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="bi bi-reply me-2"></i>Responder</a></li>
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="bi bi-emoji-smile me-2"></i>Reação</a></li>
+</ul>
+</span>
+</div>
+</div>
+</li>
+<li class="chat-item-start" id="msg_3A899AC9D23C430C77FB">
+<div class="chat-list-inner">
+<div class="ms-3">
+<div class="main-chat-msg">
+<div>
+<p class="mb-0">Mensagem 5 do contato (anonimizada).</p> </div>
+</div>
+<span class="chatting-user-info">
+<span class="chatnameperson">Contato Teste - CM Exemplo</span> <span id="reac_XXXXXXXX" style="font-size: 16px; margin-right: 5px;"></span><span class="msg-sent-time">03/09/2026 09:13</span>
+</span> <span class="dropdown" id="dropdown_XXXXXXXX">
+<a aria-label="anchor" class="btn btn-icon btn-sm btn-outline-light" data-bs-toggle="dropdown" href="javascript:void(0);">
+<i class="ri-more-2-fill"></i>
+</a>
+<ul class="dropdown-menu" role="menu">
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="ri-corner-up-right-double-line me-2"></i>Encaminhar</a></li> <li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="bi bi-reply me-2"></i>Responder</a></li>
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="bi bi-emoji-smile me-2"></i>Reação</a></li>
+</ul>
+</span>
+</div>
+</div>
+</li>
+<li class="chat-day-label">
+<span>Conversa transferida 14:48</span>
+</li>
+<li class="chat-item-end" id="msg_90db4c84241010fe51c4714f8e00eb2d">
+<div class="chat-list-inner">
+<div class="me-3">
+<div class="main-chat-msg">
+<div id="content_XXXXXXXX"><p class="mb-0">Resposta 4 do técnico (anonimizada).</p></div>
+</div>
+<span class="chatting-user-info">
+<span id="reac_XXXXXXXX" style="font-size: 16px; margin-right: 5px;"></span><span class="msg-sent-time">14:48</span> <span class="dropdown">
+<a aria-label="anchor" class="btn btn-icon btn-sm btn-outline-light" data-bs-toggle="dropdown" href="javascript:void(0);">
+<i class="ri-more-2-fill"></i>
+</a>
+<ul class="dropdown-menu" role="menu">
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="ri-edit-line me-2"></i>Editar</a></li> <li><a class="dropdown-item" href="javascript:void(0);" onclick="void(0)"><i class="ri-delete-bin-line me-2"></i>Remover</a></li>
+</ul>
+</span>
+</span>
+</div>
+</div>
+</li>
+</ul>
+<div class="spinner-border text-primary" id="spinner-chat-int" role="status" style="display: none">
+<span class="visually-hidden">Loading...</span>
+</div>
+<div class="alert alert-success text-center" id="display-view-chat" role="alert" style="display:block">
+<i class="bi bi-check-circle"></i> Viu a conversa!
+
+</div>
+</div>
+<div class="chat-footer">
+<a aria-label="anchor" class="btn btn-dark me-2 btn-icon" href="javascript:void(0)" id="cancel-reply" onclick="cancelReply();" style="display: none">
+<i class="bi bi-x-square-fill"></i>
+</a>
+<textarea class="chat-message-space" disabled="" id="meuTextarea" oninput="autoResizeCampo(this)" onkeydown="sendState('c');" onkeyup="saveTempDebounced();" placeholder="Contato em atendimento com outro usuário."></textarea>
+</div>
+<div aria-labelledby="offcanvasBottomLabel" class="offcanvas offcanvas-bottom" id="offcanvasBottom" tabindex="-1">
+<div class="offcanvas-body small">
+<form action="uploadfiles-chat.php" class="dropzone" id="exampleDropzone-chat"><div class="dz-message" data-dz-message="" style="font-size: 18px"><span>Arraste arquivos aqui ou clique</span></div></form>
+</div>
+</div>
+<div aria-labelledby="offcanvasBottomLabel-voice" class="offcanvas offcanvas-bottom" id="offcanvasBottom-voice" tabindex="-1">
+<div class="offcanvas-body small" style=" display: flex;justify-content: center;">
+<div class="row" style="padding: 15px;">
+<div aria-label="Large button group" class="btn-group" role="group">
+<div class="col-sm-12" style="font-size: 25px;">
+<button class="btn btn-outline-dark" id="recButton" style="font-size: 25px"><i class="bi bi-mic-fill" id="mic"></i></button>
+<button class="btn btn-outline-dark" disabled="" id="stopButton" style="font-size: 25px"><i class="bi bi-stop-fill"></i></button>
+<button class="btn btn-outline-dark" disabled="" id="playButton" style="font-size: 25px"><i class="bi bi-play-fill"></i></button>
+<button class="btn btn-outline-dark" disabled="" id="pauseButton" style="font-size: 25px"><i class="bi bi-pause-fill"></i></button>
+<button class="btn btn-outline-dark" disabled="" id="sendButton" style="font-size: 25px"><i class="bi bi-send"></i></button>
+</div>
+</div>
+<div id="waveform"></div>
+</div>
+</div>
+</div>
+<div aria-hidden="false" aria-labelledby="offcanvasBottomLabel-print" class="offcanvas offcanvas-bottom" data-bs-backdrop="static" data-bs-keyboard="false" id="offcanvasBottom-print" tabindex="-1">
+<div class="offcanvas-body small" style=" display: flex;justify-content: center;">
+<div id="textareaid2" style="text-align: center;"></div>
+</div>
+</div>
+<div aria-hidden="false" aria-labelledby="staticBackdropLabel" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" id="staticBackdropEdit" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header">
+<h6 class="modal-title" id="staticBackdropLabel"><i class="bi bi-plus-circle"></i> Editar Mensagem                </h6>
+<button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+</div>
+<div class="modal-body">
+<h5 id="newChatTitle" style="text-align: center; margin-bottom: 20px;"></h5>
+<div class="mb-3">
+<label class="form-label fs-14 text-dark" for="newEditContent">Mensagem</label>
+<textarea class="form-control" id="newEditContent" name="newEditContent" placeholder="" rows="2"></textarea><input id="newEditId" type="hidden" value="0"/>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-danger" data-bs-dismiss="modal" id="btnEditCancel" type="button">Cancelar</button>
+<button class="btn btn-primary" id="btnEditSave" onclick="sendEditMessage();" type="button">Editar Agora</button>
+</div>
+</div>
+</div>
+</div>
+<input id="chat_instanceid" type="hidden" value="5"/><input id="chat_number" type="hidden" value="5519900000000"/><input id="chat_isgroup" type="hidden" value="0"/><input id="chat_lang" type="hidden" value="pt-br"/><input id="eprint" type="hidden" value="0"/><input id="eprint_cont" type="hidden" value=""/><input id="chat_replyid" type="hidden" value="0"/><input id="chat_state" type="hidden" value="0"/><input id="st_open" type="hidden" value="1"/><input id="st_open_regint" type="hidden" value="1"/>

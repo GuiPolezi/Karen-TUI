@@ -27,6 +27,7 @@ from app.sources.base import Source, SourceError
 from app.tui.launcher import Action, parse_command
 from app.tui.screens import (
     MODE_SCREENS,
+    ConversationDetailScreen,
     EmailDetailScreen,
     HelpScreen,
     LauncherScreen,
@@ -449,7 +450,7 @@ class CmdAllInOneApp(App[None]):
                 return
             self.open_ticket(ticket_id)
         elif source == "chatpanel":
-            self.notify(f"detalhe da conversa {key} chega na Fase 6.3")
+            self.open_conversation(key)
 
     async def _open_email(self, uid: str) -> None:
         state = self.states.get("email")
@@ -508,6 +509,62 @@ class CmdAllInOneApp(App[None]):
             return
         if screen.is_attached:
             screen.show(detail)
+
+    def _chat_item(self, number: str) -> Any:
+        state = self.states.get("chatpanel")
+        if state is None:
+            return None
+        for item in [*state.mine, *state.others]:
+            if item.number == number:
+                return item
+        return None
+
+    def open_conversation(self, number: str, force: bool = False) -> None:
+        """Abre (ou recarrega) a conversa; a tela abre já com "carregando…"."""
+        item = self._chat_item(number)
+        screen = self.screen if isinstance(self.screen, ConversationDetailScreen) else None
+        if screen is None or screen.number != number:
+            if isinstance(self.screen, ModalScreen):
+                self.pop_screen()
+            screen = ConversationDetailScreen(number, item)
+            self.push_screen(screen)
+        else:
+            screen.item = item
+            screen.set_loading()
+        self.run_worker(self._load_conversation(screen, number), name="detail-chat",
+                        group="detail", exclusive=True, exit_on_error=False)
+
+    async def _load_conversation(self, screen: ConversationDetailScreen, number: str) -> None:
+        source = self._sources.get("chatpanel")
+        fetch = getattr(source, "fetch_conversation", None)
+        if fetch is None:
+            screen.show_error("fonte ChatPanel indisponível")
+            return
+        item = screen.item
+        try:
+            detail = await fetch(number, item.name if item is not None else "")
+        except Exception as exc:
+            log.warning("erro ao ler a conversa %s: %s", number, exc)
+            if screen.is_attached:
+                screen.show_error(str(exc))
+            return
+        if screen.is_attached:
+            screen.show(detail)
+
+    def _refresh_open_conversation(self, state: Any) -> None:
+        """Conversa aberta ganhou mensagem (não lidas/última mensagem mudaram): recarrega."""
+        screen = self.screen if isinstance(self.screen, ConversationDetailScreen) else None
+        if screen is None:
+            return
+        item = self._chat_item(screen.number)
+        if item is None:
+            return
+        snapshot = (item.unread, item.last_message, item.time)
+        if snapshot != screen.snapshot:
+            screen.snapshot = snapshot
+            screen.item = item
+            self.run_worker(self._load_conversation(screen, screen.number), name="detail-chat",
+                            group="detail", exclusive=True, exit_on_error=False)
 
     def action_open_email(self) -> None:
         state = self.states.get("email")
@@ -592,6 +649,8 @@ class CmdAllInOneApp(App[None]):
             panel.show_state(state)
             panel.set_error(state.error)
             panel.mark_updated(state.updated_at)
+        if name == "chatpanel":
+            self._refresh_open_conversation(state)
         if previous is not None:
             reference = panels[0] if panels else _panel_class_for(name)
             if reference is not None:

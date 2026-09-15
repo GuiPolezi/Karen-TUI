@@ -204,6 +204,26 @@ class ChatItem:
 
 
 @dataclass
+class ChatMessage:
+    """Uma mensagem da conversa (inc_chat_view.php)."""
+
+    when: str          # dd/mm/aaaa HH:MM (como o painel mostra)
+    author: str        # nome do contato, "técnico" ou "" (marco)
+    text: str
+    mine: bool = False  # enviada pelo lado da empresa (li.chat-item-end)
+    kind: str = "text"  # text | media | system
+
+
+@dataclass
+class ConversationDetail:
+    number: str
+    name: str = ""
+    messages: list[ChatMessage] = field(default_factory=list)  # ordem cronológica
+    has_more: bool = False  # o painel tem "ver mais" (mensagens antigas não carregadas)
+    fetched_at: datetime = field(default_factory=datetime.now)
+
+
+@dataclass
 class ChatPanelState:
     mine: list[ChatItem] = field(default_factory=list)
     mine_unread: int = 0

@@ -158,6 +158,15 @@ Quando a sessão cair, pressione `c` e refaça o login. Alternativas (usuário d
 dashboard, userscript + servidor local) foram avaliadas e descartadas: o fluxo fica
 assim, sem depender de servidor local nem de extensão no navegador.
 
+### Ressincronização das listas (transferências)
+
+As listas do painel só mudam por eventos de socket (nova mensagem, encerramento...). Uma
+**transferência** feita em outra aba não gera evento, então a conversa ficaria no seu nome
+na TUI até chegar a próxima mensagem dela. Por isso, a cada `CHATPANEL_RESYNC_SECONDS`
+(padrão 60) o app refaz dentro da página as mesmas duas chamadas de lista que o painel usa
+na busca e troca o HTML de "SUAS CONVERSAS" e "EM ATENDIMENTO". Sem recarregar a página e
+sem derrubar o socket. `0` desliga.
+
 ### O que o painel mostra
 
 - Conversas em `#box-atende-chats` ("SUAS CONVERSAS") contam como suas sempre; as de

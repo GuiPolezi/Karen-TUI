@@ -10,6 +10,12 @@ senha (se CHATPANEL_USER/CHATPANEL_PASSWORD estiverem no .env) e espera a pessoa
 responder o captcha e entrar. A TUI chama isso pela tecla `c` e, uma vez por execução,
 sozinha quando detecta sessão expirada. `scripts/chatpanel_login.py` faz o mesmo fora da TUI.
 
+Ressincronização das listas: as listas "SUAS CONVERSAS" e "EM ATENDIMENTO" só mudam
+por eventos de socket (nova mensagem, encerramento...). Uma TRANSFERÊNCIA feita em outra
+aba não gera evento, então o item ficaria no nome antigo até a próxima mensagem. Por isso,
+a cada CHATPANEL_RESYNC_SECONDS o app refaz, dentro da página, as mesmas duas chamadas que
+o painel usa na busca (control-atende-on-us.php / -ot.php) e troca o HTML das listas.
+
 Atenção: o ChatPanel aceita UMA sessão por usuário. Logar aqui derruba a sessão do
 navegador normal (e vice-versa). Com o mesmo usuário do técnico isso vira pingue-pongue;
 o ideal é um usuário dedicado ao dashboard.
@@ -25,6 +31,7 @@ from __future__ import annotations
 import asyncio
 import re
 import sys
+import time
 import unicodedata
 from datetime import datetime
 from typing import Any
@@ -32,7 +39,7 @@ from typing import Any
 from bs4 import BeautifulSoup, SoupStrainer, Tag
 
 from app.config import ChatPanelSettings
-from app.sources.base import Source, SourceError
+from app.sources.base import Source, SourceError, describe_error
 from app.state import ChatItem, ChatPanelState
 
 SESSION_EXPIRED = "sessão expirada — pressione c para fazer login (ou rode scripts/chatpanel_login.py)"
@@ -54,6 +61,29 @@ LOGGED_OR_LOGIN_SELECTOR = f"#int_username, {LOGIN_FORM_SELECTOR}"
 LOGGED_SELECTOR = "#int_username"  # input hidden: esperar por presença, não por visibilidade
 LOGIN_USER_SELECTOR = "#user"      # tela de login (index.php); o captcha (#captcha) fica com a pessoa
 LOGIN_PASSWORD_SELECTOR = "#password"
+
+# Recarrega as duas listas da aba Atende do jeito que o próprio painel faz na busca
+# (searchActiveusServices / searchActiveotServices), mas com Promise para dar para esperar.
+# Só leitura de listas: o painel dispara exatamente estes POSTs ao digitar na busca.
+RESYNC_JS = """
+() => new Promise((resolve) => {
+  if (typeof $ !== "function") { resolve({ok: 0, failed: 2, reason: "sem jQuery"}); return; }
+  const jobs = [
+    ["control-atende-on-us.php", "#box-atende-chats", "#box-bottom-activeus-services"],
+    ["control-atende-on-ot.php", "#box-atendeothers-chats", "#box-bottom-activeot-services"],
+  ];
+  const result = {ok: 0, failed: 0};
+  let pending = jobs.length;
+  const finish = () => { if (--pending === 0) resolve(result); };
+  for (const [url, box, more] of jobs) {
+    $.ajax({
+      type: "POST", url: url, data: {qsearch: ""}, timeout: 15000,
+      success: (html) => { $(more).remove(); $(box).html(html); result.ok++; finish(); },
+      error: () => { result.failed++; finish(); },
+    });
+  }
+})
+"""
 
 
 class SessionExpiredError(Exception):
@@ -204,6 +234,7 @@ class ChatPanelSource(Source[ChatPanelState]):
         self._playwright: Any = None
         self._context: Any = None
         self._page: Any = None
+        self._last_resync: float | None = None  # time.monotonic() da última carga das listas
 
     @property
     def configured(self) -> bool:
@@ -237,7 +268,28 @@ class ChatPanelSource(Source[ChatPanelState]):
         page = await self._ensure_page()
         if reload:
             await self._open_panel(page)
+        elif self._resync_due():
+            await self._resync_lists(page)
         return await page.content()
+
+    def _resync_due(self, now: float | None = None) -> bool:
+        return resync_due(self._last_resync, now if now is not None else time.monotonic(),
+                          self.settings.resync_seconds)
+
+    async def _resync_lists(self, page: Any) -> None:
+        """Refaz as chamadas de lista do painel dentro da página (ver RESYNC_JS)."""
+        self._last_resync = time.monotonic()
+        try:
+            result = await asyncio.wait_for(page.evaluate(RESYNC_JS), timeout=20)
+        except Exception as exc:
+            self.log.warning("ressincronização das listas falhou: %s", describe_error(exc))
+            return
+        failed = int((result or {}).get("failed", 0))
+        if failed:
+            self.log.warning("ressincronização das listas: %d chamada(s) falharam (%s)",
+                             failed, (result or {}).get("reason", "erro HTTP"))
+        else:
+            self.log.debug("listas do ChatPanel ressincronizadas com o servidor")
 
     async def _ensure_page(self) -> Any:
         if self._page is not None and not self._page.is_closed():
@@ -322,6 +374,7 @@ class ChatPanelSource(Source[ChatPanelState]):
             self.log.warning("nem painel nem tela de login apareceram em 15 s (%s)", page.url)
         if await page.query_selector("#int_username"):
             await page.wait_for_timeout(2000)  # deixa o XHR/socket preencher as listas
+            self._last_resync = time.monotonic()  # página recém-carregada já está em dia
             return
         # chat.php também tem um input de senha (modal); só é tela de login sem #int_username
         if await page.query_selector(LOGIN_FORM_SELECTOR):
@@ -341,6 +394,13 @@ class ChatPanelSource(Source[ChatPanelState]):
                 await asyncio.wait_for(closer(), timeout=10)
             except Exception as exc:
                 self.log.debug("erro ao fechar navegador: %s", exc)
+
+
+def resync_due(last: float | None, now: float, interval_seconds: int) -> bool:
+    """True quando passou o intervalo desde a última carga das listas (0 desliga)."""
+    if interval_seconds <= 0:
+        return False
+    return last is None or now - last >= interval_seconds
 
 
 def _describe_login_failure(exc: BaseException, timeout: float) -> str:

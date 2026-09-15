@@ -176,6 +176,91 @@ def test_prefill_login_requires_user_and_password(tmp_path: Path):
     assert ChatPanelSettings(**base, user="g", password="s").prefill_login is True
 
 
+# --- ressincronização das listas ----------------------------------------------------
+
+
+def test_resync_due_respects_interval_and_zero_disables():
+    from app.sources.chatpanel import resync_due
+
+    assert resync_due(None, 100.0, 60) is True
+    assert resync_due(100.0, 159.9, 60) is False
+    assert resync_due(100.0, 160.0, 60) is True
+    assert resync_due(None, 100.0, 0) is False  # desligado
+
+
+class FakePage:
+    """Página falsa: evaluate() simula o RESYNC_JS trocando o HTML das listas."""
+
+    def __init__(self, html_before: str, html_after: str, fail: bool = False):
+        self.html = html_before
+        self.html_after = html_after
+        self.fail = fail
+        self.evaluations = 0
+
+    def is_closed(self) -> bool:
+        return False
+
+    async def evaluate(self, script: str):
+        self.evaluations += 1
+        assert "control-atende-on-us.php" in script and "control-atende-on-ot.php" in script
+        if self.fail:
+            raise RuntimeError("Execution context was destroyed")
+        self.html = self.html_after
+        return {"ok": 2, "failed": 0}
+
+    async def content(self) -> str:
+        return self.html
+
+
+class ResyncSource(ChatPanelSource):
+    def __init__(self, fake_page: FakePage, resync_seconds: int = 60):
+        super().__init__(
+            ChatPanelSettings(url="https://x/chat.php", profile_dir=Path(".p"), refresh_seconds=15,
+                              headless=True, resync_seconds=resync_seconds),
+            "Guilherme",
+        )
+        self.fake_page = fake_page
+
+    async def _ensure_page(self):
+        return self.fake_page
+
+
+async def test_resync_replaces_stale_list_after_interval():
+    stale = page(mine_box=li("551", "Transferida", agent="Guilherme"))
+    fresh = page(others_box=li("551", "Transferida", agent="Fulano"))
+    fake = FakePage(stale, fresh)
+    source = ResyncSource(fake, resync_seconds=60)
+
+    source._last_resync = 1000.0
+    assert source._resync_due(now=1030.0) is False
+
+    source._last_resync = None  # nunca ressincronizou: faz na primeira leitura
+    state = await source.fetch()
+    assert fake.evaluations == 1
+    assert state.mine == []  # a conversa transferida saiu do meu nome
+    assert state.others_count == 1
+    assert source._last_resync is not None
+
+
+async def test_resync_is_skipped_when_disabled_or_not_due():
+    stale = page(mine_box=li("551", "X", agent="Guilherme"))
+    fake = FakePage(stale, page())
+    source = ResyncSource(fake, resync_seconds=0)
+    state = await source.fetch()
+    assert fake.evaluations == 0
+    assert len(state.mine) == 1
+
+
+async def test_resync_failure_keeps_reading_current_dom(caplog):
+    stale = page(mine_box=li("551", "X", agent="Guilherme"))
+    fake = FakePage(stale, page(), fail=True)
+    source = ResyncSource(fake, resync_seconds=60)
+    state = await source.fetch()
+    assert fake.evaluations == 1
+    assert len(state.mine) == 1  # falha na ressincronização não derruba a leitura
+    assert any("ressincronização" in r.getMessage() for r in caplog.records)
+
+
 def test_login_failure_messages_are_short():
     from app.sources.chatpanel import _describe_login_failure
 

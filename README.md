@@ -188,8 +188,12 @@ Com um **usuário dedicado à TUI** (criado no ChatPanel só para isso) nada dis
   painel da TUI filtra por ele. "SUAS CONVERSAS" desse usuário fica vazio.
 - A cada `CHATPANEL_RESYNC_SECONDS` (padrão 60) o app refaz dentro da página as mesmas
   chamadas que o painel usa ao limpar a busca, troca o HTML das listas e segue os botões
-  "ver mais". Assim uma **transferência** sai (ou entra) do seu nome em até um minuto, sem
-  depender de mensagem nova. `0` desliga.
+  "ver mais". Assim uma **transferência** (botão Transferir) ou uma **reatribuição pelo
+  perfil do contato** (trocar atendente/departamento em "Atendimento atual") sai ou entra
+  do seu nome em até um minuto, sem depender de mensagem nova. Nenhuma das duas gera evento
+  de socket; validado em 15/09/2026. `0` desliga.
+- O usuário dedicado só enxerga conversas dos **departamentos em que está cadastrado**. Se
+  você atende em mais de um departamento, cadastre-o em todos eles no ChatPanel.
 - Seu login no navegador e o do app não se derrubam mais.
 
 Se o app estiver logado com o mesmo usuário do técnico, a ressincronização se desliga

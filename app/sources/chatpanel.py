@@ -63,27 +63,60 @@ LOGIN_USER_SELECTOR = "#user"      # tela de login (index.php); o captcha (#capt
 LOGIN_PASSWORD_SELECTOR = "#password"
 
 # Recarrega as duas listas da aba Atende do jeito que o próprio painel faz na busca
-# (searchActiveusServices / searchActiveotServices), mas com Promise para dar para esperar.
-# Só leitura de listas: o painel dispara exatamente estes POSTs ao digitar na busca.
-RESYNC_JS = """
-() => new Promise((resolve) => {
-  if (typeof $ !== "function") { resolve({ok: 0, failed: 2, reason: "sem jQuery"}); return; }
-  const jobs = [
-    ["control-atende-on-us.php", "#box-atende-chats", "#box-bottom-activeus-services"],
-    ["control-atende-on-ot.php", "#box-atendeothers-chats", "#box-bottom-activeot-services"],
+# (searchActiveusServices / searchActiveotServices) e segue os rodapés "ver mais"
+# (viewMoreActiveusChats / viewMoreActiveotChats) até a última página. Só leitura de
+# listas: o painel dispara exatamente estes POSTs ao digitar na busca e ao clicar em
+# "ver mais". Modo "full" recarrega a 1ª página e expande; "expand" só expande o que
+# já está na página (usado logo após o carregamento).
+RESYNC_MAX_PAGES = 30
+RESYNC_JS = r"""
+async (mode) => {
+  const result = {ok: 0, failed: 0, pages: 0};
+  if (typeof $ !== "function") { result.failed = 2; result.reason = "sem jQuery"; return result; }
+  const MAX_PAGES = %d;
+  const lists = [
+    {url: "control-atende-on-us.php", box: "#box-atende-chats",
+     bottom: "box-bottom-activeus-services", more: "viewMoreActiveusChats"},
+    {url: "control-atende-on-ot.php", box: "#box-atendeothers-chats",
+     bottom: "box-bottom-activeot-services", more: "viewMoreActiveotChats"},
   ];
-  const result = {ok: 0, failed: 0};
-  let pending = jobs.length;
-  const finish = () => { if (--pending === 0) resolve(result); };
-  for (const [url, box, more] of jobs) {
-    $.ajax({
-      type: "POST", url: url, data: {qsearch: ""}, timeout: 15000,
-      success: (html) => { $(more).remove(); $(box).html(html); result.ok++; finish(); },
-      error: () => { result.failed++; finish(); },
-    });
+  const post = (url, data) => new Promise((resolve, reject) => $.ajax({
+    type: "POST", url: url, data: data, timeout: 15000,
+    success: resolve, error: () => reject(new Error("falha em " + url)),
+  }));
+  // onclick vem como viewMoreActiveusChats(1 + 1): soma os inteiros da expressão
+  const nextPage = (bottom, fn) => {
+    const m = (bottom.innerHTML || "").match(new RegExp(fn + "\\(([^)]*)\\)"));
+    if (!m) return null;
+    const nums = m[1].match(/\d+/g);
+    return nums ? nums.reduce((a, b) => a + parseInt(b, 10), 0) : null;
+  };
+  for (const l of lists) {
+    try {
+      if (mode === "full") {
+        const html = await post(l.url, {qsearch: ""});
+        $("#" + l.bottom).remove();
+        $(l.box).html(html);
+        result.ok++;
+      }
+      for (let i = 0; i < MAX_PAGES; i++) {
+        const bottom = document.getElementById(l.bottom);
+        if (!bottom) break;
+        const page = nextPage(bottom, l.more);
+        if (page === null) break;
+        const html = await post(l.url, {qpage: page, qsearch: ""});
+        bottom.remove();
+        $(l.box).append(html);
+        result.pages++;
+      }
+    } catch (e) {
+      result.failed++;
+      result.reason = String(e && e.message || e);
+    }
   }
-})
-"""
+  return result;
+}
+""" % RESYNC_MAX_PAGES
 
 
 class SessionExpiredError(Exception):
@@ -276,20 +309,27 @@ class ChatPanelSource(Source[ChatPanelState]):
         return resync_due(self._last_resync, now if now is not None else time.monotonic(),
                           self.settings.resync_seconds)
 
-    async def _resync_lists(self, page: Any) -> None:
-        """Refaz as chamadas de lista do painel dentro da página (ver RESYNC_JS)."""
+    async def _resync_lists(self, page: Any, mode: str = "full") -> None:
+        """Refaz as chamadas de lista do painel dentro da página e segue os "ver mais"
+        (ver RESYNC_JS). mode="expand" só carrega as páginas que faltam."""
         self._last_resync = time.monotonic()
         try:
-            result = await asyncio.wait_for(page.evaluate(RESYNC_JS), timeout=20)
+            result = await asyncio.wait_for(page.evaluate(RESYNC_JS, mode), timeout=60)
         except Exception as exc:
             self.log.warning("ressincronização das listas falhou: %s", describe_error(exc))
             return
-        failed = int((result or {}).get("failed", 0))
+        result = result or {}
+        failed = int(result.get("failed", 0))
+        pages = int(result.get("pages", 0))
         if failed:
-            self.log.warning("ressincronização das listas: %d chamada(s) falharam (%s)",
-                             failed, (result or {}).get("reason", "erro HTTP"))
+            self.log.warning("ressincronização das listas (%s): %d lista(s) falharam (%s)",
+                             mode, failed, result.get("reason", "erro HTTP"))
         else:
-            self.log.debug("listas do ChatPanel ressincronizadas com o servidor")
+            self.log.debug("listas do ChatPanel ressincronizadas (%s), %d página(s) extra(s)",
+                           mode, pages)
+        if pages >= RESYNC_MAX_PAGES:
+            self.log.warning("ChatPanel: limite de %d páginas extras atingido; pode haver conversas fora da tela",
+                             RESYNC_MAX_PAGES)
 
     async def _ensure_page(self) -> Any:
         if self._page is not None and not self._page.is_closed():
@@ -374,7 +414,7 @@ class ChatPanelSource(Source[ChatPanelState]):
             self.log.warning("nem painel nem tela de login apareceram em 15 s (%s)", page.url)
         if await page.query_selector("#int_username"):
             await page.wait_for_timeout(2000)  # deixa o XHR/socket preencher as listas
-            self._last_resync = time.monotonic()  # página recém-carregada já está em dia
+            await self._resync_lists(page, mode="expand")  # carrega as páginas "ver mais"
             return
         # chat.php também tem um input de senha (modal); só é tela de login sem #int_username
         if await page.query_selector(LOGIN_FORM_SELECTOR):

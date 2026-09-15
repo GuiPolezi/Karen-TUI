@@ -167,6 +167,10 @@ na TUI até chegar a próxima mensagem dela. Por isso, a cada `CHATPANEL_RESYNC_
 na busca e troca o HTML de "SUAS CONVERSAS" e "EM ATENDIMENTO". Sem recarregar a página e
 sem derrubar o socket. `0` desliga.
 
+As listas do painel são paginadas (botão "ver mais" no fim). Ao abrir a página e em cada
+ressincronização o app segue esses botões até a última página, então todas as conversas
+entram na TUI, não só a primeira página.
+
 ### O que o painel mostra
 
 - Conversas em `#box-atende-chats` ("SUAS CONVERSAS") contam como suas sempre; as de

@@ -196,12 +196,14 @@ class FakePage:
         self.html_after = html_after
         self.fail = fail
         self.evaluations = 0
+        self.modes: list[str] = []
 
     def is_closed(self) -> bool:
         return False
 
-    async def evaluate(self, script: str):
+    async def evaluate(self, script: str, mode: str = "full"):
         self.evaluations += 1
+        self.modes.append(mode)
         assert "control-atende-on-us.php" in script and "control-atende-on-ot.php" in script
         if self.fail:
             raise RuntimeError("Execution context was destroyed")
@@ -237,6 +239,7 @@ async def test_resync_replaces_stale_list_after_interval():
     source._last_resync = None  # nunca ressincronizou: faz na primeira leitura
     state = await source.fetch()
     assert fake.evaluations == 1
+    assert fake.modes == ["full"]
     assert state.mine == []  # a conversa transferida saiu do meu nome
     assert state.others_count == 1
     assert source._last_resync is not None

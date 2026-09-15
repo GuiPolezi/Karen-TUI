@@ -1,11 +1,10 @@
-// Executa o RESYNC_JS real (app/sources/chatpanel.py) num DOM/jQuery falsos, com um
-// "servidor" paginado. Uso: node tests/resync_js_harness.js <arquivo-com-o-js> <modo>
+// Executa o EXPAND_JS real (app/sources/chatpanel.py) num DOM/jQuery falsos, com um
+// "servidor" paginado. Uso: node tests/resync_js_harness.js <arquivo-com-o-js>
 // Imprime JSON: {result, boxes: {box-atende-chats, box-atendeothers-chats}, calls}.
 "use strict";
 const fs = require("fs");
 
 const js = fs.readFileSync(process.argv[2], "utf8");
-const mode = process.argv[3] || "full";
 
 // --- servidor falso: 2 listas, 3 páginas na "us" e 1 na "ot" ------------------------
 const li = (n, agent) => `<li class="checkforactive" id="chat_${n}"><a><span class="avatar"></span>` +
@@ -65,9 +64,9 @@ $.ajax = ({ url, data, success, error }) => {
 };
 
 globalThis.$ = $;
-globalThis.document = document;  // o RESYNC_JS usa os dois como globais
+globalThis.document = document;  // o EXPAND_JS usa os dois como globais
 const fn = eval("(" + js + ")");
-fn.call({ $, document }, mode).then((result) => {
+fn.call({ $, document }).then((result) => {
   console.log(JSON.stringify({ result, boxes, calls }));
 });
 

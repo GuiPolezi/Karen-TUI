@@ -67,7 +67,6 @@ def test_reads_dotenv_file_and_masks_api_key(clean_env, tmp_path: Path):
                 "CHATPANEL_USER=guilherme",
                 "CHATPANEL_PASSWORD='cp#senha'",
                 "CHATPANEL_LOGIN_ON_START=false",
-                "CHATPANEL_RESYNC_SECONDS=0",
             ]
         ),
         encoding="utf-8",
@@ -77,7 +76,6 @@ def test_reads_dotenv_file_and_masks_api_key(clean_env, tmp_path: Path):
     assert settings.chatpanel.password == "cp#senha"
     assert settings.chatpanel.prefill_login is True
     assert settings.chatpanel.login_on_start is False
-    assert settings.chatpanel.resync_seconds == 0
     assert settings.milldesk.configured is True
     assert settings.milldesk.masked_key == "****1776"
     assert settings.email.password == "se#nha*"
@@ -91,13 +89,11 @@ def test_invalid_values_are_reported(clean_env):
         clean_env.setenv(key, value)
     clean_env.setenv("EMAIL_IMAP_PORT", "abc")
     clean_env.setenv("EMAIL_REFRESH_SECONDS", "1")
-    clean_env.setenv("CHATPANEL_RESYNC_SECONDS", "3")
     with pytest.raises(ConfigError) as info:
         load_settings(Path("nao-existe.env"))
     message = str(info.value)
     assert "EMAIL_IMAP_PORT" in message
     assert "EMAIL_REFRESH_SECONDS" in message
-    assert "CHATPANEL_RESYNC_SECONDS" in message
 
 
 def test_secrets_are_masked_in_logs(clean_env, tmp_path: Path, caplog):

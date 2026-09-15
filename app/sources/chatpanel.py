@@ -10,11 +10,16 @@ senha (se CHATPANEL_USER/CHATPANEL_PASSWORD estiverem no .env) e espera a pessoa
 responder o captcha e entrar. A TUI chama isso pela tecla `c` e, uma vez por execução,
 sozinha quando detecta sessão expirada. `scripts/chatpanel_login.py` faz o mesmo fora da TUI.
 
-Ressincronização das listas: as listas "SUAS CONVERSAS" e "EM ATENDIMENTO" só mudam
-por eventos de socket (nova mensagem, encerramento...). Uma TRANSFERÊNCIA feita em outra
-aba não gera evento, então o item ficaria no nome antigo até a próxima mensagem. Por isso,
-a cada CHATPANEL_RESYNC_SECONDS o app refaz, dentro da página, as mesmas duas chamadas que
-o painel usa na busca (control-atende-on-us.php / -ot.php) e troca o HTML das listas.
+Por que o app não faz chamadas ao servidor depois da carga (medido em 15/09/2026):
+o ChatPanel mantém UMA sessão ativa por usuário. Quando o técnico age no navegador, a
+sessão do app é invalidada no servidor: os endpoints de lista passam a devolver vazio e
+um reload cai na tela de login. O socket já autenticado, porém, continua entregando os
+eventos (nova mensagem, encerramento, leitura...), e os handlers do painel mantêm as
+listas do DOM corretas. Por isso a fonte carrega a página UMA vez (sessão nova), segue os
+rodapés "ver mais" nesse momento e depois só lê o DOM. Consequência aceita: uma
+TRANSFERÊNCIA feita em outra aba não gera evento e a conversa fica no nome antigo até a
+próxima mensagem dela. Uma ressincronização por endpoint foi tentada e removida: ela
+apagava as listas assim que a sessão do app era invalidada.
 
 Atenção: o ChatPanel aceita UMA sessão por usuário. Logar aqui derruba a sessão do
 navegador normal (e vice-versa). Com o mesmo usuário do técnico isso vira pingue-pongue;
@@ -31,7 +36,6 @@ from __future__ import annotations
 import asyncio
 import re
 import sys
-import time
 import unicodedata
 from datetime import datetime
 from typing import Any
@@ -62,16 +66,13 @@ LOGGED_SELECTOR = "#int_username"  # input hidden: esperar por presença, não p
 LOGIN_USER_SELECTOR = "#user"      # tela de login (index.php); o captcha (#captcha) fica com a pessoa
 LOGIN_PASSWORD_SELECTOR = "#password"
 
-# Recarrega as duas listas da aba Atende do jeito que o próprio painel faz na busca
-# (searchActiveusServices / searchActiveotServices) e segue os rodapés "ver mais"
-# (viewMoreActiveusChats / viewMoreActiveotChats) até a última página. Só leitura de
-# listas: o painel dispara exatamente estes POSTs ao digitar na busca e ao clicar em
-# "ver mais". Modo "full" recarrega a 1ª página e expande; "expand" só expande o que
-# já está na página (usado logo após o carregamento).
-RESYNC_MAX_PAGES = 30
-RESYNC_JS = r"""
-async (mode) => {
-  const result = {ok: 0, failed: 0, pages: 0};
+# Segue os rodapés "ver mais" (viewMoreActiveusChats / viewMoreActiveotChats) até a
+# última página, do jeito que o botão do painel faz. Só faz sentido logo após a carga da
+# página, enquanto a sessão do app é a ativa no servidor (ver docstring do módulo).
+EXPAND_MAX_PAGES = 30
+EXPAND_JS = r"""
+async () => {
+  const result = {failed: 0, pages: 0};
   if (typeof $ !== "function") { result.failed = 2; result.reason = "sem jQuery"; return result; }
   const MAX_PAGES = %d;
   const lists = [
@@ -93,12 +94,6 @@ async (mode) => {
   };
   for (const l of lists) {
     try {
-      if (mode === "full") {
-        const html = await post(l.url, {qsearch: ""});
-        $("#" + l.bottom).remove();
-        $(l.box).html(html);
-        result.ok++;
-      }
       for (let i = 0; i < MAX_PAGES; i++) {
         const bottom = document.getElementById(l.bottom);
         if (!bottom) break;
@@ -106,7 +101,7 @@ async (mode) => {
         if (page === null) break;
         const html = await post(l.url, {qpage: page, qsearch: ""});
         bottom.remove();
-        $(l.box).append(html);
+        if (String(html).trim()) $(l.box).append(html);
         result.pages++;
       }
     } catch (e) {
@@ -116,7 +111,7 @@ async (mode) => {
   }
   return result;
 }
-""" % RESYNC_MAX_PAGES
+""" % EXPAND_MAX_PAGES
 
 
 class SessionExpiredError(Exception):
@@ -267,7 +262,6 @@ class ChatPanelSource(Source[ChatPanelState]):
         self._playwright: Any = None
         self._context: Any = None
         self._page: Any = None
-        self._last_resync: float | None = None  # time.monotonic() da última carga das listas
 
     @property
     def configured(self) -> bool:
@@ -301,35 +295,26 @@ class ChatPanelSource(Source[ChatPanelState]):
         page = await self._ensure_page()
         if reload:
             await self._open_panel(page)
-        elif self._resync_due():
-            await self._resync_lists(page)
         return await page.content()
 
-    def _resync_due(self, now: float | None = None) -> bool:
-        return resync_due(self._last_resync, now if now is not None else time.monotonic(),
-                          self.settings.resync_seconds)
-
-    async def _resync_lists(self, page: Any, mode: str = "full") -> None:
-        """Refaz as chamadas de lista do painel dentro da página e segue os "ver mais"
-        (ver RESYNC_JS). mode="expand" só carrega as páginas que faltam."""
-        self._last_resync = time.monotonic()
+    async def _expand_lists(self, page: Any) -> None:
+        """Carrega as páginas "ver mais" das listas logo após a carga (ver EXPAND_JS)."""
         try:
-            result = await asyncio.wait_for(page.evaluate(RESYNC_JS, mode), timeout=60)
+            result = await asyncio.wait_for(page.evaluate(EXPAND_JS), timeout=60)
         except Exception as exc:
-            self.log.warning("ressincronização das listas falhou: %s", describe_error(exc))
+            self.log.warning("carga das páginas extras das listas falhou: %s", describe_error(exc))
             return
         result = result or {}
         failed = int(result.get("failed", 0))
         pages = int(result.get("pages", 0))
         if failed:
-            self.log.warning("ressincronização das listas (%s): %d lista(s) falharam (%s)",
-                             mode, failed, result.get("reason", "erro HTTP"))
+            self.log.warning("páginas extras das listas: %d lista(s) falharam (%s)",
+                             failed, result.get("reason", "erro HTTP"))
         else:
-            self.log.debug("listas do ChatPanel ressincronizadas (%s), %d página(s) extra(s)",
-                           mode, pages)
-        if pages >= RESYNC_MAX_PAGES:
+            self.log.debug("listas do ChatPanel carregadas com %d página(s) extra(s)", pages)
+        if pages >= EXPAND_MAX_PAGES:
             self.log.warning("ChatPanel: limite de %d páginas extras atingido; pode haver conversas fora da tela",
-                             RESYNC_MAX_PAGES)
+                             EXPAND_MAX_PAGES)
 
     async def _ensure_page(self) -> Any:
         if self._page is not None and not self._page.is_closed():
@@ -414,7 +399,7 @@ class ChatPanelSource(Source[ChatPanelState]):
             self.log.warning("nem painel nem tela de login apareceram em 15 s (%s)", page.url)
         if await page.query_selector("#int_username"):
             await page.wait_for_timeout(2000)  # deixa o XHR/socket preencher as listas
-            await self._resync_lists(page, mode="expand")  # carrega as páginas "ver mais"
+            await self._expand_lists(page)  # carrega as páginas "ver mais" enquanto a sessão é nova
             return
         # chat.php também tem um input de senha (modal); só é tela de login sem #int_username
         if await page.query_selector(LOGIN_FORM_SELECTOR):
@@ -434,13 +419,6 @@ class ChatPanelSource(Source[ChatPanelState]):
                 await asyncio.wait_for(closer(), timeout=10)
             except Exception as exc:
                 self.log.debug("erro ao fechar navegador: %s", exc)
-
-
-def resync_due(last: float | None, now: float, interval_seconds: int) -> bool:
-    """True quando passou o intervalo desde a última carga das listas (0 desliga)."""
-    if interval_seconds <= 0:
-        return False
-    return last is None or now - last >= interval_seconds
 
 
 def _describe_login_failure(exc: BaseException, timeout: float) -> str:

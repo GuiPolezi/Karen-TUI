@@ -158,18 +158,30 @@ Quando a sessão cair, pressione `c` e refaça o login. Alternativas (usuário d
 dashboard, userscript + servidor local) foram avaliadas e descartadas: o fluxo fica
 assim, sem depender de servidor local nem de extensão no navegador.
 
-### Ressincronização das listas (transferências)
+### Por que o app não consulta o servidor depois da carga
 
-As listas do painel só mudam por eventos de socket (nova mensagem, encerramento...). Uma
-**transferência** feita em outra aba não gera evento, então a conversa ficaria no seu nome
-na TUI até chegar a próxima mensagem dela. Por isso, a cada `CHATPANEL_RESYNC_SECONDS`
-(padrão 60) o app refaz dentro da página as mesmas duas chamadas de lista que o painel usa
-na busca e troca o HTML de "SUAS CONVERSAS" e "EM ATENDIMENTO". Sem recarregar a página e
-sem derrubar o socket. `0` desliga.
+Medido em 15/09/2026 com o painel real: o ChatPanel mantém **uma sessão ativa por
+usuário**. Quando você age no seu navegador, a sessão do app é invalidada no servidor: os
+endpoints de lista passam a devolver vazio e um reload cai na tela de login. O socket já
+autenticado, porém, continua entregando os eventos (nova mensagem, encerramento,
+leitura...), e os handlers do próprio painel mantêm as listas corretas no DOM.
 
-As listas do painel são paginadas (botão "ver mais" no fim). Ao abrir a página e em cada
-ressincronização o app segue esses botões até a última página, então todas as conversas
-entram na TUI, não só a primeira página.
+Por isso o app carrega a página **uma vez** (com a sessão recém-criada), segue os botões
+"ver mais" nesse momento para trazer todas as páginas das listas, e depois só lê o DOM.
+Uma ressincronização periódica por endpoint foi tentada e removida: ela apagava as listas
+assim que a sessão era invalidada.
+
+**Consequência aceita:** uma **transferência** feita em outra aba não gera evento, então a
+conversa fica no seu nome na TUI até a próxima mensagem dela (que a recria já no nome do
+novo atendente). Se precisar de uma leitura fresca, pressione `c` e refaça o login, o que
+derruba a sessão do seu navegador.
+
+### Diagnóstico
+
+`python scripts\chatpanel_diag.py --watch 180` (com a TUI fechada) grava em
+`logs/chatpanel_diag/` o DOM da carga, as respostas cruas dos endpoints de lista e, pelo
+tempo indicado, os eventos do socket e as mutações das listas. Foi assim que o comportamento
+acima foi medido.
 
 ### O que o painel mostra
 

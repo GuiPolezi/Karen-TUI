@@ -66,7 +66,6 @@ class ChatPanelSettings:
     user: str = ""               # opcional: pré-preenche o usuário na janela de login
     password: str = ""           # opcional: pré-preenche a senha; nunca aparece em log
     login_on_start: bool = True  # abre a janela de login sozinho (1x por execução) se a sessão expirou
-    resync_seconds: int = 60     # recarrega as listas do servidor a cada N s (0 desliga); ver chatpanel.py
 
     @property
     def prefill_login(self) -> bool:
@@ -162,7 +161,6 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
         user=env.str("CHATPANEL_USER", "", required=False),
         password=env.str("CHATPANEL_PASSWORD", "", required=False),
         login_on_start=env.bool("CHATPANEL_LOGIN_ON_START", True),
-        resync_seconds=env.int("CHATPANEL_RESYNC_SECONDS", 60),
     )
 
     notify_bell = env.bool("NOTIFY_BELL", True)
@@ -182,10 +180,6 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
     ):
         if seconds < 5:
             problems.append(f"{label} deve ser >= 5 (recebido {seconds})")
-    if chatpanel.resync_seconds != 0 and chatpanel.resync_seconds < 5:
-        problems.append(
-            f"CHATPANEL_RESYNC_SECONDS deve ser 0 (desligado) ou >= 5 (recebido {chatpanel.resync_seconds})"
-        )
     if problems:
         raise ConfigError("\n".join(problems) + f"\n\nArquivo lido: {env_path}")
 

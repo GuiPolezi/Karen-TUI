@@ -176,92 +176,54 @@ def test_prefill_login_requires_user_and_password(tmp_path: Path):
     assert ChatPanelSettings(**base, user="g", password="s").prefill_login is True
 
 
-# --- ressincronização das listas ----------------------------------------------------
-
-
-def test_resync_due_respects_interval_and_zero_disables():
-    from app.sources.chatpanel import resync_due
-
-    assert resync_due(None, 100.0, 60) is True
-    assert resync_due(100.0, 159.9, 60) is False
-    assert resync_due(100.0, 160.0, 60) is True
-    assert resync_due(None, 100.0, 0) is False  # desligado
+# --- páginas extras ("ver mais") logo após a carga -----------------------------------
 
 
 class FakePage:
-    """Página falsa: evaluate() simula o RESYNC_JS trocando o HTML das listas."""
+    """Página falsa: evaluate() simula o EXPAND_JS."""
 
-    def __init__(self, html_before: str, html_after: str, fail: bool = False):
-        self.html = html_before
-        self.html_after = html_after
+    def __init__(self, fail: bool = False, pages: int = 0):
         self.fail = fail
+        self.pages = pages
         self.evaluations = 0
-        self.modes: list[str] = []
 
     def is_closed(self) -> bool:
         return False
 
-    async def evaluate(self, script: str, mode: str = "full"):
+    async def evaluate(self, script: str, *args):
         self.evaluations += 1
-        self.modes.append(mode)
-        assert "control-atende-on-us.php" in script and "control-atende-on-ot.php" in script
+        assert "viewMoreActiveusChats" in script and "viewMoreActiveotChats" in script
         if self.fail:
             raise RuntimeError("Execution context was destroyed")
-        self.html = self.html_after
-        return {"ok": 2, "failed": 0}
-
-    async def content(self) -> str:
-        return self.html
+        return {"failed": 0, "pages": self.pages}
 
 
-class ResyncSource(ChatPanelSource):
-    def __init__(self, fake_page: FakePage, resync_seconds: int = 60):
-        super().__init__(
-            ChatPanelSettings(url="https://x/chat.php", profile_dir=Path(".p"), refresh_seconds=15,
-                              headless=True, resync_seconds=resync_seconds),
-            "Guilherme",
-        )
-        self.fake_page = fake_page
-
-    async def _ensure_page(self):
-        return self.fake_page
+def expand_source() -> ChatPanelSource:
+    return ChatPanelSource(
+        ChatPanelSettings(url="https://x/chat.php", profile_dir=Path(".p"), refresh_seconds=15, headless=True),
+        "Guilherme",
+    )
 
 
-async def test_resync_replaces_stale_list_after_interval():
-    stale = page(mine_box=li("551", "Transferida", agent="Guilherme"))
-    fresh = page(others_box=li("551", "Transferida", agent="Fulano"))
-    fake = FakePage(stale, fresh)
-    source = ResyncSource(fake, resync_seconds=60)
+async def test_expand_lists_logs_pages_and_tolerates_failure(caplog):
+    import logging
 
-    source._last_resync = 1000.0
-    assert source._resync_due(now=1030.0) is False
-
-    source._last_resync = None  # nunca ressincronizou: faz na primeira leitura
-    state = await source.fetch()
+    caplog.set_level(logging.DEBUG, logger="source.chatpanel")
+    fake = FakePage(pages=2)
+    await expand_source()._expand_lists(fake)
     assert fake.evaluations == 1
-    assert fake.modes == ["full"]
-    assert state.mine == []  # a conversa transferida saiu do meu nome
-    assert state.others_count == 1
-    assert source._last_resync is not None
+    assert any("2 página(s) extra(s)" in r.getMessage() for r in caplog.records)
+
+    failing = FakePage(fail=True)
+    await expand_source()._expand_lists(failing)  # não levanta: só avisa no log
+    assert any("páginas extras" in r.getMessage() and r.levelname == "WARNING" for r in caplog.records)
 
 
-async def test_resync_is_skipped_when_disabled_or_not_due():
-    stale = page(mine_box=li("551", "X", agent="Guilherme"))
-    fake = FakePage(stale, page())
-    source = ResyncSource(fake, resync_seconds=0)
-    state = await source.fetch()
-    assert fake.evaluations == 0
-    assert len(state.mine) == 1
+async def test_expand_lists_warns_when_page_limit_is_hit(caplog):
+    from app.sources.chatpanel import EXPAND_MAX_PAGES
 
-
-async def test_resync_failure_keeps_reading_current_dom(caplog):
-    stale = page(mine_box=li("551", "X", agent="Guilherme"))
-    fake = FakePage(stale, page(), fail=True)
-    source = ResyncSource(fake, resync_seconds=60)
-    state = await source.fetch()
-    assert fake.evaluations == 1
-    assert len(state.mine) == 1  # falha na ressincronização não derruba a leitura
-    assert any("ressincronização" in r.getMessage() for r in caplog.records)
+    await expand_source()._expand_lists(FakePage(pages=EXPAND_MAX_PAGES))
+    assert any("limite" in r.getMessage() for r in caplog.records)
 
 
 def test_login_failure_messages_are_short():

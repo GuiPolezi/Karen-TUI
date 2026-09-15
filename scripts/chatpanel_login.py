@@ -51,15 +51,16 @@ def main() -> int:
 
     source = ChatPanelSource(settings.chatpanel, settings.tech_name)
     try:
-        user = asyncio.run(source.interactive_login(timeout=0))  # 0 = sem limite de tempo
+        # sem headless: este script só confere as credenciais e salva os cookies
+        user = asyncio.run(source.interactive_login(timeout=0, keep_headless=False))  # 0 = sem limite
     except LoginNotCompletedError as exc:
         print(f"Não foi possível confirmar o login: {exc}", file=sys.stderr)
         return 1
 
-    print(f"Sessão salva. Usuário logado no ChatPanel: {user!r}")
-    if user.strip().casefold() != settings.tech_name.strip().casefold():
-        print(f"Atenção: TECH_NAME={settings.tech_name!r} é diferente do usuário logado {user!r}.")
-    print("Agora rode: python -m app.sources.chatpanel   (teste)  ou  python -m app   (TUI)")
+    print(f"Login OK. Usuário logado no ChatPanel: {user!r}")
+    print("Atenção: o ChatPanel desloga o usuário quando o socket dele cai. Como esta janela")
+    print("fechou, a sessão salva provavelmente já não vale: na TUI, use a tecla c (o app abre a")
+    print("janela, sobe o headless e só então fecha a janela, mantendo a sessão).")
     return 0
 
 

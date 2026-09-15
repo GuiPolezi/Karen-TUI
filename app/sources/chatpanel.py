@@ -24,6 +24,13 @@ a busca (control-atende-on-us.php / -ot.php), troca o HTML das listas e segue os
 "ver mais". Com o usuário dedicado a sessão do app é sempre a ativa e isso funciona; o
 técnico aparece nas listas pelo badge de pessoa (TECH_NAME), em "EM ATENDIMENTO".
 
+Socket e sessão (medido em 15/09/2026 com o usuário dedicado): o servidor DESLOGA o usuário
+quando o socket "atual" dele desconecta. Por isso a janela de login usa um perfil
+separado e o headless é aberto (com os cookies salvos em session.bin) ANTES de a janela
+fechar: o socket do headless vira o atual e a queda do socket da janela não desloga.
+Consequência: fechar a TUI desloga o usuário dedicado; ao abrir de novo, a janela de
+login aparece (uma vez por execução).
+
 Atenção: o ChatPanel aceita UMA sessão por usuário. Logar aqui derruba a sessão do
 navegador normal (e vice-versa). Com o mesmo usuário do técnico isso vira pingue-pongue;
 o ideal é um usuário dedicado ao dashboard.
@@ -57,6 +64,8 @@ LOGIN_HINT = "pressione c (ou rode scripts/chatpanel_login.py) para salvar a ses
 LOGIN_TIMEOUT = 300.0  # segundos que a janela de login fica aberta esperando a pessoa
 COOKIE_LIFETIME_DAYS = 30  # cookies de sessão do painel (sem validade) ganham esta validade no perfil
 SESSION_FILE_NAME = "session.bin"  # cookies da sessão, protegidos com DPAPI (Windows), dentro do perfil
+LOGIN_PROFILE_SUFFIX = "-login"    # perfil separado só para a janela de login (os dois ficam abertos juntos)
+SOCKET_SETTLE_MS = 3000            # tempo para o socket do headless autenticar antes de fechar a janela
 
 # só estes trechos do HTML (≈780 KB) interessam; o SoupStrainer corta o parse de ~2 s para ~0,2 s
 _INTERESTING_IDS = {
@@ -404,17 +413,37 @@ class ChatPanelSource(Source[ChatPanelState]):
 
     # --- login humano ------------------------------------------------------------
 
-    async def interactive_login(self, timeout: float = LOGIN_TIMEOUT) -> str:
-        """Abre um Chromium VISÍVEL no mesmo perfil e espera a pessoa fazer o login.
+    @property
+    def login_profile_dir(self) -> Path:
+        return self.settings.profile_dir.with_name(self.settings.profile_dir.name + LOGIN_PROFILE_SUFFIX)
 
-        Fecha o headless antes (o perfil não pode estar aberto em dois processos).
+    async def interactive_login(self, timeout: float = LOGIN_TIMEOUT, keep_headless: bool = True) -> str:
+        """Abre um Chromium VISÍVEL (perfil separado) e espera a pessoa fazer o login.
+
         Pré-preenche usuário e senha se estiverem no .env; o captcha e o botão ficam com a
-        pessoa. `timeout=0` espera sem limite. Devolve o nome do usuário logado.
+        pessoa. Com o login feito, salva os cookies em session.bin, sobe o headless no
+        perfil principal e SÓ ENTÃO fecha a janela (o servidor desloga quando o socket
+        atual cai; assim o socket atual passa a ser o do headless). `timeout=0` espera
+        sem limite. Devolve o nome do usuário logado.
         """
         await self._teardown()
         self.settings.profile_dir.mkdir(parents=True, exist_ok=True)
-        page = await self._launch_context(headless=False)
+        self.login_profile_dir.mkdir(parents=True, exist_ok=True)
         try:
+            from playwright.async_api import async_playwright
+        except ImportError as exc:  # pragma: no cover
+            raise RuntimeError("playwright não instalado: pip install playwright") from exc
+        if self._playwright is None:
+            self._playwright = await async_playwright().start()
+        self.log.info("abrindo janela de login com perfil %s", self.login_profile_dir)
+        login_context = await self._playwright.chromium.launch_persistent_context(
+            str(self.login_profile_dir),
+            headless=False,
+            viewport={"width": 1366, "height": 900},
+            args=["--disable-blink-features=AutomationControlled"],
+        )
+        try:
+            page = login_context.pages[0] if login_context.pages else await login_context.new_page()
             await page.goto(self.settings.url, wait_until="domcontentloaded")
             try:
                 await page.wait_for_selector(LOGGED_OR_LOGIN_SELECTOR, state="attached", timeout=15000)
@@ -426,15 +455,24 @@ class ChatPanelSource(Source[ChatPanelState]):
             await page.wait_for_selector(LOGGED_SELECTOR, state="attached", timeout=timeout * 1000)
             user = str(await page.eval_on_selector(LOGGED_SELECTOR, "el => el.value") or "").strip()
             await page.wait_for_timeout(2000)  # deixa cookies/localStorage assentarem
-            await self._persist_session_cookies(self._context)
+            await self._persist_session_cookies(login_context)
+            if keep_headless:
+                # passagem de bastão: o headless conecta o socket dele antes de a janela cair
+                headless_page = await self._launch_context(headless=self.settings.headless)
+                await self._open_panel(headless_page)
+                self._page = headless_page
+                await headless_page.wait_for_timeout(SOCKET_SETTLE_MS)
+                self.log.info("headless conectado; fechando a janela de login")
         except Exception as exc:
+            await self._teardown()
             raise LoginNotCompletedError(_describe_login_failure(exc, timeout)) from exc
         finally:
-            await self._teardown()
+            try:
+                await asyncio.wait_for(login_context.close(), timeout=10)
+            except Exception as exc:
+                self.log.debug("erro ao fechar a janela de login: %s", exc)
 
         self.log.info("login concluído; usuário logado no ChatPanel: %r", user)
-        if normalize_name(user) != normalize_name(self.tech_name):
-            self.log.warning("usuário logado é %r, mas TECH_NAME=%r", user, self.tech_name)
         return user
 
     async def _persist_session_cookies(self, context: Any) -> None:
@@ -448,8 +486,8 @@ class ChatPanelSource(Source[ChatPanelState]):
             return
         expires = time.time() + COOKIE_LIFETIME_DAYS * 86400
         rewritten = [
-            {**cookie, "expires": expires}
-            for cookie in persistable_cookies(cookies, host)
+            {**cookie, "expires": expires} if cookie.get("expires", -1) in (-1, 0) else dict(cookie)
+            for cookie in host_cookies(cookies, host)
         ]
         if not rewritten:
             self.log.warning("nenhum cookie de sessão do painel (%s) encontrado para persistir", host)
@@ -557,16 +595,19 @@ def load_session_cookies(path: Path, log: Any) -> list[dict[str, Any]]:
     ]
 
 
-def persistable_cookies(cookies: list[dict[str, Any]], host: str) -> list[dict[str, Any]]:
-    """Cookies do host do painel que são de sessão (expires -1/0) e por isso se perdem ao fechar."""
+def host_cookies(cookies: list[dict[str, Any]], host: str) -> list[dict[str, Any]]:
+    """Cookies cujo domínio cobre o host do painel."""
     result = []
     for cookie in cookies:
         domain = str(cookie.get("domain", "")).lstrip(".")
-        if not domain or not host.endswith(domain):
-            continue
-        if cookie.get("expires", -1) in (-1, 0):
+        if domain and host.endswith(domain):
             result.append(cookie)
     return result
+
+
+def persistable_cookies(cookies: list[dict[str, Any]], host: str) -> list[dict[str, Any]]:
+    """Cookies do host do painel que são de sessão (expires -1/0) e por isso se perdem ao fechar."""
+    return [c for c in host_cookies(cookies, host) if c.get("expires", -1) in (-1, 0)]
 
 
 def resync_due(last: float | None, now: float, interval_seconds: int) -> bool:

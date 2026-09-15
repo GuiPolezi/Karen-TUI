@@ -1,6 +1,7 @@
 # segredos e sessão
 .env
 .chatpanel-profile/
+.chatpanel-profile-login/
 
 # logs
 logs/

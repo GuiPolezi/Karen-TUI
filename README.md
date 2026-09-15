@@ -148,11 +148,19 @@ Dentro da TUI:
 - A janela espera 5 minutos; se fechar antes ou o tempo acabar, o painel mostra o motivo
   e `c` tenta de novo.
 
-Fora da TUI, `python scripts\chatpanel_login.py` faz o mesmo (sem limite de tempo).
-Feche o app antes: o Chromium não abre o mesmo perfil em dois processos.
+O servidor do ChatPanel **desloga o usuário quando o socket dele desconecta** (medido em
+15/09/2026). Por isso a janela de login usa um perfil separado (`.chatpanel-profile-login/`)
+e o app sobe o Chromium headless, com os cookies salvos, **antes** de fechar a janela: o
+socket do headless vira o atual e a sessão sobrevive. Duas consequências:
 
-A sessão fica em `CHATPANEL_PROFILE_DIR/session.bin` (`.chatpanel-profile/`, ignorado
-pelo git), protegida com o DPAPI do Windows (só o seu usuário do Windows consegue ler).
+- Fechar a TUI desloga o usuário dedicado. Ao abrir de novo, a janela de login aparece
+  (uma vez por execução). Deixe a TUI aberta durante o dia.
+- `python scripts\chatpanel_login.py` só serve para conferir as credenciais: quando ele
+  fecha, a sessão cai. Prefira a tecla `c` na TUI.
+
+Os cookies da sessão ficam em `CHATPANEL_PROFILE_DIR/session.bin` (`.chatpanel-profile/`,
+ignorado pelo git), protegidos com o DPAPI do Windows (só o seu usuário do Windows
+consegue ler).
 Motivo: o painel usa cookie de sessão sem validade e o Chromium do Playwright não o grava
 em disco de forma confiável ao fechar; o app salva os cookies após o login e os reinjeta a
 cada abertura do navegador. Apague o arquivo para forçar um novo login.

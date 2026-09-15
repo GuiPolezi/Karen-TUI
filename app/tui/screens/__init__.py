@@ -11,6 +11,7 @@ from app.tui.screens.email_detail import EmailDetailScreen
 from app.tui.screens.log import LogScreen
 from app.tui.screens.milldesk import MilldeskScreen
 from app.tui.screens.notes import NotesScreen
+from app.tui.screens.launcher import HelpScreen, LauncherScreen
 from app.tui.screens.ticket_detail import TicketDetailScreen
 
 MODE_SCREENS: dict[str, type[ModeScreen]] = {
@@ -25,4 +26,5 @@ MODE_SCREENS: dict[str, type[ModeScreen]] = {
 __all__ = [
     "MODE_SCREENS", "ModeScreen", "DashboardScreen", "EmailScreen", "MilldeskScreen",
     "ChatPanelScreen", "LogScreen", "NotesScreen", "EmailDetailScreen", "TicketDetailScreen",
+    "LauncherScreen", "HelpScreen",
 ]

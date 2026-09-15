@@ -96,7 +96,32 @@ A TUI tem seis telas; os workers de coleta continuam rodando em qualquer uma del
 | `r` / `1` `2` `3` | atualizar tudo / uma fonte |
 | `c` | abrir a janela de login do ChatPanel |
 | `m` | modo silêncio por 30 minutos (sem bell/toast; ícone 🔇 no cabeçalho) |
+| `:` | launcher (linha de comando; ver abaixo) |
+| `?` | ajuda com atalhos e comandos |
 | `q` | sair |
+
+### Launcher (`:`)
+
+Uma linha de comando dentro da TUI. `Enter` executa, `↑`/`↓` percorrem o histórico (50
+últimos, em `prefs.json`), `Esc` fecha. Tudo abre no navegador padrão do Windows.
+
+| Comando | Ação |
+|---|---|
+| `termo` ou `g termo` | pesquisa no motor padrão (`SEARCH_ENGINE_URL`, Google por padrão) |
+| `ddg termo`, `yt termo` | DuckDuckGo, YouTube |
+| `md 1234` | abre o detalhe do chamado na TUI |
+| `md! 1234` | abre o Milldesk no navegador e copia o ID (o Milldesk não tem URL por chamado) |
+| `wa 5511999999999` | abre `wa.me` com o número |
+| `cp`, `mail`, `mdweb` | abre ChatPanel, webmail, Milldesk (`CHATPANEL_WEB_URL`, `WEBMAIL_URL`, `MILLDESK_WEB_URL`) |
+| `open url` | abre uma URL qualquer |
+| `fav nome` · `fav add nome url` · `fav rm nome` · `fav` | favoritos em `prefs.json` |
+| `email`, `tickets`, `chats`, `log`, `notes`, `dash` | troca de tela |
+| `refresh` · `refresh md` | atualiza tudo · uma fonte |
+| `help` | lista de comandos |
+
+Limitação do sistema operacional: abrir o navegador tira o foco do terminal e o app não
+tem como trazê-lo de volta. No Windows Terminal, um atalho global (por exemplo o modo
+"quake" em `Win+\``) volta para a TUI com uma tecla.
 
 Ao voltar ao Dashboard depois de ficar em outra tela, um aviso resume o que mudou
 ("enquanto você estava fora: e-mail: não lidos · ChatPanel: conversas"). Itens novos ou

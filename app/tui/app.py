@@ -23,7 +23,15 @@ from textual.widgets import Input
 from app.config import Settings
 from app.prefs import PREFS_PATH, Prefs, load_prefs, save_prefs
 from app.sources.base import Source, SourceError
-from app.tui.screens import MODE_SCREENS, EmailDetailScreen, ModeScreen, TicketDetailScreen
+from app.tui.launcher import Action, parse_command
+from app.tui.screens import (
+    MODE_SCREENS,
+    EmailDetailScreen,
+    HelpScreen,
+    LauncherScreen,
+    ModeScreen,
+    TicketDetailScreen,
+)
 from app.tui.widgets.base_panel import BasePanel
 
 log = logging.getLogger("tui")
@@ -80,6 +88,8 @@ class CmdAllInOneApp(App[None]):
         Binding("e", "open_email", "Último e-mail", show=True),
         Binding("c", "chatpanel_login", "Login ChatPanel", show=False),
         Binding("m", "toggle_silence", "Silenciar", show=False),
+        Binding("colon", "launcher", "Launcher", show=True, key_display=":"),
+        Binding("question_mark", "help", "Ajuda", show=True, key_display="?"),
     ]
 
     def __init__(
@@ -239,6 +249,89 @@ class CmdAllInOneApp(App[None]):
             return
         if self.current_mode != "dashboard":
             self.action_goto("dashboard")
+
+    # --- launcher ----------------------------------------------------------------------
+
+    def action_launcher(self) -> None:
+        if isinstance(self.screen, LauncherScreen):
+            return
+        if isinstance(self.screen, ModalScreen):
+            self.pop_screen()
+        self.push_screen(LauncherScreen(self.prefs.history))
+
+    def action_help(self) -> None:
+        if isinstance(self.screen, HelpScreen):
+            return
+        if isinstance(self.screen, ModalScreen):
+            self.pop_screen()
+        self.push_screen(HelpScreen())
+
+    def run_command(self, text: str) -> bool:
+        """Executa um comando do launcher. Devolve True se o launcher deve ficar aberto."""
+        action = parse_command(text, self.prefs.favorites, self.settings.urls)
+        launcher = self.screen if isinstance(self.screen, LauncherScreen) else None
+        if action.kind == "empty":
+            return True
+        if action.kind == "error":
+            if launcher is not None:
+                launcher.set_message(action.label, error=True)
+            else:
+                self.notify(action.label, severity="warning")
+            return True
+        if action.kind == "fav_list":
+            self._execute(action, launcher)
+            return True
+        self.prefs.push_history(text.strip())
+        self.save_prefs()
+        if launcher is not None:
+            self.pop_screen()  # fecha o launcher ANTES de agir (a ação pode abrir outra tela)
+        self._execute(action, None)
+        return False
+
+    def _execute(self, action: Action, launcher: LauncherScreen | None) -> bool:
+        if action.kind == "help":
+            self.push_screen(HelpScreen())
+            return False
+        if action.kind in ("search", "open"):
+            if action.copy:
+                self.copy_text(action.copy, "ID do chamado", quiet=True)
+            self.open_url(action.arg, action.label)
+            return False
+        if action.kind == "ticket":
+            self.open_ticket(int(action.arg))
+            return False
+        if action.kind == "goto":
+            self.action_goto(action.arg)
+            return False
+        if action.kind == "refresh":
+            if action.arg:
+                self.action_refresh(action.arg)
+            else:
+                self.action_refresh_all()
+            return False
+        if action.kind == "fav_add":
+            self.prefs.favorites[action.arg] = action.label if action.label else ""
+            self.save_prefs()
+            self.notify(f"favorito '{action.arg}' salvo")
+            return False
+        if action.kind == "fav_rm":
+            removed = self.prefs.favorites.pop(action.arg, None)
+            self.save_prefs()
+            self.notify(f"favorito '{action.arg}' removido" if removed else f"favorito '{action.arg}' não existe",
+                        severity="information" if removed else "warning")
+            return False
+        if action.kind == "fav_list":
+            if not self.prefs.favorites:
+                message = "nenhum favorito (fav add nome url)"
+            else:
+                message = "favoritos: " + " · ".join(f"{name} → {url}" for name, url in self.prefs.favorites.items())
+            if launcher is not None:
+                launcher.set_message(message)
+            else:
+                self.notify(message, timeout=10)
+            return True
+        self.notify(f"comando não reconhecido: {action.kind}", severity="warning")
+        return True
 
     # --- navegador e área de transferência ------------------------------------------
 

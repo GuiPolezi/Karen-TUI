@@ -143,6 +143,51 @@ BasePanel .panel-error {
     margin: 0 1;
 }
 
+/* Launcher (:) e ajuda (?) ------------------------------------------------- */
+
+LauncherScreen {
+    align: center top;
+    background: $background 40%;
+}
+
+#launcher {
+    width: 80%;
+    height: auto;
+    margin-top: 2;
+    border: round $accent;
+    background: $surface;
+    padding: 0 1;
+}
+
+#launcher-input {
+    border: none;
+    padding: 0;
+    background: $surface;
+}
+
+#launcher-hint {
+    height: auto;
+    padding: 0 1;
+}
+
+HelpScreen {
+    align: center middle;
+    background: $background 60%;
+}
+
+#help {
+    width: 90%;
+    height: 90%;
+    border: round $primary;
+    background: $surface;
+    padding: 1 2;
+}
+
+#help-keys, #help-commands, #help-footer {
+    height: auto;
+    margin-bottom: 1;
+}
+
 /* Detalhe do chamado (Enter no Milldesk) ----------------------------------- */
 
 TicketDetailScreen {

@@ -84,18 +84,6 @@ toca o bell. `NOTIFY_BELL=false` no `.env` desliga o som, mantendo o destaque.
 Em terminais com menos de 100 colunas, os painéis de E-mail e Milldesk empilham
 verticalmente.
 
-## E-mail (IMAP)
-
-- A pasta é aberta em modo **somente leitura**: nada é marcado como lido.
-- Porta 143 com `EMAIL_IMAP_STARTTLS=true` usa STARTTLS. Se o servidor recusar, o app
-  cai para SSL direto na porta 993 e registra um aviso em `logs/app.log`. Porta 143 com
-  STARTTLS desligado é recusada: a senha nunca sai em texto puro.
-- Validado em 14/09/2026 contra `imap.sinoinformatica.com.br`: STARTTLS na 143 aceito,
-  pasta `Junk E-Mail` lida, datas convertidas para o fuso local.
-- A conexão fica aberta entre ciclos e reconecta sozinha se cair.
-- A caixa `suporte@` é compartilhada (confirmado em 14/09/2026), então "não lidos"
-  reflete a equipe toda, não só o técnico. Comportamento aceito.
-
 ## Milldesk
 
 **Validação da Fase 3 (14/09/2026, chamada real à API):**

@@ -1,7 +1,7 @@
 # CMD ALL-IN-ONE
 
-Dashboard de terminal (TUI) para o técnico de suporte da Sino Informática. Em uma única
-tela, atualizada sozinha, mostra:
+Dashboard de terminal (TUI) para técnico de suporte. Em uma única tela, atualizada
+sozinha, mostra:
 
 | Painel | O que mostra | Fonte |
 |---|---|---|
@@ -17,8 +17,7 @@ A especificação completa está em `PROMPT_CMD_ALL_IN_ONE.md`.
 - [x] Fase 1 — E-mail (IMAP)
 - [x] Fase 2 — Milldesk
 - [x] Fase 3 — validação do Milldesk (`amount` é histórico; painel usa `showTicketsByStatus`)
-- [x] Fase 4 — ChatPanel (Playwright, Estratégia A). **Bloqueio:** o painel só aceita
-  uma sessão por usuário; ver a seção ChatPanel.
+- [x] Fase 4 — ChatPanel (Playwright, Estratégia A, login humano integrado à TUI)
 - [x] Fase 5 — polimento (destaque + bell, painel de log, detalhe do e-mail, coleta
   incremental do Milldesk por causa do limite de requisições)
 
@@ -43,8 +42,6 @@ python -m pip install -e ".[dev]"
 playwright install chromium
 ```
 
-Se preferir o `uv`: `uv sync` faz os passos 1 e 2.
-
 ## Configuração
 
 ```powershell
@@ -55,9 +52,11 @@ notepad .env
 Preencha pelo menos:
 
 - `TECH_NAME` exatamente como aparece no ChatPanel e no Milldesk
-- `EMAIL_APP_PASSWORD` (se tiver `#` ou `*`, deixe entre aspas simples)
+- `EMAIL_IMAP_HOST`, `EMAIL_USER` e `EMAIL_APP_PASSWORD` (se a senha tiver `#` ou `*`,
+  deixe entre aspas simples)
 - `MILLDESK_API_KEY`
 - `MILLDESK_AGENT_NAME` se o seu nome no Milldesk for diferente do `TECH_NAME`
+- `CHATPANEL_URL` (endereço do `chat.php` do seu painel)
 
 Regras de validação:
 
@@ -84,30 +83,38 @@ toca o bell. `NOTIFY_BELL=false` no `.env` desliga o som, mantendo o destaque.
 Em terminais com menos de 100 colunas, os painéis de E-mail e Milldesk empilham
 verticalmente.
 
+## E-mail (IMAP)
+
+- A pasta é aberta em modo **somente leitura**: nada é marcado como lido.
+- Porta 143 com `EMAIL_IMAP_STARTTLS=true` usa STARTTLS. Se o servidor recusar, o app
+  cai para SSL direto na porta 993 e registra um aviso em `logs/app.log`. Porta 143 com
+  STARTTLS desligado é recusada: a senha nunca sai em texto puro.
+- `EMAIL_SPAM_FOLDER` é opcional; se a pasta não existir, o contador de spam some.
+- Datas são convertidas para o fuso local.
+- A conexão fica aberta entre ciclos e reconecta sozinha se cair.
+- Se a caixa for compartilhada pela equipe, "não lidos" reflete a equipe toda, não só o
+  técnico.
+
 ## Milldesk
 
-**Validação da Fase 3 (14/09/2026, chamada real à API):**
-
 - `ticketsByAgent.amount` é o **histórico** de chamados do técnico, não os abertos.
-  Exemplo real: o técnico tinha 168 no `amount` e apenas 3 chamados abertos.
 - Para contar os abertos, o app usa `ticketsByStatus` (agregado leve) para descobrir
   quais status têm chamados e chama `showTicketsByStatus?status=...` só para esses,
-  filtrando pelo campo `agent`. `Fechado` nunca é consultado (a rota devolve vazio para
-  ele mesmo assim). São cerca de 10 GETs por ciclo, 0,2 s cada, no máximo 3 em paralelo.
+  filtrando pelo campo `agent`. `Fechado` nunca é consultado.
 - O painel mostra **"Abertos no meu nome"** como destaque, a quebra por status, até 3
   chamados (mais recentes primeiro) e o histórico de `ticketsByAgent` como linha secundária.
-- Peculiaridades da API vistas em produção: `starttime` às vezes vem com a data junto
-  (`14/09/2026 13:09`), `slasexpirationdate` pode ser texto (`Em pausa`), e erros vêm com
-  HTTP 200 e corpo `{"error": "invalidApiKey"}` ou `{"error": "invalidStatus"}`.
+- Peculiaridades da API: `starttime` às vezes vem com a data junto, `slasexpirationdate`
+  pode ser texto (`Em pausa`), e erros vêm com HTTP 200 e corpo
+  `{"error": "invalidApiKey"}` ou `{"error": "invalidStatus"}`.
 - O nome no Milldesk pode ser diferente do nome no ChatPanel. Use `MILLDESK_AGENT_NAME`
-  no `.env` (ex.: `Guilherme P.`); vazio significa usar `TECH_NAME`. Cuidado com
-  homônimos: a comparação é exata (ignorando acentos e maiúsculas), então
-  `Guilherme P.` não casa com `Guilherme Anderson dos Santos`.
+  no `.env`; vazio significa usar `TECH_NAME`. Cuidado com homônimos: a comparação é
+  exata (ignorando acentos e maiúsculas), então um nome abreviado não casa com o nome
+  completo de outra pessoa.
 - Só rotas de leitura são usadas. `addTicket`, `updateTicketStatus` e
   `sendCommunication` nunca são chamadas.
 
-**Limite de requisições (descoberto na Fase 5):** a API responde `HTTP 429` com cerca de
-dez chamadas por minuto. Por isso a coleta é incremental:
+**Limite de requisições:** a API responde `HTTP 429` com cerca de dez chamadas por
+minuto. Por isso a coleta é incremental:
 
 - todo ciclo faz só uma chamada, `ticketsByStatus`, e compara as quantidades por status
   com o ciclo anterior;
@@ -117,21 +124,18 @@ dez chamadas por minuto. Por isso a coleta é incremental:
 - um `429` não é retentado: o painel mostra o erro e espera 3 minutos, mantendo os
   últimos dados na tela.
 
-Medido em 14/09/2026: primeiro ciclo com 10 chamadas em 6 s, ciclos seguintes com uma
-chamada em 0,6 s.
-
 ## ChatPanel (WhatsApp)
 
-O ChatPanel não tem API. O app usa a **Estratégia A** da spec: um Chromium headless
-(Playwright) com perfil persistente fica com o painel aberto e, a cada
-`CHATPANEL_REFRESH_SECONDS`, lê o HTML e extrai as conversas com BeautifulSoup. A página
-não é recarregada a cada ciclo: o socket.io do painel já atualiza o DOM.
+O ChatPanel não tem API. O app usa um Chromium headless (Playwright) com perfil
+persistente que fica com o painel aberto e, a cada `CHATPANEL_REFRESH_SECONDS`, lê o
+HTML e extrai as conversas com BeautifulSoup. A página não é recarregada a cada ciclo: o
+socket.io do painel já atualiza o DOM.
 
 ### Login (sempre humano: a tela tem captcha)
 
-A tela de login do ChatPanel pede usuário, senha e um captcha aritmético ("Quanto é
-3 - 2?"). Por isso o login nunca é totalmente automático: o app abre a janela e
-pré-preenche o que pode, e a pessoa responde o captcha e clica em "Acessar Painel".
+A tela de login do ChatPanel pede usuário, senha e um captcha aritmético. Por isso o
+login nunca é totalmente automático: o app abre a janela e pré-preenche o que pode, e a
+pessoa responde o captcha e clica em "Acessar Painel".
 
 Dentro da TUI:
 
@@ -148,14 +152,11 @@ Fora da TUI, `python scripts\chatpanel_login.py` faz o mesmo (sem limite de temp
 Feche o app antes: o Chromium não abre o mesmo perfil em dois processos. A sessão fica
 salva em `CHATPANEL_PROFILE_DIR` (`.chatpanel-profile/`, ignorado pelo git).
 
-**Limitação que continua:** o ChatPanel aceita **uma sessão por usuário**. Cada login
-feito pelo app derruba a sessão do seu navegador, e cada login no navegador derruba a do
-app. Com o mesmo usuário, o login integrado só encurta o caminho; ele não evita o
-pingue-pongue: quando a sessão cair, pressione `c` e refaça o login.
-
-**Decisão (15/09/2026):** o fluxo fica assim. Usuário dedicado e Estratégia B (userscript
-+ servidor local) foram avaliados e descartados pelo técnico, que não quer depender de
-servidor local nem de extensão no navegador.
+**Limitação conhecida:** o ChatPanel aceita **uma sessão por usuário**. Cada login feito
+pelo app derruba a sessão do seu navegador, e cada login no navegador derruba a do app.
+Quando a sessão cair, pressione `c` e refaça o login. Alternativas (usuário dedicado ao
+dashboard, userscript + servidor local) foram avaliadas e descartadas: o fluxo fica
+assim, sem depender de servidor local nem de extensão no navegador.
 
 ### O que o painel mostra
 
@@ -168,28 +169,6 @@ servidor local nem de extensão no navegador.
   login". O app tenta um reload antes de declarar isso e, na primeira vez por execução,
   abre a janela de login sozinho.
 
-### Validações feitas em 14/09/2026
-
-- Parser testado contra o HTML real (`tests/fixtures/chatpanel_chat.html`): com
-  `SINO Admin` retorna 2 conversas, com `Fabio` 1, com `Guilherme` 0, como a spec previa.
-- Chromium headless abre a URL do painel nesta máquina; sem login o app reporta
-  "sessão expirada" em vez de travar.
-- **Teste de sessão concorrente (14/09/2026): FALHOU.** O ChatPanel permite **uma sessão
-  por usuário**. Depois do login manual, a leitura headless funcionou; quando o técnico
-  abriu o painel no navegador normal, o site pediu login de novo, e esse novo login
-  derrubou a sessão headless. Ou seja, a Estratégia A só funciona se o técnico não usar
-  o ChatPanel no navegador, o que não é o caso. Alternativas em aberto:
-  1. **Estratégia B** da spec: userscript Tampermonkey que lê o DOM no navegador do
-     técnico e faz `POST` para um servidor HTTP local do app (`127.0.0.1:8765`). Zero
-     risco de sessão; depende da aba do ChatPanel estar aberta.
-  2. **Usuário dedicado:** criar um segundo usuário no ChatPanel só para o dashboard e
-     logar o Chromium headless com ele. A Estratégia A fica como está e o painel filtra
-     as conversas pelo badge `Guilherme` em "EM ATENDIMENTO". Depende de o
-     administrador do ChatPanel poder criar o usuário.
-- **Pendente:** confirmar em produção se as conversas do próprio usuário aparecem em
-  `#box-atende-chats` ou só com badge em `#box-atendeothers-chats`. O parser trata os
-  dois casos.
-
 ### Modo offline do parser
 
 ```powershell
@@ -198,8 +177,7 @@ python -m app.sources.chatpanel tests\fixtures\chatpanel_chat.html
 
 ## Modo debug por fonte
 
-Cada fonte tem um modo standalone que imprime o estado em JSON e sai (a partir da fase
-em que é implementada):
+Cada fonte tem um modo standalone que imprime o estado em JSON e sai:
 
 ```powershell
 python -m app.sources.email_imap
@@ -215,8 +193,9 @@ python -m pytest
 
 ## Logs
 
-`logs/app.log`, com rotação (1 MB, 3 arquivos). A chave do Milldesk aparece mascarada
-(`****1776`). Nada é impresso no terminal enquanto a TUI está aberta.
+`logs/app.log`, com rotação (1 MB, 3 arquivos). Chave do Milldesk e senhas aparecem
+mascaradas (`****1776`, `********`). Nada é impresso no terminal enquanto a TUI está
+aberta.
 
 ## Troubleshooting
 
@@ -231,8 +210,8 @@ python -m pytest
 
 **A janela de login abre toda vez que inicio o app**
 : A sessão está sendo derrubada pelo seu login no navegador (uma sessão por usuário).
-  Use um usuário dedicado ao dashboard ou desligue a abertura automática com
-  `CHATPANEL_LOGIN_ON_START=false` e use `c` quando quiser.
+  Se preferir, desligue a abertura automática com `CHATPANEL_LOGIN_ON_START=false` e use
+  `c` quando quiser.
 
 **"limite de requisições da API (HTTP 429 ...)"** no painel do Milldesk
 : A API do Milldesk recusou por excesso de chamadas. O painel mantém os últimos dados e
@@ -242,7 +221,7 @@ python -m pytest
 **"técnico não encontrado na resposta"** no painel do Milldesk
 : `MILLDESK_AGENT_NAME` (ou `TECH_NAME`, se aquele estiver vazio) não bate com nenhum
   `agent` da API e você não tem chamado aberto. Rode `python -m app.sources.milldesk` e
-  confira a grafia exata no Milldesk (ex.: `Guilherme P.`).
+  confira a grafia exata do seu nome no Milldesk.
 
 **"porta 143 sem STARTTLS enviaria a senha em texto puro"** no painel de e-mail
 : `EMAIL_IMAP_STARTTLS=false` com `EMAIL_IMAP_PORT=143`. Use `true`, ou porta `993`.

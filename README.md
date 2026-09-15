@@ -85,6 +85,8 @@ A TUI tem seis telas; os workers de coleta continuam rodando em qualquer uma del
 | `F4` | ChatPanel: minhas conversas (`t` mostra/esconde as "com outros técnicos") |
 | `F5` / `l` | Log: últimas 300 linhas de `logs/app.log` (`f` alterna o filtro de nível) |
 | `F6` | Notas: bloco de notas salvo em `notes.md` (autosave; `Ctrl+S` salva agora) |
+| `F7` | Eventos: linha do tempo do dia (e-mail novo, chamado que entrou/saiu do seu nome, conversa transferida, mensagem nova); `x` limpa a tela. Persistido em `logs/events-AAAA-MM-DD.jsonl` |
+| `F8` | Saúde: status de cada fonte, última coleta, duração, próximo ciclo, chamadas do Milldesk no último minuto e cooldown de 429, sessão do ChatPanel, tamanho do log, versões |
 | `↑` `↓` `j` `k` `PgUp` `PgDn` `Home` `End` | mover o cursor na lista |
 | `Enter` | abrir o item selecionado: e-mail completo ou detalhe do chamado (descrição, SLA regressivo, resolução, histórico de comunicações); conversa chega na fase 6.3 |
 | `Esc` | fechar o detalhe, limpar o filtro ou voltar ao Dashboard |
@@ -122,6 +124,9 @@ Uma linha de comando dentro da TUI. `Enter` executa, `↑`/`↓` percorrem o his
 Limitação do sistema operacional: abrir o navegador tira o foco do terminal e o app não
 tem como trazê-lo de volta. No Windows Terminal, um atalho global (por exemplo o modo
 "quake" em `Win+\``) volta para a TUI com uma tecla.
+
+No painel Milldesk, o chamado com o SLA mais próximo aparece em linha própria com
+contagem regressiva (verde, amarelo abaixo de 4 h, vermelho abaixo de 30 min ou vencido).
 
 Ao voltar ao Dashboard depois de ficar em outra tela, um aviso resume o que mudou
 ("enquanto você estava fora: e-mail: não lidos · ChatPanel: conversas"). Itens novos ou

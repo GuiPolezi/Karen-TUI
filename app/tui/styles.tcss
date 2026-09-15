@@ -26,7 +26,7 @@ Screen {
 }
 
 #top-row {
-    height: 12;
+    height: 13;
 }
 
 #top-row > BasePanel {
@@ -46,7 +46,7 @@ Screen {
 
 #main.narrow #top-row > BasePanel {
     width: 1fr;
-    height: 12;
+    height: 13;
 }
 
 /* Telas cheias: um painel ocupa tudo */
@@ -186,6 +186,34 @@ HelpScreen {
 #help-keys, #help-commands, #help-footer {
     height: auto;
     margin-bottom: 1;
+}
+
+/* Eventos (F7) e Saúde (F8) ----------------------------------------------- */
+
+#events-status, #health-sources, #health-extra {
+    height: auto;
+    padding: 0 1;
+    color: $text-muted;
+}
+
+#events-table {
+    height: 1fr;
+    margin: 0 1;
+    scrollbar-size: 1 1;
+}
+
+#health {
+    height: 1fr;
+    margin: 0 1;
+}
+
+#health-sources {
+    color: $text;
+    margin-bottom: 1;
+}
+
+#health-extra {
+    color: $text;
 }
 
 /* Detalhe do chamado (Enter no Milldesk) ----------------------------------- */

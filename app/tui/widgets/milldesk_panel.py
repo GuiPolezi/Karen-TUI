@@ -13,6 +13,8 @@ from app.tui.widgets.base_panel import BasePanel
 SORT_MODES = ("sla", "data", "status")
 SORT_LABELS = {"sla": "SLA mais próximo", "data": "mais recente", "status": "status"}
 SLA_WARNING_HOURS = 4
+SLA_ALERT_MINUTES = 30
+HEADER_REFRESH_SECONDS = 30.0
 
 
 def format_percentage(value: float) -> str:
@@ -37,6 +39,34 @@ def sla_text(ticket: MilldeskTicket, now: datetime | None = None) -> str:
     if remaining is None:
         return (ticket.sla_expiration or "")[:9]
     return format_remaining(remaining)
+
+
+def nearest_sla(tickets: list[MilldeskTicket], now: datetime | None = None) -> MilldeskTicket | None:
+    """Chamado com o prazo de SLA mais próximo (vencidos primeiro); None sem prazos."""
+    with_deadline = [t for t in tickets if t.sla_deadline is not None]
+    if not with_deadline:
+        return None
+    return min(with_deadline, key=lambda t: t.sla_deadline or datetime.max)
+
+
+def sla_highlight(ticket: MilldeskTicket, now: datetime | None = None) -> Text:
+    """Linha de destaque: '⏱ SLA mais próximo: #id assunto · faltam 02h15' com cor/alerta."""
+    now = now or datetime.now()
+    remaining = ticket.sla_remaining(now)
+    text = Text(no_wrap=True, overflow="ellipsis")
+    minutes = (remaining.total_seconds() / 60) if remaining is not None else None
+    if minutes is not None and minutes < 0:
+        style, label = "bold white on red", f"VENCIDO há {format_remaining(-remaining)}"
+    elif minutes is not None and minutes < SLA_ALERT_MINUTES:
+        style, label = "bold white on red", f"faltam {format_remaining(remaining)} ⚠"
+    elif minutes is not None and minutes < SLA_WARNING_HOURS * 60:
+        style, label = "bold yellow", f"faltam {format_remaining(remaining)}"
+    else:
+        style, label = "green", f"faltam {format_remaining(remaining)}"
+    text.append("⏱ SLA mais próximo: ", style="dim")
+    text.append(f"#{ticket.id} ", style="cyan").append(ticket.subject[:40])
+    text.append(" · ").append(label, style=style)
+    return text
 
 
 def sorted_tickets(tickets: list[MilldeskTicket], mode: str, now: datetime | None = None) -> list[MilldeskTicket]:
@@ -75,6 +105,9 @@ class MilldeskPanel(BasePanel):
         text.append(f"  (todos: {state.open_total})", style="dim")
         if state.my_open_by_status:
             text.append("  ·  " + " · ".join(f"{name} {n}" for name, n in state.my_open_by_status.items()), style="dim")
+        nearest = nearest_sla(state.tickets)
+        if nearest is not None:
+            text.append("\n").append_text(sla_highlight(nearest))
         text.append(
             f"\nHistórico: {state.my_history} chamados · {format_percentage(state.my_percentage)}% de "
             f"{state.total_all_agents}  ·  ordem: {SORT_LABELS[self.sort_mode]}",
@@ -83,6 +116,15 @@ class MilldeskPanel(BasePanel):
         if state.note:
             text.append(f"\n⚠ {state.note}", style="yellow")
         return text
+
+    def on_mount(self) -> None:
+        super().on_mount()
+        self.set_interval(HEADER_REFRESH_SECONDS, self._refresh_countdowns)
+
+    def _refresh_countdowns(self) -> None:
+        """A contagem regressiva do SLA anda mesmo sem estado novo."""
+        if self.state is not None:
+            self.show_state(self.state)
 
     def rows(self, state: MilldeskState) -> list[tuple[str, dict[str, Text]]]:
         now = datetime.now()

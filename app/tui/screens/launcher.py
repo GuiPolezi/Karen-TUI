@@ -64,6 +64,7 @@ class HelpScreen(ModalScreen[None]):
     SHORTCUTS = [
         ("F1 / d", "Dashboard"), ("F2", "E-mail (u: só não lidos)"), ("F3", "Milldesk (s: ordenar)"),
         ("F4", "ChatPanel (t: com outros)"), ("F5 / l", "Log (f: filtro de nível)"), ("F6", "Notas"),
+        ("F7", "Eventos do dia (x: limpar tela)"), ("F8", "Saúde das fontes"),
         ("↑ ↓ j k PgUp PgDn", "mover o cursor"), ("Enter", "abrir o item"), ("Esc", "voltar / limpar filtro"),
         ("Tab", "trocar painel"), ("/", "filtrar a lista"), ("o", "abrir no navegador"), ("y", "copiar"),
         ("e", "último e-mail"), ("r · 1 2 3", "atualizar"), ("c", "login ChatPanel"),

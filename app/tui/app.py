@@ -21,6 +21,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Input
 
 from app.config import Settings
+from app.events import EventLog, diff_states
 from app.prefs import PREFS_PATH, Prefs, load_prefs, save_prefs
 from app.sources.base import Source, SourceError
 from app.tui.launcher import Action, parse_command
@@ -80,6 +81,8 @@ class CmdAllInOneApp(App[None]):
         Binding("f4", "goto('chatpanel')", "ChatPanel", priority=True),
         Binding("f5", "goto('log')", "Log", priority=True),
         Binding("f6", "goto('notes')", "Notas", priority=True),
+        Binding("f7", "goto('events')", "Eventos", priority=True),
+        Binding("f8", "goto('health')", "Saúde", priority=True),
         Binding("l", "goto('log')", "Log", show=False),
         Binding("r", "refresh_all", "Atualizar", show=True),
         Binding("1", "refresh('email')", "Atualizar e-mail", show=False),
@@ -119,6 +122,9 @@ class CmdAllInOneApp(App[None]):
         self._login_in_progress = False
         self._login_on_start_used = False
         self.login_count = 0
+        self.started_at = time.time()
+        self.event_log = EventLog(settings.log_dir if prefs_path is not None else None)
+        self.health_info: dict[str, dict[str, Any]] = {}  # por fonte: duração, próximo ciclo, última ok
 
     # --- ciclo de vida --------------------------------------------------------
 
@@ -249,6 +255,73 @@ class CmdAllInOneApp(App[None]):
             return
         if self.current_mode != "dashboard":
             self.action_goto("dashboard")
+
+    # --- saúde ---------------------------------------------------------------------------
+
+    def health(self) -> dict[str, Any]:
+        """Dados da tela F8: status por fonte, Milldesk, ChatPanel, log, versões, uptime."""
+        rows = []
+        for name, source in self._sources.items():
+            label = SOURCE_PANELS.get(name, (name, name, 0))[1]
+            info = self.health_info.get(name, {})
+            error = self.errors.get(name)
+            if not source.configured:
+                status, detail = "não configurada", getattr(source, "config_hint", "")
+            elif error:
+                status, detail = "erro", error
+            elif name in self.states:
+                status, detail = "ok", f"intervalo {source.interval}s"
+            else:
+                status, detail = "aguardando", "primeira coleta"
+            rows.append({"name": name, "label": label, "status": status, "detail": detail,
+                         "duration": info.get("duration"), "next_at": info.get("next_at"),
+                         "last_ok": info.get("last_ok")})
+        milldesk = self._sources.get("milldesk")
+        calls = getattr(milldesk, "calls_last_minute", lambda: 0)()
+        cooldown_until = getattr(milldesk, "_rate_limited_until", None)
+        cooldown = "não"
+        if cooldown_until is not None and milldesk is not None:
+            remaining = cooldown_until - milldesk._clock()  # type: ignore[attr-defined]
+            cooldown = f"sim, {int(remaining)}s" if remaining > 0 else "não"
+        chat_state = self.states.get("chatpanel")
+        chat_source = self._sources.get("chatpanel")
+        resync = "desligada"
+        if chat_source is not None:
+            seconds = getattr(getattr(chat_source, "settings", None), "resync_seconds", 0)
+            blocked = getattr(chat_source, "_resync_blocked", False)
+            resync = "bloqueada (mesmo usuário do técnico)" if blocked else (f"a cada {seconds}s" if seconds else "desligada")
+        session_file = getattr(chat_source, "session_file", None)
+        log_path = self.settings.log_dir / "app.log"
+        try:
+            log_size_kb = log_path.stat().st_size / 1024 if log_path.exists() else 0.0
+        except OSError:
+            log_size_kb = 0.0
+        uptime = int(time.time() - self.started_at)
+        try:
+            import textual
+
+            versions = f"textual {textual.__version__}"
+            try:
+                import playwright
+
+                versions += f" · playwright {playwright.__version__}"
+            except Exception:
+                pass
+        except Exception:
+            versions = "?"
+        return {
+            "sources": rows,
+            "milldesk_calls_last_minute": calls,
+            "milldesk_cooldown": cooldown,
+            "chatpanel_user": getattr(chat_state, "logged_user", None),
+            "chatpanel_resync": resync,
+            "chatpanel_session_file": bool(session_file is not None and Path(session_file).exists()),
+            "log_path": str(log_path),
+            "log_size_kb": log_size_kb,
+            "events_today": len(self.event_log.events),
+            "versions": versions,
+            "uptime": f"{uptime // 3600}h{(uptime % 3600) // 60:02d}min",
+        }
 
     # --- launcher ----------------------------------------------------------------------
 
@@ -486,11 +559,14 @@ class CmdAllInOneApp(App[None]):
             self._login_requested = False
             if not await self._run_login(source):
                 return float(source.interval)
+        started = time.monotonic()
+        info = self.health_info.setdefault(name, {"duration": None, "next_at": None, "last_ok": None})
         try:
             state = await source.fetch_with_retry()
         except SourceError as exc:
             log.error("fonte %s falhou: %s", name, exc)
             wait = max(float(source.interval), exc.retry_after or 0.0)
+            info.update(duration=time.monotonic() - started, next_at=time.time() + wait)
             self._set_error(name, str(exc) + (f" · aguardando {int(wait)}s" if exc.retry_after else ""))
             if self._should_login_on_start(name, source, exc):
                 self._login_on_start_used = True
@@ -499,9 +575,11 @@ class CmdAllInOneApp(App[None]):
             return wait
         except Exception as exc:  # bug na fonte: mostra, registra e segue vivo
             log.exception("erro inesperado na fonte %s", name)
+            info.update(duration=time.monotonic() - started, next_at=time.time() + source.interval)
             self._set_error(name, f"erro inesperado: {exc}")
             return float(source.interval)
 
+        info.update(duration=time.monotonic() - started, next_at=time.time() + source.interval, last_ok=time.time())
         self._publish(name, state)
         return float(source.interval)
 
@@ -520,6 +598,14 @@ class CmdAllInOneApp(App[None]):
                 grew = increased_counters(reference.counters(previous), reference.counters(state))
                 if grew:
                     self.notify_change(name, grew)
+            events = diff_states(name, previous, state)
+            if events:
+                self.event_log.add(events)
+                for event in events:
+                    log.info("evento: %s", event.text)
+                screen = self.mode_screens.get("events")
+                if screen is not None:
+                    screen.refresh_events()  # type: ignore[attr-defined]
 
     def _set_error(self, name: str, message: str | None) -> None:
         self.errors[name] = message

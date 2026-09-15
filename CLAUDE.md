@@ -48,3 +48,10 @@ as regras que valem em todo o projeto.
 - `app/tui/widgets/keyed_table.py` — `KeyedTable.set_rows()` faz diff por chave e
   preserva o cursor.
 - `app/prefs.py` — `prefs.json` (última tela, ordenação, favoritos, histórico). Nunca segredo.
+- `app/events.py` — `diff_email/milldesk/chatpanel` (puros) e `EventLog` (memória +
+  `logs/events-AAAA-MM-DD.jsonl`); telas `events.py` (F7) e `health.py` (F8).
+- `app/tui/launcher.py` — parser puro dos comandos do `:`; a tela fica em
+  `screens/launcher.py` junto com a ajuda (`?`).
+- Detalhes: `screens/ticket_detail.py` (showTicket com cache em
+  `MilldeskSource.fetch_ticket`) e `screens/email_detail.py` (corpo via
+  `EmailSource.fetch_body`).

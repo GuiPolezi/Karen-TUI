@@ -301,6 +301,7 @@ class MilldeskSource(Source[MilldeskState]):
         # detalhe por ID: {id: (detalhe, instante monotônico em que foi buscado)}
         self._details: dict[int, tuple[TicketDetail, float]] = {}
         self._rate_limited_until: float | None = None  # cooldown após HTTP 429
+        self._request_times: list[float] = []  # instantes (clock) das chamadas, para a tela de saúde
 
     @property
     def configured(self) -> bool:
@@ -333,6 +334,8 @@ class MilldeskSource(Source[MilldeskState]):
                 raise RuntimeError(self._mask(f"{type(exc).__name__}: {exc}")) from None
             finally:
                 self._last_request_at = self._clock()
+                self._request_times.append(self._last_request_at)
+                del self._request_times[:-60]
         if response.status_code == 429:
             self._rate_limited_until = self._clock() + RATE_LIMIT_WAIT
             raise RateLimitedError(route)
@@ -377,6 +380,10 @@ class MilldeskSource(Source[MilldeskState]):
         if state.note:
             self.log.warning("%s (MILLDESK_AGENT_NAME=%r)", state.note, self.agent_name)
         return state
+
+    def calls_last_minute(self) -> int:
+        now = self._clock()
+        return sum(1 for stamp in self._request_times if now - stamp < 60)
 
     async def fetch_ticket(self, ticket_id: int, force: bool = False) -> TicketDetail:
         """Detalhe de um chamado: 1 GET showTicket, cache por ID com TTL. `force` ignora o cache."""

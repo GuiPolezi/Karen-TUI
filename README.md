@@ -163,8 +163,11 @@ salva em `CHATPANEL_PROFILE_DIR` (`.chatpanel-profile/`, ignorado pelo git).
 **Limitação que continua:** o ChatPanel aceita **uma sessão por usuário**. Cada login
 feito pelo app derruba a sessão do seu navegador, e cada login no navegador derruba a do
 app. Com o mesmo usuário, o login integrado só encurta o caminho; ele não evita o
-pingue-pongue. Para o painel ficar estável, use um **usuário dedicado** ao dashboard
-(`CHATPANEL_USER`/`CHATPANEL_PASSWORD` dele) ou a Estratégia B da spec.
+pingue-pongue: quando a sessão cair, pressione `c` e refaça o login.
+
+**Decisão (15/09/2026):** o fluxo fica assim. Usuário dedicado e Estratégia B (userscript
++ servidor local) foram avaliados e descartados pelo técnico, que não quer depender de
+servidor local nem de extensão no navegador.
 
 ### O que o painel mostra
 

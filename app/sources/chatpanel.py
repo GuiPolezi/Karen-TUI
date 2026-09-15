@@ -2,8 +2,17 @@
 
 Estratégia A: Chromium headless (Playwright) com perfil persistente. A página fica aberta
 entre ciclos (o socket.io do painel já atualiza o DOM) e a cada ciclo lemos o HTML e
-parseamos com BeautifulSoup. O login é feito uma vez, manualmente, com
-`scripts/chatpanel_login.py`, que grava a sessão no mesmo perfil.
+parseamos com BeautifulSoup.
+
+Login: a tela de login do ChatPanel tem um captcha, então o login é sempre humano.
+`interactive_login()` abre um Chromium VISÍVEL no mesmo perfil, pré-preenche usuário e
+senha (se CHATPANEL_USER/CHATPANEL_PASSWORD estiverem no .env) e espera a pessoa
+responder o captcha e entrar. A TUI chama isso pela tecla `c` e, uma vez por execução,
+sozinha quando detecta sessão expirada. `scripts/chatpanel_login.py` faz o mesmo fora da TUI.
+
+Atenção: o ChatPanel aceita UMA sessão por usuário. Logar aqui derruba a sessão do
+navegador normal (e vice-versa). Com o mesmo usuário do técnico isso vira pingue-pongue;
+o ideal é um usuário dedicado ao dashboard.
 
 Parser puro: `parse_chatpanel_html(html, tech_name) -> ChatPanelState`, testado contra
 tests/fixtures/chatpanel_chat.html.
@@ -23,11 +32,12 @@ from typing import Any
 from bs4 import BeautifulSoup, SoupStrainer, Tag
 
 from app.config import ChatPanelSettings
-from app.sources.base import Source
+from app.sources.base import Source, SourceError
 from app.state import ChatItem, ChatPanelState
 
-SESSION_EXPIRED = "sessão expirada — rode scripts/chatpanel_login.py"
-LOGIN_HINT = "rode scripts/chatpanel_login.py uma vez para salvar a sessão"
+SESSION_EXPIRED = "sessão expirada — pressione c para fazer login (ou rode scripts/chatpanel_login.py)"
+LOGIN_HINT = "pressione c (ou rode scripts/chatpanel_login.py) para salvar a sessão"
+LOGIN_TIMEOUT = 300.0  # segundos que a janela de login fica aberta esperando a pessoa
 
 # só estes trechos do HTML (≈780 KB) interessam; o SoupStrainer corta o parse de ~2 s para ~0,2 s
 _INTERESTING_IDS = {
@@ -41,12 +51,19 @@ _INTERESTING_IDS = {
 
 LOGIN_FORM_SELECTOR = "input[type='password']"
 LOGGED_OR_LOGIN_SELECTOR = f"#int_username, {LOGIN_FORM_SELECTOR}"
+LOGGED_SELECTOR = "#int_username"  # input hidden: esperar por presença, não por visibilidade
+LOGIN_USER_SELECTOR = "#user"      # tela de login (index.php); o captcha (#captcha) fica com a pessoa
+LOGIN_PASSWORD_SELECTOR = "#password"
 
 
 class SessionExpiredError(Exception):
     """A página não tem o usuário logado (redirecionou para o login). Não é retentada."""
 
-    retry_after = 120.0  # segundos até tentar de novo (dá tempo de rodar o login)
+    retry_after = 120.0  # segundos até tentar de novo (dá tempo de fazer o login)
+
+
+class LoginNotCompletedError(Exception):
+    """A janela de login fechou ou o tempo acabou sem o usuário aparecer logado."""
 
 
 # --- parser puro -------------------------------------------------------------------
@@ -190,8 +207,9 @@ class ChatPanelSource(Source[ChatPanelState]):
 
     @property
     def configured(self) -> bool:
-        """Sem perfil salvo não há sessão: o painel pede o login manual."""
-        return self.settings.profile_dir.exists()
+        """Sempre ativa: sem perfil salvo o primeiro ciclo cai em "sessão expirada" e a
+        TUI abre a janela de login, que cria o perfil."""
+        return True
 
     async def fetch(self) -> ChatPanelState:
         html = await self._get_html()
@@ -224,6 +242,13 @@ class ChatPanelSource(Source[ChatPanelState]):
     async def _ensure_page(self) -> Any:
         if self._page is not None and not self._page.is_closed():
             return self._page
+        page = await self._launch_context(headless=self.settings.headless)
+        await self._open_panel(page)
+        self._page = page
+        return page
+
+    async def _launch_context(self, headless: bool) -> Any:
+        """Abre o Chromium no perfil persistente e devolve a primeira página."""
         try:
             from playwright.async_api import async_playwright
         except ImportError as exc:  # pragma: no cover
@@ -233,19 +258,60 @@ class ChatPanelSource(Source[ChatPanelState]):
             self._playwright = await async_playwright().start()
         self.log.info(
             "abrindo Chromium %s com perfil %s",
-            "headless" if self.settings.headless else "visível",
+            "headless" if headless else "visível",
             self.settings.profile_dir,
         )
         self._context = await self._playwright.chromium.launch_persistent_context(
             str(self.settings.profile_dir),
-            headless=self.settings.headless,
+            headless=headless,
             viewport={"width": 1366, "height": 900},
             args=["--disable-blink-features=AutomationControlled"],
         )
-        page = self._context.pages[0] if self._context.pages else await self._context.new_page()
-        await self._open_panel(page)
-        self._page = page
-        return page
+        return self._context.pages[0] if self._context.pages else await self._context.new_page()
+
+    # --- login humano ------------------------------------------------------------
+
+    async def interactive_login(self, timeout: float = LOGIN_TIMEOUT) -> str:
+        """Abre um Chromium VISÍVEL no mesmo perfil e espera a pessoa fazer o login.
+
+        Fecha o headless antes (o perfil não pode estar aberto em dois processos).
+        Pré-preenche usuário e senha se estiverem no .env; o captcha e o botão ficam com a
+        pessoa. `timeout=0` espera sem limite. Devolve o nome do usuário logado.
+        """
+        await self._teardown()
+        self.settings.profile_dir.mkdir(parents=True, exist_ok=True)
+        page = await self._launch_context(headless=False)
+        try:
+            await page.goto(self.settings.url, wait_until="domcontentloaded")
+            try:
+                await page.wait_for_selector(LOGGED_OR_LOGIN_SELECTOR, state="attached", timeout=15000)
+            except Exception:
+                self.log.warning("nem painel nem tela de login apareceram em 15 s (%s)", page.url)
+            if not await page.query_selector(LOGGED_SELECTOR):
+                await self._prefill_login_form(page)
+                self.log.info("janela de login aberta; esperando o login humano (captcha)")
+            await page.wait_for_selector(LOGGED_SELECTOR, state="attached", timeout=timeout * 1000)
+            user = str(await page.eval_on_selector(LOGGED_SELECTOR, "el => el.value") or "").strip()
+            await page.wait_for_timeout(2000)  # deixa cookies/localStorage assentarem
+        except Exception as exc:
+            raise LoginNotCompletedError(_describe_login_failure(exc, timeout)) from exc
+        finally:
+            await self._teardown()
+
+        self.log.info("login concluído; usuário logado no ChatPanel: %r", user)
+        if normalize_name(user) != normalize_name(self.tech_name):
+            self.log.warning("usuário logado é %r, mas TECH_NAME=%r", user, self.tech_name)
+        return user
+
+    async def _prefill_login_form(self, page: Any) -> None:
+        if not self.settings.prefill_login:
+            return
+        try:
+            await page.fill(LOGIN_USER_SELECTOR, self.settings.user)
+            await page.fill(LOGIN_PASSWORD_SELECTOR, self.settings.password)
+            self.log.info("usuário e senha pré-preenchidos; falta o captcha")
+        except Exception as exc:
+            self.log.warning("não consegui pré-preencher o login: %s", exc)
 
     async def _open_panel(self, page: Any) -> None:
         """Navega até o painel e espera ou o usuário logado ou a tela de login."""
@@ -277,6 +343,16 @@ class ChatPanelSource(Source[ChatPanelState]):
                 self.log.debug("erro ao fechar navegador: %s", exc)
 
 
+def _describe_login_failure(exc: BaseException, timeout: float) -> str:
+    name = type(exc).__name__
+    if "Timeout" in name:
+        return f"tempo esgotado ({int(timeout)}s) sem completar o login"
+    if "TargetClosed" in name or "closed" in str(exc).lower():
+        return "janela de login fechada antes de completar o login"
+    text = str(exc).strip().splitlines()[0] if str(exc).strip() else name
+    return f"login não concluído: {text}"
+
+
 # --- modo debug ------------------------------------------------------------------------
 
 
@@ -300,11 +376,11 @@ async def _debug_main() -> int:
         return 0
 
     source = ChatPanelSource(settings.chatpanel, settings.tech_name)
-    if not source.configured:
-        print(source.config_hint, file=sys.stderr)
-        return 2
     try:
         state = await source.fetch_with_retry()
+    except SourceError as exc:  # ex.: sessão expirada — mensagem limpa, sem traceback
+        print(exc, file=sys.stderr)
+        return 1
     finally:
         await source.close()
     print(to_json(state))

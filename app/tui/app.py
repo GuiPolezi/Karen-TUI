@@ -25,6 +25,7 @@ from app.tui.widgets.status_bar import StatusBar
 log = logging.getLogger("tui")
 
 NARROW_WIDTH = 100  # abaixo disso os painéis de cima empilham
+LOGIN_SOURCE = "chatpanel"  # única fonte com login humano (janela visível + captcha)
 
 # nome da fonte -> (id do painel, rótulo, fase em que é implementada)
 SOURCE_PANELS: dict[str, tuple[str, str, int]] = {
@@ -63,6 +64,7 @@ class CmdAllInOneApp(App[None]):
         Binding("3", "refresh('chatpanel')", "Atualizar ChatPanel"),
         Binding("e", "open_email", "Abrir e-mail"),
         Binding("l", "toggle_log", "Log"),
+        Binding("c", "chatpanel_login", "Login ChatPanel"),
     ]
 
     def __init__(self, settings: Settings, sources: dict[str, Source[Any]] | None = None) -> None:
@@ -74,6 +76,10 @@ class CmdAllInOneApp(App[None]):
         self._refresh_events: dict[str, asyncio.Event] = {}
         self.states: dict[str, Any] = {}  # último estado válido por fonte
         self.bell_count = 0  # quantas vezes o bell disparou (útil em testes)
+        self._login_requested = False     # tecla c (ou sessão expirada na 1ª vez)
+        self._login_in_progress = False
+        self._login_on_start_used = False  # a abertura automática vale uma vez por execução
+        self.login_count = 0              # quantos logins foram concluídos (útil em testes)
 
     # --- layout ------------------------------------------------------------
 
@@ -100,21 +106,27 @@ class CmdAllInOneApp(App[None]):
         self._apply_layout(event.size.width)
 
     def _apply_layout(self, width: int) -> None:
-        self.query_one("#main", Container).set_class(width < NARROW_WIDTH, "narrow")
+        self.main_screen.query_one("#main", Container).set_class(width < NARROW_WIDTH, "narrow")
 
     def _tick_clock(self) -> None:
         now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        self.query_one("#clock", Static).update(f"{self.settings.tech_name} · {now}")
+        self.main_screen.query_one("#clock", Static).update(f"{self.settings.tech_name} · {now}")
 
     # --- helpers -----------------------------------------------------------
 
     @property
+    def main_screen(self):  # noqa: ANN201 — Screen do Textual
+        """Tela principal. `self.query_one` olha a tela ATIVA e quebra quando um modal
+        (detalhe do e-mail) está aberto e um worker ou o relógio tenta atualizar algo."""
+        return self.screen_stack[0]
+
+    @property
     def status_bar(self) -> StatusBar:
-        return self.query_one(StatusBar)
+        return self.main_screen.query_one(StatusBar)
 
     def panel(self, name: str) -> BasePanel:
         panel_id, _, _ = SOURCE_PANELS[name]
-        return self.query_one(f"#{panel_id}", BasePanel)
+        return self.main_screen.query_one(f"#{panel_id}", BasePanel)
 
     def notify_change(self, panel: BasePanel, what: list[str]) -> None:
         """Contador aumentou: destaca o painel por 3 s e toca o bell se configurado."""
@@ -161,12 +173,20 @@ class CmdAllInOneApp(App[None]):
 
     async def _fetch_once(self, name: str, source: Source[Any], panel: BasePanel) -> float:
         """Uma coleta. Devolve quantos segundos esperar até o próximo ciclo."""
+        if name == LOGIN_SOURCE and self._login_requested:
+            self._login_requested = False
+            if not await self._run_login(source, panel):
+                return float(source.interval)
         try:
             state = await source.fetch_with_retry()
         except SourceError as exc:
             log.error("fonte %s falhou: %s", name, exc)
             wait = max(float(source.interval), exc.retry_after or 0.0)
             panel.set_error(str(exc) + (f" · aguardando {int(wait)}s" if exc.retry_after else ""))
+            if self._should_login_on_start(name, source, exc):
+                self._login_on_start_used = True
+                self._login_requested = True
+                return 0.0  # volta já para o topo do loop, que abre a janela de login
             return wait
         except Exception as exc:  # bug na fonte: mostra, registra e segue vivo
             log.exception("erro inesperado na fonte %s", name)
@@ -183,6 +203,65 @@ class CmdAllInOneApp(App[None]):
             if grew:
                 self.notify_change(panel, grew)
         return float(source.interval)
+
+    # --- login humano do ChatPanel -------------------------------------------
+
+    def _should_login_on_start(self, name: str, source: Source[Any], exc: SourceError) -> bool:
+        """Sessão expirada pela primeira vez nesta execução: abre a janela sozinho (se ligado)."""
+        from app.sources.chatpanel import SessionExpiredError
+
+        return (
+            name == LOGIN_SOURCE
+            and self.settings.chatpanel.login_on_start
+            and not self._login_on_start_used
+            and hasattr(source, "interactive_login")
+            and isinstance(exc.__cause__, SessionExpiredError)
+        )
+
+    async def _run_login(self, source: Source[Any], panel: BasePanel) -> bool:
+        """Roda dentro do worker da fonte (o perfil do Chromium não pode ter dois donos)."""
+        login = getattr(source, "interactive_login", None)
+        if login is None:
+            return False
+        self._login_in_progress = True
+        previous = self.states.get(LOGIN_SOURCE)
+        panel.set_error(None)
+        panel.set_body(
+            "[yellow]janela de login aberta[/]\n"
+            "[dim]faça o login no Chromium que abriu (o captcha é seu); o painel volta sozinho[/]"
+        )
+        self.status_bar.set_message("faça o login na janela do Chromium…", seconds=300)
+        try:
+            user = await login()
+        except Exception as exc:
+            log.warning("login do ChatPanel não concluído: %s", exc)
+            if previous is not None:
+                panel.show_state(previous)
+            panel.set_error(str(exc))
+            self.status_bar.set_message("login do ChatPanel não concluído (c tenta de novo)")
+            return False
+        finally:
+            self._login_in_progress = False
+        self.login_count += 1
+        panel.set_body("[dim]login ok, lendo o painel…[/]")
+        self.status_bar.set_message(f"login ok: {user} · lendo o ChatPanel…")
+        return True
+
+    def action_chatpanel_login(self) -> None:
+        source = self._sources.get(LOGIN_SOURCE)
+        label = SOURCE_PANELS[LOGIN_SOURCE][1]
+        if source is None or not hasattr(source, "interactive_login"):
+            self.status_bar.set_message(f"{label}: login não disponível")
+            return
+        if LOGIN_SOURCE not in self._refresh_events:
+            self.status_bar.set_message(f"{label}: não configurado")
+            return
+        if self._login_in_progress:
+            self.status_bar.set_message("login já em andamento: veja a janela do Chromium")
+            return
+        self._login_requested = True
+        self._request_refresh(LOGIN_SOURCE)
+        self.status_bar.set_message(f"abrindo a janela de login do {label}…")
 
     # --- ações -------------------------------------------------------------
 
@@ -222,5 +301,5 @@ class CmdAllInOneApp(App[None]):
         self.push_screen(EmailDetailScreen(latest))
 
     def action_toggle_log(self) -> None:
-        visible = self.query_one(LogPanel).toggle()
+        visible = self.main_screen.query_one(LogPanel).toggle()
         self.status_bar.set_message("log aberto (l fecha)" if visible else "log fechado")

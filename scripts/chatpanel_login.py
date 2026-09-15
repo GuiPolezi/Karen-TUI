@@ -1,29 +1,35 @@
-"""Login manual no ChatPanel, uma única vez.
+"""Login humano no ChatPanel fora da TUI (a TUI faz o mesmo com a tecla `c`).
 
 Abre um Chromium VISÍVEL com o perfil persistente configurado em CHATPANEL_PROFILE_DIR,
-navega até CHATPANEL_URL e espera você fazer login. Quando o painel carregar com o
-usuário logado (input#int_username no DOM), fecha o navegador e a sessão fica salva.
+navega até CHATPANEL_URL e espera você fazer o login (usuário, senha e captcha). Se
+CHATPANEL_USER e CHATPANEL_PASSWORD estiverem no .env, usuário e senha já vêm
+preenchidos. Quando o painel carregar com o usuário logado (input#int_username no DOM),
+fecha o navegador e a sessão fica salva.
 
 Uso:
     python scripts/chatpanel_login.py
 
 Importante: feche o app (python -m app) antes de rodar isto. O Chromium não abre o
-mesmo perfil em dois processos ao mesmo tempo.
+mesmo perfil em dois processos ao mesmo tempo. Dentro da TUI, prefira a tecla `c`.
 """
 
 from __future__ import annotations
 
+import asyncio
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.config import ConfigError, load_settings  # noqa: E402
+from app.logging_setup import setup_debug_logging  # noqa: E402
 from app.main import force_utf8_console  # noqa: E402
+from app.sources.chatpanel import ChatPanelSource, LoginNotCompletedError  # noqa: E402
 
 
 def main() -> int:
     force_utf8_console()
+    setup_debug_logging("WARNING")
     try:
         settings = load_settings()
     except ConfigError as exc:
@@ -31,35 +37,24 @@ def main() -> int:
         return 2
 
     try:
-        from playwright.sync_api import sync_playwright
+        import playwright  # noqa: F401
     except ImportError:
         print("playwright não instalado. Rode: pip install playwright && playwright install chromium")
         return 2
 
-    profile_dir = settings.chatpanel.profile_dir
-    profile_dir.mkdir(parents=True, exist_ok=True)
-    print(f"Perfil: {profile_dir}")
+    print(f"Perfil: {settings.chatpanel.profile_dir}")
     print(f"Abrindo {settings.chatpanel.url}")
-    print("Faça o login no navegador que vai abrir. Esta janela fecha sozinha quando o painel carregar.")
+    if settings.chatpanel.prefill_login:
+        print("Usuário e senha vêm preenchidos do .env; responda o captcha e clique em Acessar Painel.")
+    else:
+        print("Faça o login no navegador que vai abrir. A janela fecha sozinha quando o painel carregar.")
 
-    with sync_playwright() as playwright:
-        context = playwright.chromium.launch_persistent_context(
-            str(profile_dir),
-            headless=False,
-            viewport={"width": 1366, "height": 900},
-            args=["--disable-blink-features=AutomationControlled"],
-        )
-        page = context.pages[0] if context.pages else context.new_page()
-        page.goto(settings.chatpanel.url, wait_until="domcontentloaded")
-        try:
-            # o input é type="hidden": esperar por presença no DOM, não por visibilidade
-            page.wait_for_selector("#int_username", state="attached", timeout=0)
-        except Exception as exc:  # navegador fechado pelo usuário, por exemplo
-            print(f"Não foi possível confirmar o login: {exc}", file=sys.stderr)
-            return 1
-        user = page.eval_on_selector("#int_username", "el => el.value")
-        page.wait_for_timeout(2000)  # deixa cookies/localStorage assentarem
-        context.close()
+    source = ChatPanelSource(settings.chatpanel, settings.tech_name)
+    try:
+        user = asyncio.run(source.interactive_login(timeout=0))  # 0 = sem limite de tempo
+    except LoginNotCompletedError as exc:
+        print(f"Não foi possível confirmar o login: {exc}", file=sys.stderr)
+        return 1
 
     print(f"Sessão salva. Usuário logado no ChatPanel: {user!r}")
     if user.strip().casefold() != settings.tech_name.strip().casefold():

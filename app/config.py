@@ -63,6 +63,13 @@ class ChatPanelSettings:
     profile_dir: Path
     refresh_seconds: int
     headless: bool
+    user: str = ""               # opcional: pré-preenche o usuário na janela de login
+    password: str = ""           # opcional: pré-preenche a senha; nunca aparece em log
+    login_on_start: bool = True  # abre a janela de login sozinho (1x por execução) se a sessão expirou
+
+    @property
+    def prefill_login(self) -> bool:
+        return bool(self.user and self.password)
 
 
 @dataclass(frozen=True)
@@ -151,6 +158,9 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
         profile_dir=profile_dir,
         refresh_seconds=env.int("CHATPANEL_REFRESH_SECONDS", 15),
         headless=env.bool("CHATPANEL_HEADLESS", True),
+        user=env.str("CHATPANEL_USER", "", required=False),
+        password=env.str("CHATPANEL_PASSWORD", "", required=False),
+        login_on_start=env.bool("CHATPANEL_LOGIN_ON_START", True),
     )
 
     notify_bell = env.bool("NOTIFY_BELL", True)
@@ -178,6 +188,7 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
 
     register_secret(milldesk.api_key, milldesk.masked_key)
     register_secret(email.password, "********")
+    register_secret(chatpanel.password, "********")
 
     return Settings(
         tech_name=tech_name,

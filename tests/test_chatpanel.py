@@ -162,8 +162,29 @@ async def test_source_recovers_after_reload():
     assert source.torn_down is False
 
 
-def test_not_configured_without_profile_dir(tmp_path: Path):
+def test_always_configured_even_without_profile_dir(tmp_path: Path):
+    """Sem perfil o 1º ciclo cai em "sessão expirada" e a TUI abre o login, que cria o perfil."""
     settings = ChatPanelSettings(url="https://x", profile_dir=tmp_path / "nao-existe", refresh_seconds=15, headless=True)
-    assert ChatPanelSource(settings, "G").configured is False
-    (tmp_path / "nao-existe").mkdir()
     assert ChatPanelSource(settings, "G").configured is True
+    assert settings.prefill_login is False
+    assert settings.login_on_start is True
+
+
+def test_prefill_login_requires_user_and_password(tmp_path: Path):
+    base = dict(url="https://x", profile_dir=tmp_path, refresh_seconds=15, headless=True)
+    assert ChatPanelSettings(**base, user="g", password="").prefill_login is False
+    assert ChatPanelSettings(**base, user="g", password="s").prefill_login is True
+
+
+def test_login_failure_messages_are_short():
+    from app.sources.chatpanel import _describe_login_failure
+
+    class TimeoutError_(Exception):
+        pass
+
+    class TargetClosedError(Exception):
+        pass
+
+    assert _describe_login_failure(TimeoutError_("x"), 300) == "tempo esgotado (300s) sem completar o login"
+    assert "fechada" in _describe_login_failure(TargetClosedError("Target page, context or browser has been closed"), 300)
+    assert _describe_login_failure(RuntimeError("boom\nmais"), 300) == "login não concluído: boom"

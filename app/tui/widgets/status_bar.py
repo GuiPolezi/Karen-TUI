@@ -9,7 +9,7 @@ from textual.widgets import Static
 
 SHORTCUTS = (
     "[b]r[/] atualizar tudo  [b]1/2/3[/] atualizar painel  "
-    "[b]e[/] abrir e-mail  [b]l[/] log  [b]q[/] sair"
+    "[b]e[/] abrir e-mail  [b]c[/] login ChatPanel  [b]l[/] log  [b]q[/] sair"
 )
 
 

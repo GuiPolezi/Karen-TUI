@@ -74,8 +74,8 @@ python -m app
 ```
 
 Atalhos: `q` sair · `r` atualizar tudo · `1`/`2`/`3` atualizar um painel · `e` abrir o
-e-mail mais recente em tela cheia · `l` mostrar/esconder as últimas 50 linhas do log ·
-`Esc` voltar.
+e-mail mais recente em tela cheia · `c` abrir a janela de login do ChatPanel · `l`
+mostrar/esconder as últimas 50 linhas do log · `Esc` voltar.
 
 Quando um contador aumenta entre dois ciclos (não lidos, chamados abertos, conversas ou
 não lidas do ChatPanel), o painel ganha borda grossa amarela por 3 segundos e o terminal
@@ -139,17 +139,32 @@ O ChatPanel não tem API. O app usa a **Estratégia A** da spec: um Chromium hea
 `CHATPANEL_REFRESH_SECONDS`, lê o HTML e extrai as conversas com BeautifulSoup. A página
 não é recarregada a cada ciclo: o socket.io do painel já atualiza o DOM.
 
-### Primeiro login (uma vez)
+### Login (sempre humano: a tela tem captcha)
 
-```powershell
-.venv\Scripts\Activate.ps1
-python scripts\chatpanel_login.py
-```
+A tela de login do ChatPanel pede usuário, senha e um captcha aritmético ("Quanto é
+3 - 2?"). Por isso o login nunca é totalmente automático: o app abre a janela e
+pré-preenche o que pode, e a pessoa responde o captcha e clica em "Acessar Painel".
 
-Abre um Chromium visível. Faça o login normalmente; a janela fecha sozinha quando o
-painel carregar e a sessão fica salva em `CHATPANEL_PROFILE_DIR` (`.chatpanel-profile/`,
-ignorado pelo git). Feche o app antes de rodar o login: o Chromium não abre o mesmo
-perfil em dois processos.
+Dentro da TUI:
+
+- Ao iniciar, se o app detecta sessão expirada (ou ainda não há perfil salvo), ele abre
+  sozinho um Chromium visível **uma vez por execução** (`CHATPANEL_LOGIN_ON_START=true`).
+  Faça o login; a janela fecha sozinha e o painel volta a ler o ChatPanel.
+- A tecla `c` abre a janela a qualquer momento (sessão caiu de novo, login cancelado...).
+- `CHATPANEL_USER` e `CHATPANEL_PASSWORD` no `.env` (opcionais) deixam usuário e senha
+  já preenchidos; sobra só o captcha. A senha é mascarada nos logs como as outras.
+- A janela espera 5 minutos; se fechar antes ou o tempo acabar, o painel mostra o motivo
+  e `c` tenta de novo.
+
+Fora da TUI, `python scripts\chatpanel_login.py` faz o mesmo (sem limite de tempo).
+Feche o app antes: o Chromium não abre o mesmo perfil em dois processos. A sessão fica
+salva em `CHATPANEL_PROFILE_DIR` (`.chatpanel-profile/`, ignorado pelo git).
+
+**Limitação que continua:** o ChatPanel aceita **uma sessão por usuário**. Cada login
+feito pelo app derruba a sessão do seu navegador, e cada login no navegador derruba a do
+app. Com o mesmo usuário, o login integrado só encurta o caminho; ele não evita o
+pingue-pongue. Para o painel ficar estável, use um **usuário dedicado** ao dashboard
+(`CHATPANEL_USER`/`CHATPANEL_PASSWORD` dele) ou a Estratégia B da spec.
 
 ### O que o painel mostra
 
@@ -158,8 +173,9 @@ perfil em dois processos.
   `TECH_NAME`. Números repetidos são deduplicados.
 - Por conversa: online, hora, contato, tag, departamento, última mensagem, não lidas.
 - Rodapé: quantas estão com outros técnicos e o total de não lidas da aba Atende.
-- Sem sessão válida o painel fica vermelho com "sessão expirada — rode
-  scripts/chatpanel_login.py". O app tenta um reload antes de declarar isso.
+- Sem sessão válida o painel fica vermelho com "sessão expirada — pressione c para fazer
+  login". O app tenta um reload antes de declarar isso e, na primeira vez por execução,
+  abre a janela de login sozinho.
 
 ### Validações feitas em 14/09/2026
 
@@ -213,14 +229,19 @@ python -m pytest
 
 ## Troubleshooting
 
-**"sessão expirada — rode scripts/chatpanel_login.py"** no painel do ChatPanel
+**"sessão expirada — pressione c para fazer login"** no painel do ChatPanel
 : A sessão salva no perfil headless não vale mais. Causa mais comum: alguém fez login com o
-  mesmo usuário em outro navegador (o ChatPanel aceita uma sessão por usuário). Feche o
-  app, rode `python scripts\chatpanel_login.py`, faça o login e abra o app de novo. O app
-  tenta de novo sozinho a cada 2 minutos.
+  mesmo usuário em outro navegador (o ChatPanel aceita uma sessão por usuário). Pressione
+  `c`, faça o login na janela que abre (responda o captcha) e o painel volta sozinho. Sem
+  login, o app tenta de novo a cada 2 minutos.
 
-**"não configurado" no painel do ChatPanel**
-: A pasta `.chatpanel-profile/` não existe. Rode o login manual uma vez.
+**"janela de login fechada antes de completar o login"** ou **"tempo esgotado (300s)..."**
+: A janela do Chromium foi fechada ou ficou 5 minutos sem login. Pressione `c` de novo.
+
+**A janela de login abre toda vez que inicio o app**
+: A sessão está sendo derrubada pelo seu login no navegador (uma sessão por usuário).
+  Use um usuário dedicado ao dashboard ou desligue a abertura automática com
+  `CHATPANEL_LOGIN_ON_START=false` e use `c` quando quiser.
 
 **"limite de requisições da API (HTTP 429 ...)"** no painel do Milldesk
 : A API do Milldesk recusou por excesso de chamadas. O painel mantém os últimos dados e

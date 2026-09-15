@@ -49,6 +49,8 @@ def test_empty_secrets_mark_sources_as_not_configured(clean_env):
     assert settings.email.port == 143
     assert settings.email.starttls is True
     assert settings.chatpanel.profile_dir.is_absolute()
+    assert settings.chatpanel.prefill_login is False  # sem usuário/senha: só login manual
+    assert settings.chatpanel.login_on_start is True
 
 
 def test_reads_dotenv_file_and_masks_api_key(clean_env, tmp_path: Path):
@@ -62,11 +64,18 @@ def test_reads_dotenv_file_and_masks_api_key(clean_env, tmp_path: Path):
                 "EMAIL_IMAP_PORT=993",
                 "EMAIL_IMAP_STARTTLS=false",
                 "EMAIL_SPAM_FOLDER=Junk E-Mail",
+                "CHATPANEL_USER=guilherme",
+                "CHATPANEL_PASSWORD='cp#senha'",
+                "CHATPANEL_LOGIN_ON_START=false",
             ]
         ),
         encoding="utf-8",
     )
     settings = load_settings(env_file)
+    assert settings.chatpanel.user == "guilherme"
+    assert settings.chatpanel.password == "cp#senha"
+    assert settings.chatpanel.prefill_login is True
+    assert settings.chatpanel.login_on_start is False
     assert settings.milldesk.configured is True
     assert settings.milldesk.masked_key == "****1776"
     assert settings.email.password == "se#nha*"
@@ -96,9 +105,11 @@ def test_secrets_are_masked_in_logs(clean_env, tmp_path: Path, caplog):
         clean_env.setenv(key, value)
     clean_env.setenv("MILLDESK_API_KEY", "abcdef1776")
     clean_env.setenv("EMAIL_APP_PASSWORD", "senha-secreta")
+    clean_env.setenv("CHATPANEL_PASSWORD", "senha-do-chat")
     load_settings(Path("nao-existe.env"))
 
     record = logging.LogRecord("httpx", logging.INFO, __file__, 1,
-                               "GET https://x/api/%s/ticketsByAgent senha=%s", ("abcdef1776", "senha-secreta"), None)
+                               "GET https://x/api/%s/ticketsByAgent senha=%s chat=%s",
+                               ("abcdef1776", "senha-secreta", "senha-do-chat"), None)
     assert SecretMaskFilter().filter(record) is True
-    assert record.getMessage() == "GET https://x/api/****1776/ticketsByAgent senha=********"
+    assert record.getMessage() == "GET https://x/api/****1776/ticketsByAgent senha=******** chat=********"

@@ -284,6 +284,51 @@ async def test_resync_warns_when_page_limit_is_hit(caplog):
     assert any("limite" in r.getMessage() for r in caplog.records)
 
 
+# --- persistência dos cookies de sessão ------------------------------------------------
+
+
+def test_persistable_cookies_selects_session_cookies_of_the_panel_host():
+    from app.sources.chatpanel import persistable_cookies
+
+    cookies = [
+        {"name": "PHPSESSID", "domain": "srv.example.com", "expires": -1},
+        {"name": "perm", "domain": "srv.example.com", "expires": 1_900_000_000},
+        {"name": "outro", "domain": "outro.example.com", "expires": -1},
+        {"name": "sub", "domain": ".example.com", "expires": 0},
+    ]
+    chosen = [c["name"] for c in persistable_cookies(cookies, "srv.example.com")]
+    assert chosen == ["PHPSESSID", "sub"]
+
+
+async def test_persist_session_cookies_rewrites_with_expiry(caplog):
+    import logging
+    import time
+
+    caplog.set_level(logging.INFO, logger="source.chatpanel")
+
+    class FakeContext:
+        def __init__(self):
+            self.added = None
+
+        async def cookies(self):
+            return [{"name": "PHPSESSID", "value": "x", "domain": "x", "path": "/", "expires": -1,
+                     "httpOnly": True, "secure": True, "sameSite": "Lax"}]
+
+        async def add_cookies(self, cookies):
+            self.added = cookies
+
+    source = ChatPanelSource(
+        ChatPanelSettings(url="https://x/chat.php", profile_dir=Path(".p"), refresh_seconds=15, headless=True),
+        "Guilherme",
+    )
+    ctx = FakeContext()
+    await source._persist_session_cookies(ctx)
+    assert ctx.added and ctx.added[0]["name"] == "PHPSESSID"
+    assert ctx.added[0]["expires"] > time.time() + 29 * 86400
+    assert ctx.added[0]["value"] == "x"  # valor intacto
+    assert any("persistidos" in r.getMessage() for r in caplog.records)
+
+
 def test_login_failure_messages_are_short():
     from app.sources.chatpanel import _describe_login_failure
 

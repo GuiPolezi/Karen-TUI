@@ -53,6 +53,7 @@ from app.state import ChatItem, ChatPanelState
 SESSION_EXPIRED = "sessão expirada — pressione c para fazer login (ou rode scripts/chatpanel_login.py)"
 LOGIN_HINT = "pressione c (ou rode scripts/chatpanel_login.py) para salvar a sessão"
 LOGIN_TIMEOUT = 300.0  # segundos que a janela de login fica aberta esperando a pessoa
+COOKIE_LIFETIME_DAYS = 30  # cookies de sessão do painel (sem validade) ganham esta validade no perfil
 
 # só estes trechos do HTML (≈780 KB) interessam; o SoupStrainer corta o parse de ~2 s para ~0,2 s
 _INTERESTING_IDS = {
@@ -404,6 +405,7 @@ class ChatPanelSource(Source[ChatPanelState]):
             await page.wait_for_selector(LOGGED_SELECTOR, state="attached", timeout=timeout * 1000)
             user = str(await page.eval_on_selector(LOGGED_SELECTOR, "el => el.value") or "").strip()
             await page.wait_for_timeout(2000)  # deixa cookies/localStorage assentarem
+            await self._persist_session_cookies(self._context)
         except Exception as exc:
             raise LoginNotCompletedError(_describe_login_failure(exc, timeout)) from exc
         finally:
@@ -413,6 +415,31 @@ class ChatPanelSource(Source[ChatPanelState]):
         if normalize_name(user) != normalize_name(self.tech_name):
             self.log.warning("usuário logado é %r, mas TECH_NAME=%r", user, self.tech_name)
         return user
+
+    async def _persist_session_cookies(self, context: Any) -> None:
+        """O painel usa cookies de sessão (sem validade) e o Chromium os descarta ao fechar.
+        Regrava os cookies do host do painel com validade de COOKIE_LIFETIME_DAYS."""
+        host = self.settings.url.split("/")[2].split(":")[0]
+        try:
+            cookies = await context.cookies()
+        except Exception as exc:
+            self.log.warning("não consegui ler os cookies para persistir a sessão: %s", exc)
+            return
+        expires = time.time() + COOKIE_LIFETIME_DAYS * 86400
+        rewritten = [
+            {**cookie, "expires": expires}
+            for cookie in persistable_cookies(cookies, host)
+        ]
+        if not rewritten:
+            self.log.warning("nenhum cookie de sessão do painel (%s) encontrado para persistir", host)
+            return
+        try:
+            await context.add_cookies(rewritten)
+        except Exception as exc:
+            self.log.warning("não consegui persistir os cookies de sessão: %s", exc)
+            return
+        self.log.info("cookies de sessão persistidos por %d dias: %s", COOKIE_LIFETIME_DAYS,
+                      ", ".join(c["name"] for c in rewritten))
 
     async def _prefill_login_form(self, page: Any) -> None:
         if not self.settings.prefill_login:
@@ -453,6 +480,18 @@ class ChatPanelSource(Source[ChatPanelState]):
                 await asyncio.wait_for(closer(), timeout=10)
             except Exception as exc:
                 self.log.debug("erro ao fechar navegador: %s", exc)
+
+
+def persistable_cookies(cookies: list[dict[str, Any]], host: str) -> list[dict[str, Any]]:
+    """Cookies do host do painel que são de sessão (expires -1/0) e por isso se perdem ao fechar."""
+    result = []
+    for cookie in cookies:
+        domain = str(cookie.get("domain", "")).lstrip(".")
+        if not domain or not host.endswith(domain):
+            continue
+        if cookie.get("expires", -1) in (-1, 0):
+            result.append(cookie)
+    return result
 
 
 def resync_due(last: float | None, now: float, interval_seconds: int) -> bool:

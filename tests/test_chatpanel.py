@@ -329,6 +329,62 @@ async def test_persist_session_cookies_rewrites_with_expiry(caplog):
     assert any("persistidos" in r.getMessage() for r in caplog.records)
 
 
+def test_session_file_roundtrip_is_protected_on_disk(tmp_path: Path):
+    import logging
+
+    from app.sources.chatpanel import load_session_cookies, save_session_cookies
+
+    log = logging.getLogger("test")
+    path = tmp_path / "session.bin"
+    cookies = [{"name": "PHPSESSID", "value": "segredo-123", "domain": "x", "path": "/", "expires": 4_000_000_000},
+               {"name": "vencido", "value": "y", "domain": "x", "path": "/", "expires": 1}]
+    save_session_cookies(path, cookies, log)
+    assert b"segredo-123" not in path.read_bytes() or sys_is_not_windows()
+    loaded = load_session_cookies(path, log)
+    assert [c["name"] for c in loaded] == ["PHPSESSID"]  # o vencido é descartado
+    assert loaded[0]["value"] == "segredo-123"
+    assert load_session_cookies(tmp_path / "nao-existe.bin", log) == []
+    (tmp_path / "lixo.bin").write_bytes(b"xx")
+    assert load_session_cookies(tmp_path / "lixo.bin", log) == []
+
+
+def sys_is_not_windows() -> bool:
+    import sys
+
+    return sys.platform != "win32"
+
+
+async def test_launch_restores_saved_session_cookies(tmp_path: Path, caplog):
+    import logging
+
+    from app.sources.chatpanel import save_session_cookies
+
+    caplog.set_level(logging.INFO, logger="source.chatpanel")
+
+    class FakeContext:
+        pages = []
+
+        def __init__(self):
+            self.added = None
+
+        async def add_cookies(self, cookies):
+            self.added = cookies
+
+        async def new_page(self):
+            return "page"
+
+    source = ChatPanelSource(
+        ChatPanelSettings(url="https://x/chat.php", profile_dir=tmp_path, refresh_seconds=15, headless=True),
+        "Guilherme",
+    )
+    save_session_cookies(source.session_file, [{"name": "PHPSESSID", "value": "v", "domain": "x", "path": "/", "expires": 4_000_000_000}], logging.getLogger("t"))
+    ctx = FakeContext()
+    await source._restore_session(ctx)
+    assert ctx.added and ctx.added[0]["name"] == "PHPSESSID"
+    assert any("reinjetados" in r.getMessage() for r in caplog.records)
+    assert not any("v" == r.getMessage() for r in caplog.records)
+
+
 def test_login_failure_messages_are_short():
     from app.sources.chatpanel import _describe_login_failure
 

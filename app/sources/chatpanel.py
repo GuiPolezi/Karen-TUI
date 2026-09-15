@@ -37,10 +37,12 @@ Modo debug: `python -m app.sources.chatpanel` imprime o ChatPanelState em JSON.
 from __future__ import annotations
 
 import asyncio
+import json
 import re
 import sys
 import time
 import unicodedata
+from pathlib import Path
 from datetime import datetime
 from typing import Any
 
@@ -54,6 +56,7 @@ SESSION_EXPIRED = "sessão expirada — pressione c para fazer login (ou rode sc
 LOGIN_HINT = "pressione c (ou rode scripts/chatpanel_login.py) para salvar a sessão"
 LOGIN_TIMEOUT = 300.0  # segundos que a janela de login fica aberta esperando a pessoa
 COOKIE_LIFETIME_DAYS = 30  # cookies de sessão do painel (sem validade) ganham esta validade no perfil
+SESSION_FILE_NAME = "session.bin"  # cookies da sessão, protegidos com DPAPI (Windows), dentro do perfil
 
 # só estes trechos do HTML (≈780 KB) interessam; o SoupStrainer corta o parse de ~2 s para ~0,2 s
 _INTERESTING_IDS = {
@@ -379,7 +382,25 @@ class ChatPanelSource(Source[ChatPanelState]):
             viewport={"width": 1366, "height": 900},
             args=["--disable-blink-features=AutomationControlled"],
         )
+        await self._restore_session(self._context)
         return self._context.pages[0] if self._context.pages else await self._context.new_page()
+
+    @property
+    def session_file(self) -> Path:
+        return self.settings.profile_dir / SESSION_FILE_NAME
+
+    async def _restore_session(self, context: Any) -> None:
+        """O Chromium deste perfil não grava cookies em disco de forma confiável ao fechar;
+        por isso os cookies da sessão vivem em session.bin e são reinjetados a cada abertura."""
+        cookies = load_session_cookies(self.session_file, self.log)
+        if not cookies:
+            return
+        try:
+            await context.add_cookies(cookies)
+        except Exception as exc:
+            self.log.warning("não consegui reinjetar os cookies da sessão: %s", exc)
+            return
+        self.log.info("cookies da sessão reinjetados: %s", ", ".join(c["name"] for c in cookies))
 
     # --- login humano ------------------------------------------------------------
 
@@ -436,8 +457,8 @@ class ChatPanelSource(Source[ChatPanelState]):
         try:
             await context.add_cookies(rewritten)
         except Exception as exc:
-            self.log.warning("não consegui persistir os cookies de sessão: %s", exc)
-            return
+            self.log.warning("não consegui regravar os cookies de sessão com validade: %s", exc)
+        save_session_cookies(self.session_file, rewritten, self.log)
         self.log.info("cookies de sessão persistidos por %d dias: %s", COOKIE_LIFETIME_DAYS,
                       ", ".join(c["name"] for c in rewritten))
 
@@ -480,6 +501,60 @@ class ChatPanelSource(Source[ChatPanelState]):
                 await asyncio.wait_for(closer(), timeout=10)
             except Exception as exc:
                 self.log.debug("erro ao fechar navegador: %s", exc)
+
+
+def _dpapi(data: bytes, protect: bool) -> bytes:
+    """Criptografa/descriptografa com o DPAPI do Windows (ligado ao usuário logado)."""
+    import ctypes
+    import ctypes.wintypes as wt
+
+    class DataBlob(ctypes.Structure):
+        _fields_ = [("cbData", wt.DWORD), ("pbData", ctypes.POINTER(ctypes.c_char))]
+
+    buffer = ctypes.create_string_buffer(data, len(data))
+    inp = DataBlob(len(data), ctypes.cast(buffer, ctypes.POINTER(ctypes.c_char)))
+    out = DataBlob()
+    crypt32 = ctypes.windll.crypt32  # type: ignore[attr-defined]
+    fn = crypt32.CryptProtectData if protect else crypt32.CryptUnprotectData
+    if not fn(ctypes.byref(inp), None, None, None, None, 0, ctypes.byref(out)):
+        raise OSError("DPAPI falhou")
+    try:
+        return ctypes.string_at(out.pbData, out.cbData)
+    finally:
+        ctypes.windll.kernel32.LocalFree(out.pbData)  # type: ignore[attr-defined]
+
+
+def _protect(data: bytes) -> bytes:
+    return _dpapi(data, True) if sys.platform == "win32" else data
+
+
+def _unprotect(data: bytes) -> bytes:
+    return _dpapi(data, False) if sys.platform == "win32" else data
+
+
+def save_session_cookies(path: Path, cookies: list[dict[str, Any]], log: Any) -> None:
+    """Grava os cookies (com valores) protegidos com DPAPI. Nunca loga valores."""
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(_protect(json.dumps(cookies).encode("utf-8")))
+    except Exception as exc:
+        log.warning("não consegui salvar %s: %s", path.name, exc)
+
+
+def load_session_cookies(path: Path, log: Any) -> list[dict[str, Any]]:
+    """Lê os cookies salvos; devolve [] se não existir ou estiver ilegível/vencido."""
+    if not path.exists():
+        return []
+    try:
+        cookies = json.loads(_unprotect(path.read_bytes()).decode("utf-8"))
+    except Exception as exc:
+        log.warning("não consegui ler %s (ignorando): %s", path.name, exc)
+        return []
+    now = time.time()
+    return [
+        c for c in cookies
+        if isinstance(c, dict) and (c.get("expires", -1) in (-1, 0) or c.get("expires", 0) > now)
+    ]
 
 
 def persistable_cookies(cookies: list[dict[str, Any]], host: str) -> list[dict[str, Any]]:

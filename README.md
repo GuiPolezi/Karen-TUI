@@ -149,8 +149,13 @@ Dentro da TUI:
   e `c` tenta de novo.
 
 Fora da TUI, `python scripts\chatpanel_login.py` faz o mesmo (sem limite de tempo).
-Feche o app antes: o Chromium não abre o mesmo perfil em dois processos. A sessão fica
-salva em `CHATPANEL_PROFILE_DIR` (`.chatpanel-profile/`, ignorado pelo git).
+Feche o app antes: o Chromium não abre o mesmo perfil em dois processos.
+
+A sessão fica em `CHATPANEL_PROFILE_DIR/session.bin` (`.chatpanel-profile/`, ignorado
+pelo git), protegida com o DPAPI do Windows (só o seu usuário do Windows consegue ler).
+Motivo: o painel usa cookie de sessão sem validade e o Chromium do Playwright não o grava
+em disco de forma confiável ao fechar; o app salva os cookies após o login e os reinjeta a
+cada abertura do navegador. Apague o arquivo para forçar um novo login.
 
 **Limitação conhecida:** o ChatPanel aceita **uma sessão por usuário**. Cada login feito
 pelo app derruba a sessão do seu navegador, e cada login no navegador derruba a do app.

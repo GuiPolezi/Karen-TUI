@@ -11,12 +11,16 @@ dependencies = [
     "playwright>=1.47",
     "beautifulsoup4>=4.12",
     "python-dotenv>=1.0",
+    "pyperclip>=1.8",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8",
     "pytest-asyncio>=0.24",
+]
+toast = [
+    "winotify>=1.1; sys_platform == 'win32'",
 ]
 
 [project.scripts]

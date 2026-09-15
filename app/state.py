@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def _json_default(value: object) -> str:
@@ -32,16 +33,65 @@ class LatestEmail:
 
 
 @dataclass
+class EmailSummary:
+    """Uma linha da lista de e-mails recentes (só cabeçalhos)."""
+
+    uid: str
+    from_name: str
+    from_addr: str
+    subject: str
+    date: datetime | None
+    unseen: bool = False
+
+    @property
+    def sender(self) -> str:
+        return self.from_name or self.from_addr
+
+
+@dataclass
 class EmailState:
     total: int = 0
     unseen: int = 0
     spam: int | None = None
     latest: LatestEmail | None = None
+    recent: list[EmailSummary] = field(default_factory=list)  # mais novo primeiro
     updated_at: datetime = field(default_factory=datetime.now)
     error: str | None = None
 
 
 # --- Milldesk ---------------------------------------------------------------
+
+
+def parse_datetime_br(text: str | None) -> datetime | None:
+    """'27/10/2026 14:34' ou '27/10/2026' -> datetime; texto como 'Em pausa' -> None."""
+    if not text:
+        return None
+    match = re.search(r"(\d{2})/(\d{2})/(\d{4})(?:\s+(\d{2}):(\d{2}))?", text)
+    if not match:
+        return None
+    day, month, year, hour, minute = match.groups()
+    try:
+        return datetime(int(year), int(month), int(day), int(hour or 0), int(minute or 0))
+    except ValueError:
+        return None
+
+
+def format_remaining(delta: timedelta | None) -> str:
+    """Contagem regressiva curta: '3d 04h', '02h15', '-45min' (vencido), '' sem prazo."""
+    if delta is None:
+        return ""
+    negative = delta.total_seconds() < 0
+    seconds = abs(int(delta.total_seconds()))
+    days, rest = divmod(seconds, 86400)
+    hours, rest = divmod(rest, 3600)
+    minutes = rest // 60
+    if days:
+        text = f"{days}d {hours:02d}h"
+    elif hours:
+        text = f"{hours:02d}h{minutes:02d}"
+    else:
+        text = f"{minutes}min"
+    return f"-{text}" if negative else text
 
 
 @dataclass
@@ -54,6 +104,20 @@ class MilldeskTicket:
     start: str      # dd/mm/aaaa
     starttime: str  # HH:MM
     sla_expiration: str | None = None
+
+    @property
+    def sla_deadline(self) -> datetime | None:
+        return parse_datetime_br(self.sla_expiration)
+
+    def sla_remaining(self, now: datetime | None = None) -> timedelta | None:
+        deadline = self.sla_deadline
+        if deadline is None:
+            return None
+        return deadline - (now or datetime.now())
+
+    @property
+    def opened_at(self) -> datetime | None:
+        return parse_datetime_br(f"{self.start} {self.starttime}".strip())
 
 
 @dataclass
@@ -91,6 +155,7 @@ class ChatPanelState:
     mine: list[ChatItem] = field(default_factory=list)
     mine_unread: int = 0
     others_count: int = 0
+    others: list[ChatItem] = field(default_factory=list)  # em atendimento por outros técnicos
     total_unread_tab: int = 0
     logged_user: str | None = None
     updated_at: datetime = field(default_factory=datetime.now)

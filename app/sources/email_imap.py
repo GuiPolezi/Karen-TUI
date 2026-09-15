@@ -24,7 +24,7 @@ from imap_tools import MailBox, MailBoxStartTls, MailboxStarttlsError
 
 from app.config import EmailSettings
 from app.sources.base import Source
-from app.state import EmailState, LatestEmail
+from app.state import EmailState, EmailSummary, LatestEmail
 
 PREVIEW_MAX_CHARS = 300
 SSL_PORT = 993
@@ -96,19 +96,41 @@ def message_to_latest(msg: _MessageLike) -> LatestEmail:
     )
 
 
+def summary_from_message(msg: Any, unseen_uids: set[str]) -> EmailSummary:
+    address = msg.from_values
+    uid = str(getattr(msg, "uid", "") or "")
+    return EmailSummary(
+        uid=uid,
+        from_name=(address.name if address else "").strip(),
+        from_addr=(address.email if address else msg.from_ or "").strip(),
+        subject=(msg.subject or "").strip() or "(sem assunto)",
+        date=to_local(msg.date),
+        unseen=uid in unseen_uids,
+    )
+
+
 def collect_state(mailbox: Any, settings: EmailSettings, log: logging.Logger) -> EmailState:
-    """Lê contagens e o e-mail mais recente de uma conexão já autenticada."""
+    """Lê contagens, os últimos N cabeçalhos e o e-mail mais recente (com corpo)."""
     mailbox.folder.set(settings.inbox_folder, readonly=True)
     all_uids: list[str] = mailbox.uids("ALL")
     unseen_uids: list[str] = mailbox.uids("UNSEEN")
+    unseen_set = set(unseen_uids)
 
     latest: LatestEmail | None = None
+    recent: list[EmailSummary] = []
     if all_uids:
-        newest_uid = max(all_uids, key=int)
+        newest_first = sorted(all_uids, key=int, reverse=True)
+        newest_uid = newest_first[0]
         messages = mailbox.fetch(uid_list=[newest_uid], mark_seen=False)
         msg = next(iter(messages), None)
         if msg is not None:
             latest = message_to_latest(msg)
+        window = newest_first[: settings.list_size]
+        headers = mailbox.fetch(uid_list=window, headers_only=True, mark_seen=False)
+        recent = sorted(
+            (summary_from_message(m, unseen_set) for m in headers),
+            key=lambda item: int(item.uid or 0), reverse=True,
+        )
 
     spam: int | None = None
     if settings.spam_folder:
@@ -122,9 +144,18 @@ def collect_state(mailbox: Any, settings: EmailSettings, log: logging.Logger) ->
         unseen=len(unseen_uids),
         spam=spam,
         latest=latest,
+        recent=recent,
         updated_at=datetime.now(),
         error=None,
     )
+
+
+def fetch_message(mailbox: Any, settings: EmailSettings, uid: str) -> LatestEmail | None:
+    """Um e-mail completo por UID, em modo somente leitura (não marca como lido)."""
+    mailbox.folder.set(settings.inbox_folder, readonly=True)
+    messages = mailbox.fetch(uid_list=[uid], mark_seen=False)
+    msg = next(iter(messages), None)
+    return message_to_latest(msg) if msg is not None else None
 
 
 # --- fonte -----------------------------------------------------------------------
@@ -140,6 +171,7 @@ class EmailSource(Source[EmailState]):
         self.settings = settings
         self._mailbox: Any = None
         self._ssl_fallback = False  # fica True após STARTTLS falhar e SSL/993 funcionar
+        self._bodies: dict[str, LatestEmail] = {}  # cache de corpos por UID (tecla Enter)
 
     @property
     def configured(self) -> bool:
@@ -148,6 +180,25 @@ class EmailSource(Source[EmailState]):
     async def fetch(self) -> EmailState:
         # imap-tools é síncrono: roda em thread para não travar a TUI
         return await asyncio.to_thread(self._fetch_sync)
+
+    async def fetch_body(self, uid: str) -> LatestEmail | None:
+        """Corpo completo de um e-mail da lista (tecla Enter). Cache por UID."""
+        cached = self._bodies.get(uid)
+        if cached is not None:
+            return cached
+        detail = await asyncio.to_thread(self._fetch_body_sync, uid)
+        if detail is not None:
+            self._bodies[uid] = detail
+            if len(self._bodies) > 50:
+                self._bodies.pop(next(iter(self._bodies)))
+        return detail
+
+    def _fetch_body_sync(self, uid: str) -> LatestEmail | None:
+        try:
+            return fetch_message(self._ensure_connected(), self.settings, uid)
+        except Exception:
+            self._drop_connection()
+            raise
 
     async def close(self) -> None:
         await asyncio.to_thread(self._drop_connection)

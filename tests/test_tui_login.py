@@ -5,15 +5,11 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from textual.widgets import Static
-
 from app.config import ChatPanelSettings
 from app.sources.base import Source
 from app.sources.chatpanel import SESSION_EXPIRED, LoginNotCompletedError, SessionExpiredError
 from app.state import ChatPanelState
-from app.tui.app import CmdAllInOneApp
-from tests.helpers import fake_settings, screen_text
-from tests.test_tui_workers import wait_until
+from tests.helpers import fake_settings, make_app, screen_text, wait_until
 
 
 class FakeChatSource(Source[ChatPanelState]):
@@ -30,14 +26,14 @@ class FakeChatSource(Source[ChatPanelState]):
         self.fetches += 1
         if self.expired:
             raise SessionExpiredError(SESSION_EXPIRED)
-        return ChatPanelState(logged_user="Guilherme", updated_at=datetime(2026, 9, 15, 9, 0, 0))
+        return ChatPanelState(logged_user="User CMD", updated_at=datetime(2026, 9, 15, 9, 0, 0))
 
     async def interactive_login(self, timeout: float = 300.0) -> str:
         self.logins += 1
         if self.login_fails:
             raise LoginNotCompletedError("janela de login fechada antes de completar o login")
         self.expired = False
-        return "Guilherme"
+        return "User CMD"
 
 
 def settings(login_on_start: bool):
@@ -51,7 +47,7 @@ def settings(login_on_start: bool):
 
 async def test_expired_session_opens_login_once_and_recovers():
     source = FakeChatSource()
-    app = CmdAllInOneApp(settings(login_on_start=True), sources={"chatpanel": source})
+    app = make_app(settings(login_on_start=True), sources={"chatpanel": source})
     async with app.run_test(size=(120, 30)) as pilot:
         await wait_until(lambda: "chatpanel" in app.states)
         await pilot.pause()
@@ -59,12 +55,12 @@ async def test_expired_session_opens_login_once_and_recovers():
         assert source.fetches == 2  # expirada → login → leitura ok
         assert app.login_count == 1
         assert not app.panel("chatpanel").has_class("error")
-        assert "login ok: Guilherme" in str(app.query_one("#status-message", Static).content)
+        assert "login ok: User CMD" in app.last_message
 
 
 async def test_login_on_start_disabled_waits_for_key_c():
     source = FakeChatSource()
-    app = CmdAllInOneApp(settings(login_on_start=False), sources={"chatpanel": source})
+    app = make_app(settings(login_on_start=False), sources={"chatpanel": source})
     async with app.run_test(size=(120, 30)) as pilot:
         await wait_until(lambda: app.panel("chatpanel").has_class("error"))
         await pilot.pause()
@@ -80,13 +76,12 @@ async def test_login_on_start_disabled_waits_for_key_c():
 
 async def test_failed_login_shows_error_and_keeps_worker_alive():
     source = FakeChatSource(login_fails=True)
-    app = CmdAllInOneApp(settings(login_on_start=True), sources={"chatpanel": source})
+    app = make_app(settings(login_on_start=True), sources={"chatpanel": source})
     async with app.run_test(size=(120, 30)) as pilot:
         await wait_until(lambda: source.logins == 1)
         await wait_until(lambda: app.panel("chatpanel").has_class("error"))
         await pilot.pause()
-        text = screen_text(app, 120, 30)
-        assert "janela de login fechada" in text
+        assert "janela de login fechada" in screen_text(app, 120, 30)
         assert app.login_count == 0
         # a abertura automática é uma vez por execução; a tecla c tenta de novo
         await pilot.press("c")
@@ -94,7 +89,7 @@ async def test_failed_login_shows_error_and_keeps_worker_alive():
 
 
 async def test_key_c_without_chatpanel_source_only_shows_message():
-    app = CmdAllInOneApp(settings(login_on_start=True), sources={})
+    app = make_app(settings(login_on_start=True))
     async with app.run_test(size=(120, 30)) as pilot:
         await pilot.press("c")
-        assert "login não disponível" in str(app.query_one("#status-message", Static).content)
+        assert "login não disponível" in app.last_message

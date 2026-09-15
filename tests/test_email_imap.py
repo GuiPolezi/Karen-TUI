@@ -128,7 +128,12 @@ def test_collect_state_uses_readonly_folder_and_newest_uid():
     assert state.unseen == 2
     assert state.spam == 3
     assert state.latest is not None and state.latest.subject == "Erro ao gerar relatório"
-    assert mailbox.fetch_calls == [{"uid_list": ["10"], "mark_seen": False}]
+    assert mailbox.fetch_calls == [
+        {"uid_list": ["10"], "mark_seen": False},
+        {"uid_list": ["10", "9", "3"], "headers_only": True, "mark_seen": False},  # últimos N cabeçalhos
+    ]
+    assert [item.uid for item in state.recent] == ["10"]  # o mailbox falso devolve só o 1º da lista
+    assert state.recent[0].unseen is True and state.recent[0].sender == "Fulano"
     assert state.error is None
 
 

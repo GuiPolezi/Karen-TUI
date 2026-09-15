@@ -32,6 +32,7 @@ class EmailSettings:
     inbox_folder: str
     spam_folder: str | None
     refresh_seconds: int
+    list_size: int = 20  # quantos e-mails recentes listar (só cabeçalhos)
 
     @property
     def configured(self) -> bool:
@@ -74,6 +75,16 @@ class ChatPanelSettings:
 
 
 @dataclass(frozen=True)
+class UrlSettings:
+    """URLs abertas no navegador pela tecla `o` e pelo launcher. Vazio = "não configurado"."""
+
+    webmail: str = ""
+    milldesk: str = ""
+    chatpanel: str = ""
+    search: str = "https://www.google.com/search?q={q}"
+
+
+@dataclass(frozen=True)
 class Settings:
     tech_name: str
     email: EmailSettings
@@ -82,6 +93,8 @@ class Settings:
     notify_bell: bool
     log_level: str
     log_dir: Path
+    urls: UrlSettings = UrlSettings()
+    notify_toast: bool = False
 
 
 class _Env:
@@ -142,6 +155,7 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
         inbox_folder=env.str("EMAIL_INBOX_FOLDER", "INBOX"),
         spam_folder=env.str("EMAIL_SPAM_FOLDER", "", required=False) or None,
         refresh_seconds=env.int("EMAIL_REFRESH_SECONDS", 30),
+        list_size=env.int("EMAIL_LIST_SIZE", 20),
     )
 
     milldesk = MilldeskSettings(
@@ -166,7 +180,14 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
     )
 
     notify_bell = env.bool("NOTIFY_BELL", True)
+    notify_toast = env.bool("NOTIFY_TOAST", False)
     log_level = env.str("LOG_LEVEL", "INFO").upper()
+    urls = UrlSettings(
+        webmail=env.str("WEBMAIL_URL", "", required=False),
+        milldesk=env.str("MILLDESK_WEB_URL", "", required=False),
+        chatpanel=env.str("CHATPANEL_WEB_URL", "", required=False) or chatpanel.url,
+        search=env.str("SEARCH_ENGINE_URL", "", required=False) or "https://www.google.com/search?q={q}",
+    )
 
     problems: list[str] = []
     if env.missing:
@@ -186,6 +207,8 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
         problems.append(
             f"CHATPANEL_RESYNC_SECONDS deve ser 0 (desligado) ou >= 5 (recebido {chatpanel.resync_seconds})"
         )
+    if not 1 <= email.list_size <= 200:
+        problems.append(f"EMAIL_LIST_SIZE deve estar entre 1 e 200 (recebido {email.list_size})")
     if problems:
         raise ConfigError("\n".join(problems) + f"\n\nArquivo lido: {env_path}")
 
@@ -204,4 +227,6 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
         notify_bell=notify_bell,
         log_level=log_level,
         log_dir=ROOT_DIR / "logs",
+        urls=urls,
+        notify_toast=notify_toast,
     )

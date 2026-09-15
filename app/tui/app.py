@@ -1,33 +1,37 @@
-"""Textual App: layout, bindings, relógio, workers das fontes e telas auxiliares."""
+"""Textual App: modos (telas), workers das fontes, publicação de estado nos painéis,
+bindings globais, avisos, abrir no navegador/copiar e o login humano do ChatPanel.
+
+Os workers vivem aqui, não nas telas: trocar de tela nunca pausa a coleta. Cada painel
+vivo (no Dashboard ou numa tela cheia) se registra em `register_panel` e recebe o mesmo
+estado publicado.
+"""
 
 from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime
+import time
+import webbrowser
+from pathlib import Path
 from typing import Any
 
-from textual.app import App, ComposeResult
+from textual.app import App
 from textual.binding import Binding
-from textual.containers import Container, Horizontal
-from textual.widgets import Static
+from textual.screen import ModalScreen
+from textual.widgets import Input
 
 from app.config import Settings
-from app.logging_setup import LOG_FILE_NAME
+from app.prefs import PREFS_PATH, Prefs, load_prefs, save_prefs
 from app.sources.base import Source, SourceError
+from app.tui.screens import MODE_SCREENS, EmailDetailScreen, ModeScreen
 from app.tui.widgets.base_panel import BasePanel
-from app.tui.widgets.chatpanel_panel import ChatPanelPanel
-from app.tui.widgets.email_panel import EmailPanel
-from app.tui.widgets.log_panel import LogPanel
-from app.tui.widgets.milldesk_panel import MilldeskPanel
-from app.tui.widgets.status_bar import StatusBar
 
 log = logging.getLogger("tui")
 
-NARROW_WIDTH = 100  # abaixo disso os painéis de cima empilham
 LOGIN_SOURCE = "chatpanel"  # única fonte com login humano (janela visível + captcha)
+SILENCE_MINUTES = 30
 
-# nome da fonte -> (id do painel, rótulo, fase em que é implementada)
+# nome da fonte -> (id do painel no Dashboard, rótulo, fase em que é implementada)
 SOURCE_PANELS: dict[str, tuple[str, str, int]] = {
     "email": ("email", "e-mail", 1),
     "milldesk": ("milldesk", "Milldesk", 2),
@@ -56,111 +60,289 @@ def increased_counters(old: dict[str, int], new: dict[str, int]) -> list[str]:
 class CmdAllInOneApp(App[None]):
     TITLE = "CMD ALL-IN-ONE"
     CSS_PATH = "styles.tcss"
+    ENABLE_COMMAND_PALETTE = False  # o launcher (Fase 6.4) decide o que fazer com Ctrl+P
+    MODES = dict(MODE_SCREENS)
     BINDINGS = [
-        Binding("q", "quit", "Sair"),
-        Binding("r", "refresh_all", "Atualizar tudo"),
-        Binding("1", "refresh('email')", "Atualizar e-mail"),
-        Binding("2", "refresh('milldesk')", "Atualizar Milldesk"),
-        Binding("3", "refresh('chatpanel')", "Atualizar ChatPanel"),
-        Binding("e", "open_email", "Abrir e-mail"),
-        Binding("l", "toggle_log", "Log"),
-        Binding("c", "chatpanel_login", "Login ChatPanel"),
+        Binding("q", "quit", "Sair", priority=True),
+        Binding("escape", "escape", "Voltar", show=False, priority=True),
+        Binding("f1", "goto('dashboard')", "Dashboard", priority=True),
+        Binding("d", "goto('dashboard')", "Dashboard", show=False),
+        Binding("f2", "goto('email')", "E-mail", priority=True),
+        Binding("f3", "goto('milldesk')", "Milldesk", priority=True),
+        Binding("f4", "goto('chatpanel')", "ChatPanel", priority=True),
+        Binding("f5", "goto('log')", "Log", priority=True),
+        Binding("f6", "goto('notes')", "Notas", priority=True),
+        Binding("l", "goto('log')", "Log", show=False),
+        Binding("r", "refresh_all", "Atualizar", show=True),
+        Binding("1", "refresh('email')", "Atualizar e-mail", show=False),
+        Binding("2", "refresh('milldesk')", "Atualizar Milldesk", show=False),
+        Binding("3", "refresh('chatpanel')", "Atualizar ChatPanel", show=False),
+        Binding("e", "open_email", "Último e-mail", show=True),
+        Binding("c", "chatpanel_login", "Login ChatPanel", show=False),
+        Binding("m", "toggle_silence", "Silenciar", show=False),
     ]
 
-    def __init__(self, settings: Settings, sources: dict[str, Source[Any]] | None = None) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        sources: dict[str, Source[Any]] | None = None,
+        prefs: Prefs | None = None,
+        prefs_path: Path | None = PREFS_PATH,
+    ) -> None:
         super().__init__()
         self.settings = settings
         self._sources: dict[str, Source[Any]] = (
             sources if sources is not None else build_default_sources(settings)
         )
+        self.prefs = prefs if prefs is not None else load_prefs(prefs_path) if prefs_path else Prefs()
+        self._prefs_path = prefs_path
         self._refresh_events: dict[str, asyncio.Event] = {}
-        self.states: dict[str, Any] = {}  # último estado válido por fonte
-        self.bell_count = 0  # quantas vezes o bell disparou (útil em testes)
-        self._login_requested = False     # tecla c (ou sessão expirada na 1ª vez)
+        self.states: dict[str, Any] = {}       # último estado válido por fonte
+        self.errors: dict[str, str | None] = {}  # último erro por fonte (para painéis novos)
+        self.panels: dict[str, list[BasePanel]] = {}  # painéis vivos por fonte
+        self.mode_screens: dict[str, ModeScreen] = {}
+        self.bell_count = 0    # quantas vezes o bell disparou (útil em testes)
+        self.messages: list[str] = []  # avisos emitidos (útil em testes)
+        self.last_message = ""
+        self._away: dict[str, list[str]] = {}  # mudanças enquanto o Dashboard não estava na frente
+        self._login_requested = False
         self._login_in_progress = False
-        self._login_on_start_used = False  # a abertura automática vale uma vez por execução
-        self.login_count = 0              # quantos logins foram concluídos (útil em testes)
+        self._login_on_start_used = False
+        self.login_count = 0
 
-    # --- layout ------------------------------------------------------------
-
-    def compose(self) -> ComposeResult:
-        with Horizontal(id="header"):
-            yield Static(self.TITLE, id="title")
-            yield Static("", id="clock")
-        with Container(id="main"):
-            with Horizontal(id="top-row"):
-                yield EmailPanel(self.settings.email.refresh_seconds, id="email")
-                yield MilldeskPanel(self.settings.milldesk.refresh_seconds, id="milldesk")
-            yield ChatPanelPanel(self.settings.chatpanel.refresh_seconds, id="chatpanel")
-            yield LogPanel(self.settings.log_dir / LOG_FILE_NAME)
-        yield StatusBar()
+    # --- ciclo de vida --------------------------------------------------------
 
     def on_mount(self) -> None:
-        self._tick_clock()
-        self.set_interval(1.0, self._tick_clock)
-        self._apply_layout(self.size.width)
+        mode = self.prefs.last_screen if self.prefs.last_screen in self.MODES else "dashboard"
+        self.switch_mode(mode)
         for name, source in self._sources.items():
             self._start_source(name, source)
 
-    def on_resize(self, event) -> None:  # noqa: ANN001 — tipo vem do Textual
-        self._apply_layout(event.size.width)
+    def register_mode_screen(self, screen: ModeScreen) -> None:
+        self.mode_screens[screen.MODE] = screen
 
-    def _apply_layout(self, width: int) -> None:
-        self.main_screen.query_one("#main", Container).set_class(width < NARROW_WIDTH, "narrow")
+    def register_panel(self, panel: BasePanel) -> None:
+        self.panels.setdefault(panel.SOURCE, []).append(panel)
+        source = self._sources.get(panel.SOURCE)
+        if source is not None:
+            panel.interval = source.interval
+            if not source.configured:
+                panel.set_not_configured(getattr(source, "config_hint", "verifique o .env"))
+                return
+        state = self.states.get(panel.SOURCE)
+        if state is not None:
+            panel.show_state(state)
+            panel.mark_updated(state.updated_at)
+        panel.set_error(self.errors.get(panel.SOURCE))
 
-    def _tick_clock(self) -> None:
-        now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        self.main_screen.query_one("#clock", Static).update(f"{self.settings.tech_name} · {now}")
-
-    # --- helpers -----------------------------------------------------------
+    def unregister_panel(self, panel: BasePanel) -> None:
+        panels = self.panels.get(panel.SOURCE, [])
+        if panel in panels:
+            panels.remove(panel)
 
     @property
-    def main_screen(self):  # noqa: ANN201 — Screen do Textual
-        """Tela principal. `self.query_one` olha a tela ATIVA e quebra quando um modal
-        (detalhe do e-mail) está aberto e um worker ou o relógio tenta atualizar algo."""
-        return self.screen_stack[0]
+    def dashboard(self) -> ModeScreen:
+        return self.mode_screens["dashboard"]
 
     @property
-    def status_bar(self) -> StatusBar:
-        return self.main_screen.query_one(StatusBar)
+    def main_screen(self) -> ModeScreen:  # compatibilidade com código antigo
+        return self.dashboard
 
     def panel(self, name: str) -> BasePanel:
+        """Painel da fonte no Dashboard."""
         panel_id, _, _ = SOURCE_PANELS[name]
-        return self.main_screen.query_one(f"#{panel_id}", BasePanel)
+        return self.dashboard.query_one(f"#{panel_id}", BasePanel)
 
-    def notify_change(self, panel: BasePanel, what: list[str]) -> None:
-        """Contador aumentou: destaca o painel por 3 s e toca o bell se configurado."""
-        log.info("aumentou em %s: %s", panel.TITLE, ", ".join(what))
-        panel.flash()
+    def save_prefs(self) -> None:
+        if self._prefs_path is not None:
+            save_prefs(self.prefs, self._prefs_path)
+
+    # --- avisos ----------------------------------------------------------------
+
+    def notify(self, message: str, **kwargs: Any) -> None:  # type: ignore[override]
+        self.last_message = message
+        self.messages.append(message)
+        super().notify(message, **kwargs)
+
+    @property
+    def silenced(self) -> bool:
+        return time.time() < self.prefs.silenced_until
+
+    @property
+    def header_extra(self) -> str:
+        return "🔇 " if self.silenced else ""
+
+    def notify_change(self, name: str, what: list[str]) -> None:
+        """Contador aumentou: destaca os painéis da fonte por 3 s, toca o bell/toast."""
+        label = SOURCE_PANELS.get(name, (name, name, 0))[1]
+        log.info("aumentou em %s: %s", label, ", ".join(what))
+        for panel in self.panels.get(name, []):
+            panel.flash()
+        if self.current_mode != "dashboard":
+            self._away.setdefault(label, []).extend(what)
+        if self.silenced:
+            return
         if self.settings.notify_bell:
             self.bell_count += 1
             self.bell()
+        if self.settings.notify_toast:
+            self._toast(f"{label}: {', '.join(what)}")
 
-    # --- workers -----------------------------------------------------------
+    def _toast(self, message: str) -> None:
+        try:
+            from winotify import Notification  # type: ignore[import-not-found]
+        except ImportError:
+            log.debug("NOTIFY_TOAST=true mas winotify não está instalado (pip install winotify)")
+            return
+
+        def show() -> None:
+            try:
+                Notification(app_id=self.TITLE, title=self.TITLE, msg=message).show()
+            except Exception as exc:  # toast nunca pode derrubar a TUI
+                log.warning("toast falhou: %s", exc)
+
+        self.run_worker(show, thread=True, exit_on_error=False)
+
+    def action_toggle_silence(self) -> None:
+        if self.silenced:
+            self.prefs.silenced_until = 0.0
+            self.notify("som e toasts reativados")
+        else:
+            self.prefs.silenced_until = time.time() + SILENCE_MINUTES * 60
+            self.notify(f"modo silêncio por {SILENCE_MINUTES} min (m desliga)")
+        self.save_prefs()
+
+    # --- telas -------------------------------------------------------------------
+
+    def action_goto(self, mode: str) -> None:
+        if mode not in self.MODES or mode == self.current_mode:
+            return
+        if isinstance(self.screen, ModalScreen):
+            self.pop_screen()
+        self.switch_mode(mode)
+        self.prefs.last_screen = mode
+        self.save_prefs()
+        if mode == "dashboard" and self._away:
+            summary = " · ".join(f"{label}: {', '.join(what)}" for label, what in self._away.items())
+            self._away = {}
+            self.notify(f"enquanto você estava fora: {summary}", timeout=8)
+
+    def action_escape(self) -> None:
+        focused = self.focused
+        if isinstance(focused, Input) and focused.has_class("panel-filter"):
+            panel = focused.parent
+            if isinstance(panel, BasePanel):
+                panel.clear_filter()
+            return
+        if isinstance(self.screen, ModalScreen):
+            self.pop_screen()
+            return
+        if self.current_mode != "dashboard":
+            self.action_goto("dashboard")
+
+    # --- navegador e área de transferência ------------------------------------------
+
+    def open_url(self, url: str | None, what: str = "") -> bool:
+        if not url:
+            self.notify(f"URL de {what or 'destino'} não configurada no .env", severity="warning")
+            return False
+        try:
+            webbrowser.open_new_tab(url)
+        except Exception as exc:
+            self.notify(f"não consegui abrir o navegador: {exc}", severity="error")
+            return False
+        self.notify(f"abrindo {what or url} no navegador")
+        return True
+
+    def copy_text(self, text: str | None, what: str = "", quiet: bool = False) -> bool:
+        if not text:
+            self.notify(f"nada para copiar ({what})", severity="warning")
+            return False
+        try:
+            import pyperclip
+
+            pyperclip.copy(text)
+        except Exception:
+            self.notify(f"copie manualmente: {text}", severity="warning", timeout=10)
+            return False
+        if not quiet:
+            self.notify(f"{what or 'valor'} copiado: {text}")
+        return True
+
+    # --- detalhes --------------------------------------------------------------------
+
+    def open_detail(self, source: str, key: str) -> None:
+        if source == "email":
+            self.run_worker(self._open_email(key), name="detail-email", group="detail",
+                            exclusive=True, exit_on_error=False)
+        elif source == "milldesk":
+            self.notify(f"detalhe do chamado #{key} chega na Fase 6.2")
+        elif source == "chatpanel":
+            self.notify(f"detalhe da conversa {key} chega na Fase 6.3")
+
+    async def _open_email(self, uid: str) -> None:
+        state = self.states.get("email")
+        latest = getattr(state, "latest", None)
+        if uid == "latest" or latest is None and state is None:
+            if latest is None:
+                self.notify("nenhum e-mail carregado ainda")
+                return
+            self.push_screen(EmailDetailScreen(latest))
+            return
+        screen = EmailDetailScreen(None, loading_uid=uid)
+        self.push_screen(screen)
+        source = self._sources.get("email")
+        fetch_body = getattr(source, "fetch_body", None)
+        if fetch_body is None:
+            if latest is not None:
+                screen.show(latest)
+            return
+        try:
+            detail = await fetch_body(uid)
+        except Exception as exc:
+            log.warning("erro ao buscar o e-mail %s: %s", uid, exc)
+            self.notify(f"não consegui buscar o e-mail: {exc}", severity="error")
+            return
+        if detail is None:
+            self.notify("e-mail não encontrado (pode ter sido movido)", severity="warning")
+            return
+        if screen.is_attached:
+            screen.show(detail)
+
+    def action_open_email(self) -> None:
+        state = self.states.get("email")
+        latest = getattr(state, "latest", None)
+        if latest is None:
+            self.notify("nenhum e-mail carregado ainda")
+            return
+        if isinstance(self.screen, ModalScreen):
+            self.pop_screen()
+        self.push_screen(EmailDetailScreen(latest))
+
+    # --- workers -----------------------------------------------------------------------
 
     def _start_source(self, name: str, source: Source[Any]) -> None:
-        panel = self.panel(name)
-        panel.interval = source.interval
         if not source.configured:
             hint = getattr(source, "config_hint", "verifique o .env")
-            panel.set_not_configured(hint)
             log.warning("fonte %s não configurada: %s", name, hint)
+            for panel in self.panels.get(name, []):
+                panel.set_not_configured(hint)
             return
         self._refresh_events[name] = asyncio.Event()
         self.run_worker(
-            self._source_loop(name, source, panel),
+            self._source_loop(name, source),
             name=f"source-{name}",
             group=f"source-{name}",
             exclusive=True,
             exit_on_error=False,
         )
 
-    async def _source_loop(self, name: str, source: Source[Any], panel: BasePanel) -> None:
+    async def _source_loop(self, name: str, source: Source[Any]) -> None:
         event = self._refresh_events[name]
         try:
             while True:
                 event.clear()
-                wait_seconds = await self._fetch_once(name, source, panel)
+                wait_seconds = await self._fetch_once(name, source)
                 try:
                     await asyncio.wait_for(event.wait(), timeout=wait_seconds)
                 except asyncio.TimeoutError:
@@ -171,18 +353,18 @@ class CmdAllInOneApp(App[None]):
             except Exception as exc:  # fechar nunca pode derrubar a saída do app
                 log.warning("erro ao fechar fonte %s: %s", name, exc)
 
-    async def _fetch_once(self, name: str, source: Source[Any], panel: BasePanel) -> float:
+    async def _fetch_once(self, name: str, source: Source[Any]) -> float:
         """Uma coleta. Devolve quantos segundos esperar até o próximo ciclo."""
         if name == LOGIN_SOURCE and self._login_requested:
             self._login_requested = False
-            if not await self._run_login(source, panel):
+            if not await self._run_login(source):
                 return float(source.interval)
         try:
             state = await source.fetch_with_retry()
         except SourceError as exc:
             log.error("fonte %s falhou: %s", name, exc)
             wait = max(float(source.interval), exc.retry_after or 0.0)
-            panel.set_error(str(exc) + (f" · aguardando {int(wait)}s" if exc.retry_after else ""))
+            self._set_error(name, str(exc) + (f" · aguardando {int(wait)}s" if exc.retry_after else ""))
             if self._should_login_on_start(name, source, exc):
                 self._login_on_start_used = True
                 self._login_requested = True
@@ -190,21 +372,42 @@ class CmdAllInOneApp(App[None]):
             return wait
         except Exception as exc:  # bug na fonte: mostra, registra e segue vivo
             log.exception("erro inesperado na fonte %s", name)
-            panel.set_error(f"erro inesperado: {exc}")
+            self._set_error(name, f"erro inesperado: {exc}")
             return float(source.interval)
 
-        previous = self.states.get(name)
-        self.states[name] = state
-        panel.show_state(state)
-        panel.set_error(state.error)
-        panel.mark_updated(state.updated_at)
-        if previous is not None:
-            grew = increased_counters(panel.counters(previous), panel.counters(state))
-            if grew:
-                self.notify_change(panel, grew)
+        self._publish(name, state)
         return float(source.interval)
 
-    # --- login humano do ChatPanel -------------------------------------------
+    def _publish(self, name: str, state: Any) -> None:
+        previous = self.states.get(name)
+        self.states[name] = state
+        self.errors[name] = state.error
+        panels = self.panels.get(name, [])
+        for panel in panels:
+            panel.show_state(state)
+            panel.set_error(state.error)
+            panel.mark_updated(state.updated_at)
+        if previous is not None:
+            reference = panels[0] if panels else _panel_class_for(name)
+            if reference is not None:
+                grew = increased_counters(reference.counters(previous), reference.counters(state))
+                if grew:
+                    self.notify_change(name, grew)
+
+    def _set_error(self, name: str, message: str | None) -> None:
+        self.errors[name] = message
+        for panel in self.panels.get(name, []):
+            panel.set_error(message)
+
+    def refresh_panels(self, name: str) -> None:
+        """Re-renderiza os painéis da fonte com o estado atual (após mudar ordenação etc.)."""
+        state = self.states.get(name)
+        if state is None:
+            return
+        for panel in self.panels.get(name, []):
+            panel.show_state(state)
+
+    # --- login humano do ChatPanel ---------------------------------------------------
 
     def _should_login_on_start(self, name: str, source: Source[Any], exc: SourceError) -> bool:
         """Sessão expirada pela primeira vez nesta execução: abre a janela sozinho (se ligado)."""
@@ -218,70 +421,64 @@ class CmdAllInOneApp(App[None]):
             and isinstance(exc.__cause__, SessionExpiredError)
         )
 
-    async def _run_login(self, source: Source[Any], panel: BasePanel) -> bool:
+    async def _run_login(self, source: Source[Any]) -> bool:
         """Roda dentro do worker da fonte (o perfil do Chromium não pode ter dois donos)."""
         login = getattr(source, "interactive_login", None)
         if login is None:
             return False
         self._login_in_progress = True
-        previous = self.states.get(LOGIN_SOURCE)
-        panel.set_error(None)
-        panel.set_body(
-            "[yellow]janela de login aberta[/]\n"
-            "[dim]faça o login no Chromium que abriu (o captcha é seu); o painel volta sozinho[/]"
-        )
-        self.status_bar.set_message("faça o login na janela do Chromium…", seconds=300)
+        self._set_error(LOGIN_SOURCE, None)
+        for panel in self.panels.get(LOGIN_SOURCE, []):
+            panel.set_waiting("[yellow]janela de login aberta[/] · faça o login no Chromium (o captcha é seu)")
+        self.notify("faça o login na janela do Chromium…", timeout=20)
         try:
             user = await login()
         except Exception as exc:
             log.warning("login do ChatPanel não concluído: %s", exc)
-            if previous is not None:
-                panel.show_state(previous)
-            panel.set_error(str(exc))
-            self.status_bar.set_message("login do ChatPanel não concluído (c tenta de novo)")
+            self._set_error(LOGIN_SOURCE, str(exc))
+            self.notify("login do ChatPanel não concluído (c tenta de novo)", severity="warning")
             return False
         finally:
             self._login_in_progress = False
         self.login_count += 1
-        panel.set_body("[dim]login ok, lendo o painel…[/]")
-        self.status_bar.set_message(f"login ok: {user} · lendo o ChatPanel…")
+        self.notify(f"login ok: {user} · lendo o ChatPanel…")
         return True
 
     def action_chatpanel_login(self) -> None:
         source = self._sources.get(LOGIN_SOURCE)
         label = SOURCE_PANELS[LOGIN_SOURCE][1]
         if source is None or not hasattr(source, "interactive_login"):
-            self.status_bar.set_message(f"{label}: login não disponível")
+            self.notify(f"{label}: login não disponível")
             return
         if LOGIN_SOURCE not in self._refresh_events:
-            self.status_bar.set_message(f"{label}: não configurado")
+            self.notify(f"{label}: não configurado")
             return
         if self._login_in_progress:
-            self.status_bar.set_message("login já em andamento: veja a janela do Chromium")
+            self.notify("login já em andamento: veja a janela do Chromium")
             return
         self._login_requested = True
         self._request_refresh(LOGIN_SOURCE)
-        self.status_bar.set_message(f"abrindo a janela de login do {label}…")
+        self.notify(f"abrindo a janela de login do {label}…")
 
-    # --- ações -------------------------------------------------------------
+    # --- ações -------------------------------------------------------------------
 
     def action_refresh_all(self) -> None:
         started = [
             SOURCE_PANELS[name][1] for name in self._refresh_events if self._request_refresh(name)
         ]
         if started:
-            self.status_bar.set_message("atualizando " + ", ".join(started) + "…")
+            self.notify("atualizando " + ", ".join(started) + "…")
         else:
-            self.status_bar.set_message("nenhuma fonte ativa para atualizar")
+            self.notify("nenhuma fonte ativa para atualizar")
 
     def action_refresh(self, name: str) -> None:
         _, label, phase = SOURCE_PANELS[name]
         if self._request_refresh(name):
-            self.status_bar.set_message(f"atualizando {label}…")
+            self.notify(f"atualizando {label}…")
         elif name in self._sources:
-            self.status_bar.set_message(f"{label}: não configurado")
+            self.notify(f"{label}: não configurado")
         else:
-            self.status_bar.set_message(f"{label}: não implementado (Fase {phase})")
+            self.notify(f"{label}: não implementado (Fase {phase})")
 
     def _request_refresh(self, name: str) -> bool:
         event = self._refresh_events.get(name)
@@ -290,16 +487,13 @@ class CmdAllInOneApp(App[None]):
         event.set()
         return True
 
-    def action_open_email(self) -> None:
-        from app.tui.screens import EmailDetailScreen
 
-        state = self.states.get("email")
-        latest = getattr(state, "latest", None)
-        if latest is None:
-            self.status_bar.set_message("nenhum e-mail carregado ainda")
-            return
-        self.push_screen(EmailDetailScreen(latest))
+def _panel_class_for(name: str) -> Any:
+    """Instância "vazia" da classe do painel, só para calcular contadores sem tela."""
+    from app.tui.widgets.chatpanel_panel import ChatPanelPanel
+    from app.tui.widgets.email_panel import EmailPanel
+    from app.tui.widgets.milldesk_panel import MilldeskPanel
 
-    def action_toggle_log(self) -> None:
-        visible = self.main_screen.query_one(LogPanel).toggle()
-        self.status_bar.set_message("log aberto (l fecha)" if visible else "log fechado")
+    classes = {"email": EmailPanel, "milldesk": MilldeskPanel, "chatpanel": ChatPanelPanel}
+    cls = classes.get(name)
+    return cls(0) if cls is not None else None

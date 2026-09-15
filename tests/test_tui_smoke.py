@@ -1,49 +1,80 @@
-"""Smoke test da TUI: monta o app sem terminal real e verifica o skeleton."""
+"""Smoke test da TUI: Dashboard com três painéis, relógio, modos e Esc."""
 
-from app.tui.app import CmdAllInOneApp
-from app.tui.widgets.base_panel import BasePanel
-from app.tui.widgets.status_bar import StatusBar
 from textual.containers import Container
 from textual.widgets import Static
 
-from tests.helpers import fake_settings
+from app.tui.widgets.base_panel import BasePanel
+from tests.helpers import make_app
 
 
 async def test_three_panels_waiting_and_clock_running():
-    app = CmdAllInOneApp(fake_settings(), sources={})
+    app = make_app()
     async with app.run_test(size=(120, 40)) as pilot:
-        panels = app.query(BasePanel)
+        await pilot.pause()
+        assert app.current_mode == "dashboard"
+        panels = app.dashboard.query(BasePanel)
         assert len(panels) == 3
         for panel in panels:
-            body = panel.query_one(".panel-body", Static)
-            assert "aguardando" in str(body.content)
-        clock = app.query_one("#clock", Static)
+            assert "aguardando" in str(panel.query_one(".panel-head", Static).content)
+        clock = app.dashboard.query_one("#clock", Static)
         assert "Guilherme ·" in str(clock.content)
-        assert not app.query_one("#main", Container).has_class("narrow")
+        assert not app.dashboard.query_one("#main", Container).has_class("narrow")
 
         await pilot.press("1")
-        message = app.query_one("#status-message", Static)
-        assert "Fase 1" in str(message.content)
+        assert "Fase 1" in app.last_message
 
 
 async def test_narrow_terminal_stacks_top_row():
-    app = CmdAllInOneApp(fake_settings(), sources={})
-    async with app.run_test(size=(80, 40)):
-        assert app.query_one("#main", Container).has_class("narrow")
+    app = make_app()
+    async with app.run_test(size=(80, 40)) as pilot:
+        await pilot.pause()
+        assert app.dashboard.query_one("#main", Container).has_class("narrow")
 
 
-async def test_panel_error_keeps_body_and_marks_border():
-    app = CmdAllInOneApp(fake_settings(), sources={})
+async def test_panel_error_marks_border_and_clears():
+    app = make_app()
     async with app.run_test(size=(120, 40)) as pilot:
+        await pilot.pause()
         panel = app.panel("email")
-        panel.set_body("Inbox: 10")
         panel.set_error("timeout")
         await pilot.pause()
         assert panel.has_class("error")
-        assert "Inbox: 10" in str(panel.query_one(".panel-body", Static).content)
         assert panel.query_one(".panel-error", Static).display is True
 
         panel.set_error(None)
         await pilot.pause()
         assert not panel.has_class("error")
         assert panel.query_one(".panel-error", Static).display is False
+
+
+async def test_function_keys_switch_modes_and_escape_returns_to_dashboard():
+    app = make_app()
+    async with app.run_test(size=(120, 40)) as pilot:
+        await pilot.pause()
+        for key, mode in (("f2", "email"), ("f3", "milldesk"), ("f4", "chatpanel"), ("f5", "log"), ("f6", "notes")):
+            await pilot.press(key)
+            await pilot.pause()
+            assert app.current_mode == mode, key
+            assert app.prefs.last_screen == mode
+        await pilot.press("escape")
+        await pilot.pause()
+        assert app.current_mode == "dashboard"
+        await pilot.press("l")
+        await pilot.pause()
+        assert app.current_mode == "log"
+        await pilot.press("f1")
+        await pilot.pause()
+        assert app.current_mode == "dashboard"
+
+
+async def test_last_screen_is_restored_from_prefs():
+    from app.prefs import Prefs
+
+    app = make_app(prefs=Prefs(last_screen="milldesk"))
+    async with app.run_test(size=(120, 40)) as pilot:
+        await pilot.pause()
+        assert app.current_mode == "milldesk"
+        # o Dashboard ainda não foi criado, mas voltar a ele funciona e monta os painéis
+        await pilot.press("f1")
+        await pilot.pause()
+        assert len(app.dashboard.query(BasePanel)) == 3

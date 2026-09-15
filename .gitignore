@@ -3,8 +3,10 @@
 .chatpanel-profile/
 .chatpanel-profile-login/
 
-# logs
+# logs e dados locais do usuário
 logs/
+prefs.json
+notes.md
 
 # python
 __pycache__/

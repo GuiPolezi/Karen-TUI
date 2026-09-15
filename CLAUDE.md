@@ -37,6 +37,14 @@ as regras que valem em todo o projeto.
   marca a fonte como `configured=False`.
 - `app/state.py` — dataclasses publicadas pelas fontes + `to_json()`.
 - `app/sources/base.py` — `Source[S]` com `fetch()`, `fetch_with_retry()`, `close()`.
-- `app/tui/app.py` — `CmdAllInOneApp`; `SOURCE_PANELS` mapeia fonte → painel.
-- `app/tui/widgets/base_panel.py` — `BasePanel` com `set_body`, `set_error`,
-  `mark_updated`, `set_not_configured`.
+- `app/tui/app.py` — `CmdAllInOneApp`: `MODES` (uma tela por modo), workers das fontes,
+  `register_panel`/`_publish` (todo painel vivo recebe o mesmo estado), `notify`,
+  `open_url`, `copy_text`, `open_detail`.
+- `app/tui/screens/` — `ModeScreen` (TopBar + corpo + Footer) e as telas Dashboard,
+  E-mail, Milldesk, ChatPanel, Log, Notas; `email_detail.py` é a modal do e-mail.
+- `app/tui/widgets/base_panel.py` — `BasePanel`: cabeçalho + `KeyedTable` + filtro;
+  subclasses definem `COLUMNS`/`COLUMNS_COMPACT`/`COLUMNS_NARROW`, `rows()` (células por
+  nome de coluna), `counters()`, `browser_url()`, `copy_value()`.
+- `app/tui/widgets/keyed_table.py` — `KeyedTable.set_rows()` faz diff por chave e
+  preserva o cursor.
+- `app/prefs.py` — `prefs.json` (última tela, ordenação, favoritos, histórico). Nunca segredo.

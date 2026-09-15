@@ -26,7 +26,7 @@ Screen {
 }
 
 #top-row {
-    height: 11;
+    height: 12;
 }
 
 #top-row > BasePanel {
@@ -46,7 +46,13 @@ Screen {
 
 #main.narrow #top-row > BasePanel {
     width: 1fr;
-    height: auto;
+    height: 12;
+}
+
+/* Telas cheias: um painel ocupa tudo */
+#email-full, #milldesk-full, #chatpanel-full {
+    height: 1fr;
+    margin: 0 1;
 }
 
 /* Painéis ----------------------------------------------------------------- */
@@ -59,6 +65,11 @@ BasePanel {
     padding: 0 1;
     height: auto;
     min-height: 7;
+}
+
+BasePanel:focus-within {
+    border: round $accent;
+    border-title-color: $accent;
 }
 
 BasePanel.error {
@@ -75,10 +86,27 @@ BasePanel.changed {
     border-title-color: $warning;
 }
 
-BasePanel .panel-body {
+BasePanel .panel-head {
     height: auto;
     text-wrap: nowrap;
     text-overflow: ellipsis;
+}
+
+BasePanel .panel-filter {
+    height: 1;
+    border: none;
+    padding: 0;
+    background: $surface;
+}
+
+BasePanel .panel-table {
+    height: 1fr;
+    min-height: 3;
+    scrollbar-size: 1 1;
+}
+
+BasePanel .panel-table > .datatable--cursor {
+    background: $accent 30%;
 }
 
 BasePanel .panel-error {
@@ -87,41 +115,35 @@ BasePanel .panel-error {
     display: none;
 }
 
-/* Barra de status --------------------------------------------------------- */
+/* Log (F5) ---------------------------------------------------------------- */
 
-#status-bar {
-    dock: bottom;
+#log-status {
     height: 1;
-    background: $surface;
+    padding: 0 1;
     color: $text-muted;
-    padding: 0 1;
 }
 
-#status-shortcuts {
-    width: auto;
-}
-
-#status-message {
-    width: 1fr;
-    text-align: right;
-    color: $accent;
-}
-
-/* Painel de log (tecla l) ------------------------------------------------- */
-
-#log-panel {
-    height: 14;
-    border: round $secondary;
-    border-title-color: $text-muted;
-    padding: 0 1;
-}
-
-#log-panel Log {
+#log-lines {
     height: 1fr;
+    margin: 0 1;
+    border: round $secondary;
     scrollbar-size: 1 1;
 }
 
-/* Detalhe do e-mail (tecla e) ---------------------------------------------- */
+/* Notas (F6) -------------------------------------------------------------- */
+
+#notes-status {
+    height: 1;
+    padding: 0 1;
+    color: $text-muted;
+}
+
+#notes-text {
+    height: 1fr;
+    margin: 0 1;
+}
+
+/* Detalhe do e-mail (e / Enter) ------------------------------------------- */
 
 EmailDetailScreen {
     align: center middle;

@@ -233,7 +233,7 @@ def parse_chatpanel_html(html: str, tech_name: str) -> ChatPanelState:
     wanted = normalize_name(tech_name)
     seen: set[str] = set()
     mine: list[ChatItem] = []
-    others = 0
+    others: list[ChatItem] = []
 
     # "SUAS CONVERSAS": tudo aqui é do usuário logado, com ou sem badge de pessoa
     for li in _active_items(soup.find(id="box-atende-chats")):
@@ -252,7 +252,7 @@ def parse_chatpanel_html(html: str, tech_name: str) -> ChatPanelState:
         if item.agent is not None and normalize_name(item.agent) == wanted:
             mine.append(item)
         else:
-            others += 1
+            others.append(item)
 
     total_unread_tab = 0
     total_badge = soup.find(id="total-unread2")
@@ -263,7 +263,8 @@ def parse_chatpanel_html(html: str, tech_name: str) -> ChatPanelState:
     return ChatPanelState(
         mine=mine,
         mine_unread=sum(item.unread for item in mine),
-        others_count=others,
+        others_count=len(others),
+        others=others,
         total_unread_tab=total_unread_tab,
         logged_user=logged_user,
         updated_at=datetime.now(),

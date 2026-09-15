@@ -72,9 +72,39 @@ Regras de validação:
 python -m app
 ```
 
-Atalhos: `q` sair · `r` atualizar tudo · `1`/`2`/`3` atualizar um painel · `e` abrir o
-e-mail mais recente em tela cheia · `c` abrir a janela de login do ChatPanel · `l`
-mostrar/esconder as últimas 50 linhas do log · `Esc` voltar.
+### Telas e atalhos
+
+A TUI tem seis telas; os workers de coleta continuam rodando em qualquer uma delas, e a
+última tela aberta é lembrada em `prefs.json`.
+
+| Tecla | Ação |
+|---|---|
+| `F1` / `d` | Dashboard (três painéis compactos) |
+| `F2` | E-mail: últimos `EMAIL_LIST_SIZE` e-mails (`u` alterna "só não lidos") |
+| `F3` | Milldesk: todos os chamados abertos no meu nome (`s` alterna a ordenação: SLA, data, status) |
+| `F4` | ChatPanel: minhas conversas (`t` mostra/esconde as "com outros técnicos") |
+| `F5` / `l` | Log: últimas 300 linhas de `logs/app.log` (`f` alterna o filtro de nível) |
+| `F6` | Notas: bloco de notas salvo em `notes.md` (autosave; `Ctrl+S` salva agora) |
+| `↑` `↓` `j` `k` `PgUp` `PgDn` `Home` `End` | mover o cursor na lista |
+| `Enter` | abrir o item selecionado (e-mail completo; chamado e conversa chegam nas fases 6.2 e 6.3) |
+| `Esc` | fechar o detalhe, limpar o filtro ou voltar ao Dashboard |
+| `Tab` / `Shift+Tab` | trocar o painel focado no Dashboard |
+| `/` | filtro incremental na lista (nome, assunto, número, status) |
+| `o` | abrir no navegador (webmail, Milldesk, ChatPanel; URLs do `.env`) |
+| `y` | copiar o identificador (remetente, ID do chamado, número do WhatsApp) |
+| `e` | abrir o e-mail mais recente de qualquer tela |
+| `r` / `1` `2` `3` | atualizar tudo / uma fonte |
+| `c` | abrir a janela de login do ChatPanel |
+| `m` | modo silêncio por 30 minutos (sem bell/toast; ícone 🔇 no cabeçalho) |
+| `q` | sair |
+
+Ao voltar ao Dashboard depois de ficar em outra tela, um aviso resume o que mudou
+("enquanto você estava fora: e-mail: não lidos · ChatPanel: conversas"). Itens novos ou
+com não lidas a mais ganham um marcador `●` por 3 segundos. O cursor da lista não se
+perde quando o painel atualiza: a seleção é mantida pelo identificador do item.
+
+`NOTIFY_TOAST=true` (com `pip install winotify`) mostra também uma notificação do
+Windows quando um contador aumenta.
 
 Quando um contador aumenta entre dois ciclos (não lidos, chamados abertos, conversas ou
 não lidas do ChatPanel), o painel ganha borda grossa amarela por 3 segundos e o terminal

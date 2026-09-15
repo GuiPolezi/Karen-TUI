@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 from pathlib import Path
+from typing import Any
 
 from rich.console import Console
 from textual.app import App
 
 from app.config import ChatPanelSettings, EmailSettings, MilldeskSettings, Settings
+from app.prefs import Prefs
+from app.tui.app import CmdAllInOneApp
 
 
 def fake_settings(**overrides) -> Settings:
@@ -28,6 +32,21 @@ def fake_settings(**overrides) -> Settings:
     )
     base.update(overrides)
     return Settings(**base)
+
+
+def make_app(settings: Settings | None = None, sources: dict[str, Any] | None = None,
+             prefs: Prefs | None = None) -> CmdAllInOneApp:
+    """App de teste: preferências em memória (nunca grava prefs.json)."""
+    return CmdAllInOneApp(settings or fake_settings(), sources=sources if sources is not None else {},
+                          prefs=prefs or Prefs(), prefs_path=None)
+
+
+async def wait_until(predicate, timeout=3.0):
+    deadline = asyncio.get_running_loop().time() + timeout
+    while not predicate():
+        if asyncio.get_running_loop().time() > deadline:
+            raise AssertionError("condição não atingida a tempo")
+        await asyncio.sleep(0.02)
 
 
 def screen_text(app: App, width: int, height: int) -> str:

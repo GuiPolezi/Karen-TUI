@@ -158,23 +158,29 @@ Quando a sessão cair, pressione `c` e refaça o login. Alternativas (usuário d
 dashboard, userscript + servidor local) foram avaliadas e descartadas: o fluxo fica
 assim, sem depender de servidor local nem de extensão no navegador.
 
-### Por que o app não consulta o servidor depois da carga
+### Usuário dedicado (recomendado) e ressincronização
 
-Medido em 15/09/2026 com o painel real: o ChatPanel mantém **uma sessão ativa por
-usuário**. Quando você age no seu navegador, a sessão do app é invalidada no servidor: os
-endpoints de lista passam a devolver vazio e um reload cai na tela de login. O socket já
-autenticado, porém, continua entregando os eventos (nova mensagem, encerramento,
-leitura...), e os handlers do próprio painel mantêm as listas corretas no DOM.
+O ChatPanel mantém **uma sessão ativa por usuário** (medido em 15/09/2026). Se o app usar
+o mesmo usuário do técnico, cada ação no navegador invalida a sessão do app no servidor:
+os endpoints de lista passam a devolver vazio e um reload cai no login. O socket já
+autenticado continua entregando eventos, então a TUI segue funcionando pelo DOM, mas
+nenhuma consulta ao servidor é confiável e as transferências só aparecem na próxima
+mensagem.
 
-Por isso o app carrega a página **uma vez** (com a sessão recém-criada), segue os botões
-"ver mais" nesse momento para trazer todas as páginas das listas, e depois só lê o DOM.
-Uma ressincronização periódica por endpoint foi tentada e removida: ela apagava as listas
-assim que a sessão era invalidada.
+Com um **usuário dedicado à TUI** (criado no ChatPanel só para isso) nada disso acontece:
 
-**Consequência aceita:** uma **transferência** feita em outra aba não gera evento, então a
-conversa fica no seu nome na TUI até a próxima mensagem dela (que a recria já no nome do
-novo atendente). Se precisar de uma leitura fresca, pressione `c` e refaça o login, o que
-derruba a sessão do seu navegador.
+- Coloque as credenciais dele em `CHATPANEL_USER` e `CHATPANEL_PASSWORD`; `TECH_NAME`
+  continua sendo o **seu** nome, que é o que aparece no badge de pessoa das conversas.
+- Suas conversas aparecem para esse usuário em "EM ATENDIMENTO" com o seu badge, e o
+  painel da TUI filtra por ele. "SUAS CONVERSAS" desse usuário fica vazio.
+- A cada `CHATPANEL_RESYNC_SECONDS` (padrão 60) o app refaz dentro da página as mesmas
+  chamadas que o painel usa ao limpar a busca, troca o HTML das listas e segue os botões
+  "ver mais". Assim uma **transferência** sai (ou entra) do seu nome em até um minuto, sem
+  depender de mensagem nova. `0` desliga.
+- Seu login no navegador e o do app não se derrubam mais.
+
+Se o app estiver logado com o mesmo usuário do técnico, a ressincronização se desliga
+sozinha (aviso no log) para não apagar as listas, e vale o comportamento acima.
 
 ### Diagnóstico
 

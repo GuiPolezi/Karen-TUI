@@ -143,6 +143,42 @@ BasePanel .panel-error {
     margin: 0 1;
 }
 
+/* Detalhe do chamado (Enter no Milldesk) ----------------------------------- */
+
+TicketDetailScreen {
+    align: center middle;
+    background: $background 60%;
+}
+
+#ticket-detail {
+    width: 92%;
+    height: 92%;
+    border: round $primary;
+    background: $surface;
+    padding: 1 2;
+}
+
+#ticket-header {
+    height: auto;
+    margin-bottom: 1;
+    border-bottom: solid $secondary;
+}
+
+#ticket-sla {
+    height: auto;
+    margin-bottom: 1;
+}
+
+#ticket-body, #ticket-resolution, #ticket-communications {
+    height: auto;
+    margin-bottom: 1;
+}
+
+#ticket-footer {
+    height: auto;
+    margin-top: 1;
+}
+
 /* Detalhe do e-mail (e / Enter) ------------------------------------------- */
 
 EmailDetailScreen {

@@ -19,12 +19,19 @@ por minuto. Por isso a coleta é INCREMENTAL:
 Erros chegam com HTTP 200 e corpo {"error": "invalidApiKey"|"invalidStatus"}.
 A api_key nunca aparece em logs nem em mensagens de erro (mascarada como ****1776).
 
-Modo debug: `python -m app.sources.milldesk` imprime o MilldeskState em JSON.
+Detalhe de um chamado (Fase 6.2): `fetch_ticket(id)` chama showTicket (1 GET), com cache
+por ID (TTL MILLDESK_DETAIL_TTL_SECONDS), a mesma fila/espaçamento da coleta e respeito ao
+cooldown após 429. `description` vem em HTML e `communication` é uma string HTML com
+entradas "dd/mm/aaaa HH:MM:SS Nome diz: <br> texto".
+
+Modo debug: `python -m app.sources.milldesk` imprime o MilldeskState em JSON;
+`python -m app.sources.milldesk --ticket 1234` imprime o TicketDetail.
 """
 
 from __future__ import annotations
 
 import asyncio
+import re
 import sys
 import time
 import unicodedata
@@ -32,10 +39,11 @@ from datetime import datetime
 from typing import Any, Callable
 
 import httpx
+from bs4 import BeautifulSoup
 
 from app.config import MilldeskSettings
 from app.sources.base import Source
-from app.state import MilldeskState, MilldeskTicket
+from app.state import Communication, MilldeskState, MilldeskTicket, TicketDetail
 
 NOT_FOUND_NOTE = "técnico não encontrado na resposta"
 CLOSED_STATUSES = {"Fechado"}
@@ -173,6 +181,89 @@ def build_state(
     )
 
 
+def html_to_text(html: str | None) -> str:
+    """HTML do Milldesk -> texto com quebras: <br> vira \n, <p>/<div>/<li> viram parágrafos."""
+    if not html:
+        return ""
+    if not re.search(r"<\w+[^>]*>", html):
+        return html.strip()
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup(["script", "style"]):
+        tag.decompose()
+    for br in soup.find_all("br"):
+        br.replace_with("\n")
+    for block in soup.find_all(["p", "div", "li", "tr", "h1", "h2", "h3", "h4"]):
+        block.insert_before("\n")
+        block.insert_after("\n")
+    text = soup.get_text()
+    text = re.sub(r"[ \t]+\n", "\n", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return "\n".join(line.strip() for line in text.split("\n")).strip()
+
+
+COMMUNICATION_RE = re.compile(r"(\d{2}/\d{2}/\d{4} \d{2}:\d{2}(?::\d{2})?)\s+(.+?)\s+diz:\s*")
+
+
+def parse_communications(raw: str | None) -> list[Communication]:
+    """Separa o campo `communication` em entradas (quando, quem, texto)."""
+    text = html_to_text(raw)
+    if not text:
+        return []
+    matches = list(COMMUNICATION_RE.finditer(text))
+    if not matches:
+        return [Communication(when="", who="", text=text)]
+    result = []
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        body = text[match.end():end].strip()
+        result.append(Communication(when=match.group(1), who=match.group(2).strip(), text=body))
+    return result
+
+
+def _text(item: dict[str, Any], key: str) -> str:
+    value = item.get(key)
+    return "" if value is None else str(value).strip()
+
+
+def ticket_detail_from_api(data: Any) -> TicketDetail:
+    """Resposta crua de showTicket -> TicketDetail. Erros ({"error": ...}) viram exceção."""
+    check_api_error(data, "showTicket")
+    if isinstance(data, list):
+        data = data[0] if data else {}
+    if not isinstance(data, dict) or not data.get("id"):
+        raise MilldeskApiError("resposta inesperada de showTicket (sem id)")
+    return TicketDetail(
+        id=_to_int(data.get("id")),
+        subject=_text(data, "ticket") or "(sem assunto)",
+        requester=_text(data, "requester"),
+        agent=_text(data, "agent"),
+        status=_text(data, "status"),
+        stage=_text(data, "stage"),
+        priority=_text(data, "priority"),
+        urgency=_text(data, "urgency"),
+        category=_text(data, "category"),
+        subcategory=_text(data, "subcategory"),
+        department=_text(data, "department"),
+        location=_text(data, "location"),
+        group=_text(data, "group"),
+        tickettype=_text(data, "tickettype"),
+        manner=_text(data, "manner"),
+        level=_text(data, "level"),
+        impact=_text(data, "impact"),
+        start=_text(data, "start"),
+        starttime=_text(data, "starttime"),
+        end=_text(data, "end"),
+        endtime=_text(data, "endtime"),
+        sla_expiration=_text(data, "slasexpirationdate") or None,
+        description=html_to_text(data.get("description")),
+        resolution=html_to_text(data.get("resolution")),
+        communications=parse_communications(data.get("communication")),
+        worked_hour=_text(data, "worked_hour"),
+        charge_hour=_text(data, "charge_hour"),
+        fetched_at=datetime.now(),
+    )
+
+
 def _ticket_sort_key(ticket: MilldeskTicket) -> tuple[str, str, int]:
     """Mais recente primeiro: data dd/mm/aaaa vira aaaa-mm-dd para ordenar como texto."""
     parts = ticket.start.split("/")
@@ -207,6 +298,9 @@ class MilldeskSource(Source[MilldeskState]):
         self._status_lists: dict[str, Any] = {}
         self._by_agent: Any = None
         self._last_full_refresh: float | None = None
+        # detalhe por ID: {id: (detalhe, instante monotônico em que foi buscado)}
+        self._details: dict[int, tuple[TicketDetail, float]] = {}
+        self._rate_limited_until: float | None = None  # cooldown após HTTP 429
 
     @property
     def configured(self) -> bool:
@@ -223,6 +317,11 @@ class MilldeskSource(Source[MilldeskState]):
     async def _get_json(self, route: str, params: dict[str, Any] | None = None) -> Any:
         if self._client is None:
             self._client = httpx.AsyncClient(timeout=30.0)
+        if self._rate_limited_until is not None:
+            remaining = self._rate_limited_until - self._clock()
+            if remaining > 0:  # cooldown: nem tenta, para não estender o bloqueio
+                raise RateLimitedError(route, retry_after=remaining)
+            self._rate_limited_until = None
         async with self._lock:  # uma chamada por vez, com espaçamento
             if self._last_request_at is not None:
                 elapsed = self._clock() - self._last_request_at
@@ -235,6 +334,7 @@ class MilldeskSource(Source[MilldeskState]):
             finally:
                 self._last_request_at = self._clock()
         if response.status_code == 429:
+            self._rate_limited_until = self._clock() + RATE_LIMIT_WAIT
             raise RateLimitedError(route)
         if response.status_code != 200:
             raise RuntimeError(f"HTTP {response.status_code} em {route}")
@@ -278,6 +378,21 @@ class MilldeskSource(Source[MilldeskState]):
             self.log.warning("%s (MILLDESK_AGENT_NAME=%r)", state.note, self.agent_name)
         return state
 
+    async def fetch_ticket(self, ticket_id: int, force: bool = False) -> TicketDetail:
+        """Detalhe de um chamado: 1 GET showTicket, cache por ID com TTL. `force` ignora o cache."""
+        ttl = float(self.settings.detail_ttl_seconds)
+        cached = self._details.get(ticket_id)
+        if cached is not None and not force and self._clock() - cached[1] < ttl:
+            self.log.debug("showTicket %s: cache", ticket_id)
+            return cached[0]
+        data = await self._get_json("showTicket", {"id": ticket_id})
+        detail = ticket_detail_from_api(data)
+        self._details[ticket_id] = (detail, self._clock())
+        if len(self._details) > 100:
+            oldest = min(self._details, key=lambda key: self._details[key][1])
+            del self._details[oldest]
+        return detail
+
     async def close(self) -> None:
         if self._client is not None and self._owns_client:
             await self._client.aclose()
@@ -305,6 +420,9 @@ async def _debug_main() -> int:
         print(source.config_hint, file=sys.stderr)
         return 2
     try:
+        if len(sys.argv) > 2 and sys.argv[1] == "--ticket":  # --ticket 1234: detalhe de um chamado
+            print(to_json(await source.fetch_ticket(int(sys.argv[2]))))
+            return 0
         state = await source.fetch_with_retry()
     finally:
         await source.close()

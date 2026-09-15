@@ -2,7 +2,7 @@
   "workflow_fields": null,
   "id": 4242,
   "ticket": "ticket anonimizado",
-  "description": "<p>Texto anonimizado. </p><p> </p><p>Texto anonimizado. </p><p> </p><p>Texto anonimizado. </p><figure class=\"image\"><img height=\"820\" src=\"https://files.milldesk.com/download.php?name=34e5d53b255f5ebeb6e09945e4ece1905892058381c43cf80e812e010e0a18e6265ec4e755933e64510df1cbbcc9c310030bc3dd7904bdbb99e9bc639be63d75.zip&amp;server=pt-br-1.milldesk.com&amp;hash=10315\" style=\"aspect-ratio:925/820;\" width=\"925\"/></figure>",
+  "description": "<p>Primeiro parágrafo anonimizado.</p><p>Segundo parágrafo<br>com quebra.</p>",
   "requester": "Requester Anônimo",
   "start": "14/09/2026",
   "end": null,
@@ -39,5 +39,5 @@
   "analysistime": "",
   "charge_hour": "0,0000",
   "worked_hour": "0,0000",
-  "communication": ""
+  "communication": "15/09/2026 09:00:17 Técnico Anônimo diz: <br>    Primeira comunicação anonimizada.<br>Segunda linha da mesma comunicação.<br>16/09/2026 10:30:00 Solicitante Anônimo diz: <br>    Resposta anonimizada."
 }

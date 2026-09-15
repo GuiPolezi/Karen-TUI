@@ -134,6 +134,59 @@ class MilldeskState:
     error: str | None = None
 
 
+@dataclass
+class Communication:
+    """Uma entrada do histórico do chamado (campo `communication` do showTicket)."""
+
+    when: str   # dd/mm/aaaa HH:MM:SS
+    who: str
+    text: str
+
+
+@dataclass
+class TicketDetail:
+    """Resposta de showTicket já limpa (descrição em texto, comunicações separadas)."""
+
+    id: int
+    subject: str
+    requester: str
+    agent: str
+    status: str
+    stage: str
+    priority: str
+    urgency: str
+    category: str
+    subcategory: str
+    department: str
+    location: str
+    group: str
+    tickettype: str
+    manner: str
+    level: str
+    impact: str
+    start: str
+    starttime: str
+    end: str
+    endtime: str
+    sla_expiration: str | None
+    description: str
+    resolution: str
+    communications: list[Communication] = field(default_factory=list)
+    worked_hour: str = ""
+    charge_hour: str = ""
+    fetched_at: datetime = field(default_factory=datetime.now)
+
+    @property
+    def sla_deadline(self) -> datetime | None:
+        return parse_datetime_br(self.sla_expiration)
+
+    def sla_remaining(self, now: datetime | None = None) -> timedelta | None:
+        deadline = self.sla_deadline
+        if deadline is None:
+            return None
+        return deadline - (now or datetime.now())
+
+
 # --- ChatPanel --------------------------------------------------------------
 
 

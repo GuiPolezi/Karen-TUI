@@ -86,7 +86,7 @@ A TUI tem seis telas; os workers de coleta continuam rodando em qualquer uma del
 | `F5` / `l` | Log: últimas 300 linhas de `logs/app.log` (`f` alterna o filtro de nível) |
 | `F6` | Notas: bloco de notas salvo em `notes.md` (autosave; `Ctrl+S` salva agora) |
 | `↑` `↓` `j` `k` `PgUp` `PgDn` `Home` `End` | mover o cursor na lista |
-| `Enter` | abrir o item selecionado (e-mail completo; chamado e conversa chegam nas fases 6.2 e 6.3) |
+| `Enter` | abrir o item selecionado: e-mail completo ou detalhe do chamado (descrição, SLA regressivo, resolução, histórico de comunicações); conversa chega na fase 6.3 |
 | `Esc` | fechar o detalhe, limpar o filtro ou voltar ao Dashboard |
 | `Tab` / `Shift+Tab` | trocar o painel focado no Dashboard |
 | `/` | filtro incremental na lista (nome, assunto, número, status) |

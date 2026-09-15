@@ -164,16 +164,22 @@ async def test_rate_limit_is_not_retried_and_carries_wait_time():
     assert api.calls == ["ticketsByStatus"]
 
     api.calls.clear()
+    with pytest.raises(SourceError) as info:  # dentro do cooldown: nem chama a API
+        await source.fetch_with_retry()
+    assert api.calls == []
+    assert 0 < info.value.retry_after <= RATE_LIMIT_WAIT
+
+    clock.now += RATE_LIMIT_WAIT
     with pytest.raises(SourceError) as info:
         await source.fetch_with_retry()
     assert api.calls == ["ticketsByStatus"]  # nenhuma retentativa
     assert info.value.retry_after == RATE_LIMIT_WAIT
     assert "429" in str(info.value)
 
-    # cache sobreviveu: quando a API volta, um ciclo normal basta
+    # cache sobreviveu: quando a API volta (e o cooldown passa), um ciclo normal basta
     api.rate_limited = False
     api.calls.clear()
-    clock.now += 60
+    clock.now += RATE_LIMIT_WAIT
     state = await source.fetch()
     assert api.calls == ["ticketsByStatus"]
     assert state.my_tickets == 3

@@ -35,6 +35,8 @@ class EmailDetailScreen(ModalScreen[None]):
     def show(self, latest: LatestEmail) -> None:
         """Preenche a tela quando o corpo chega (abriu com 'carregando…')."""
         self.latest = latest
+        if not self.query("#email-detail-header"):
+            return  # ainda não compôs: compose() já usa self.latest
         self.query_one("#email-detail-header", Static).update(self._header())
         self.query_one("#email-detail-body", Static).update(self._body_text())
 

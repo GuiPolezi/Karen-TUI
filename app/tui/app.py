@@ -23,7 +23,7 @@ from textual.widgets import Input
 from app.config import Settings
 from app.prefs import PREFS_PATH, Prefs, load_prefs, save_prefs
 from app.sources.base import Source, SourceError
-from app.tui.screens import MODE_SCREENS, EmailDetailScreen, ModeScreen
+from app.tui.screens import MODE_SCREENS, EmailDetailScreen, ModeScreen, TicketDetailScreen
 from app.tui.widgets.base_panel import BasePanel
 
 log = logging.getLogger("tui")
@@ -276,7 +276,12 @@ class CmdAllInOneApp(App[None]):
             self.run_worker(self._open_email(key), name="detail-email", group="detail",
                             exclusive=True, exit_on_error=False)
         elif source == "milldesk":
-            self.notify(f"detalhe do chamado #{key} chega na Fase 6.2")
+            try:
+                ticket_id = int(key)
+            except ValueError:
+                self.notify(f"ID de chamado inválido: {key}", severity="warning")
+                return
+            self.open_ticket(ticket_id)
         elif source == "chatpanel":
             self.notify(f"detalhe da conversa {key} chega na Fase 6.3")
 
@@ -305,6 +310,35 @@ class CmdAllInOneApp(App[None]):
             return
         if detail is None:
             self.notify("e-mail não encontrado (pode ter sido movido)", severity="warning")
+            return
+        if screen.is_attached:
+            screen.show(detail)
+
+    def open_ticket(self, ticket_id: int, force: bool = False) -> None:
+        """Abre (ou recarrega) o detalhe do chamado; a tela abre já com "carregando…"."""
+        screen = self.screen if isinstance(self.screen, TicketDetailScreen) else None
+        if screen is None or screen.ticket_id != ticket_id:
+            if isinstance(self.screen, ModalScreen):
+                self.pop_screen()
+            screen = TicketDetailScreen(ticket_id)
+            self.push_screen(screen)
+        else:
+            screen.set_loading()
+        self.run_worker(self._load_ticket(screen, ticket_id, force), name="detail-ticket",
+                        group="detail", exclusive=True, exit_on_error=False)
+
+    async def _load_ticket(self, screen: TicketDetailScreen, ticket_id: int, force: bool) -> None:
+        source = self._sources.get("milldesk")
+        fetch_ticket = getattr(source, "fetch_ticket", None)
+        if fetch_ticket is None:
+            screen.show_error("fonte Milldesk indisponível")
+            return
+        try:
+            detail = await fetch_ticket(ticket_id, force=force)
+        except Exception as exc:
+            log.warning("erro ao buscar o chamado %s: %s", ticket_id, exc)
+            if screen.is_attached:
+                screen.show_error(str(exc))
             return
         if screen.is_attached:
             screen.show(detail)

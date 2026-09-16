@@ -1,30 +1,30 @@
  ▍CMD ALL-IN-ONE  Milldesk                ● ● ●                       Guilherme  08:14:20 
- ╭─ ▣ MILLDESK ─────────────────────────────────────────────────────────────────────────╮ 
- │ Abertos no meu nome 13  (todos: 37)  Em atendimento 7 · Aguardando cliente 4 · Paus… │ 
- │ SLA ▸ #4802 Certificado digital do prefeito vencendo · vencido há 01h05              │ 
- │ Histórico: 1184 chamados · 23,4% de 5061 · ordem: SLA mais próximo                   │ 
- │     #4802   13/09 08:14  Certificado digital do p  Em atendimento        -01h05      │ 
- │     #4821   16/09 05:14  Backup noturno não execu  Em atendimento        01h41       │ 
- │     #4833   16/09 08:13  Novo: sistema de protoco  Em atendimento        03h59       │ 
- │     #4831   16/09 08:02  Impressora fiscal não im  Em atendimento        05h59       │ 
- │     #4744   01/09 08:14  Câmera do plenário sem i  Aguardando cliente    23h59       │ 
- │     #4829   16/09 07:14  Acesso ao sistema de RH   Aguardando cliente    1d 01h      │ 
- │     #4815   15/09 08:14  Lentidão no portal da tr  Aguardando cliente    1d 23h      │ 
- │     #4790   10/09 08:14  E-mail institucional não  Aguardando cliente    2d 23h      │ 
- │     #4798   12/09 08:14  Configurar VPN para home  Aguardando cliente    4d 23h      │ 
- │     #4771   07/09 08:14  Migração do servidor de   Em atendimento        11d 23h     │ 
- │     #4750   02/09 08:14  Atualização do sistema c  Em atendimento        19d 23h     │ 
- │     #4731   27/08 08:14  Licenças do Office venci  Em atendimento        29d 23h     │ 
- │     #4809   14/09 08:14  Troca de toner — 2º anda  Pausado               Em pausa    │ 
- │                                                                                      │ 
- │                                                                                      │ 
- │                                                                                      │ 
- │                                                                                      │ 
- │                                                                                      │ 
- │                                                                                      │ 
- │                                                                                      │ 
- │                                                                                      │ 
- │                                                                                      │ 
- │                                                                                      │ 
- ╰───────────────────────────────────────────────────────────────────── 60s · 08:13:53 ─╯ 
+                                                                                          
+  ▍▣ MILLDESK                                                               60s · há 27s  
+  13 abertos no meu nome · 1 vencido                                                      
+                                                                                          
+  Em atendimento 7 · Aguardando cliente 4 · Pausado 1                                     
+  SLA ▸ #4802 Certificado digital do prefeito vencendo          ▮▮▮▮  vencido há 01h05    
+  histórico: 1184 chamados · 23,4% de 5061 · 37 abertos no total                          
+                                                                                          
+   #        ABERTURA     ASSUNTO                       STATUS                SLA          
+   ▍#4802   13/09 08:14  Certificado digital do prefe  Em atendimento        -01h05       
+    #4821   16/09 05:14  Backup noturno não executa d  Em atendimento        01h41        
+    #4833   16/09 08:13  Novo: sistema de protocolo f  Em atendimento        03h59        
+    #4831   16/09 08:02  Impressora fiscal não imprim  Em atendimento        05h59        
+    #4744   01/09 08:14  Câmera do plenário sem image  Aguardando cliente    23h59        
+    #4829   16/09 07:14  Acesso ao sistema de RH bloq  Aguardando cliente    1d 01h       
+    #4815   15/09 08:14  Lentidão no portal da transp  Aguardando cliente    1d 23h       
+    #4790   10/09 08:14  E-mail institucional não sin  Aguardando cliente    2d 23h       
+    #4798   12/09 08:14  Configurar VPN para home off  Aguardando cliente    4d 23h       
+    #4771   07/09 08:14  Migração do servidor de arqu  Em atendimento        11d 23h      
+    #4750   02/09 08:14  Atualização do sistema contá  Em atendimento        19d 23h      
+    #4731   27/08 08:14  Licenças do Office vencidas   Em atendimento        29d 23h      
+    #4809   14/09 08:14  Troca de toner — 2º andar     Pausado               Em pausa     
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
  ↑↓ mover  ⏎ abrir  s ordem: SLA mais próximo  / filtrar  o navegador  ? ajuda            

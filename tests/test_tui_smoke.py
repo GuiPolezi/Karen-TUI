@@ -15,9 +15,9 @@ async def test_three_panels_waiting_and_clock_running():
         panels = app.dashboard.query(BasePanel)
         assert len(panels) == 3
         for panel in panels:
-            assert "aguardando" in str(panel.query_one(".panel-head", Static).content)
+            assert "aguardando" in panel.summary_text
         assert "Guilherme" in screen_text(app, 120, 40)  # técnico e relógio na TopBar
-        assert not app.dashboard.query_one("#main", Container).has_class("narrow")
+        assert app.dashboard.has_class("-wide") and not app.dashboard.has_class("-narrow")
 
         await pilot.press("1")
         assert "Fase 1" in app.last_message
@@ -27,7 +27,7 @@ async def test_narrow_terminal_stacks_top_row():
     app = make_app()
     async with app.run_test(size=(80, 40)) as pilot:
         await pilot.pause()
-        assert app.dashboard.query_one("#main", Container).has_class("narrow")
+        assert app.dashboard.has_class("-narrow")  # breakpoint horizontal da tela (< 100 colunas)
 
 
 async def test_panel_error_marks_border_and_clears():
@@ -38,12 +38,12 @@ async def test_panel_error_marks_border_and_clears():
         panel.set_error("timeout")
         await pilot.pause()
         assert panel.has_class("error")
-        assert panel.query_one(".panel-error", Static).display is True
+        assert panel.query_one(".panel-foot", Static).display is True  # linha de rodapé com ✗ mensagem
 
         panel.set_error(None)
         await pilot.pause()
         assert not panel.has_class("error")
-        assert panel.query_one(".panel-error", Static).display is False
+        assert panel.query_one(".panel-foot", Static).display is False
 
 
 async def test_function_keys_switch_modes_and_escape_returns_to_dashboard():

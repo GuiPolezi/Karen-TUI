@@ -1,0 +1,50 @@
+ ▍CMD ALL-IN-ONE  Dashboard                                                                      ● ● ●                                                                              Guilherme  08:14:20 
+                                                                                                                                                                                                        
+  ▍✉ E-MAIL                                                                           30s · há 6s │    ▣ MILLDESK                                                                         60s · há 27s  
+                                                                                                  │                                                                                                     
+  ╶╮ ╷ ╷╶─╮    ╶─┐          ╶─╮                                                                   │   ╶╮ ╶─╮                 ╶╮                                                                         
+   │ ╰─┤┌─┘      │           ─┤                                                                   │    │ ┌─┘                  │                                                                         
+  ╶┴╴  ╵╰─╴      ╵          ╶─╯                                                                   │   ╶┴╴╰─╴                 ╶┴╴                                                                        
+    inbox      não lidos    spam                                                                  │   abertos no meu nome    vencido                                                                    
+                                                                                                  │                                                                                                     
+   Fulano de Tal <fulano@cm.sp.gov.br>                                                    08:11   │   Em atendimento 7 · Aguardando cliente 4 · Pausado 1                                               
+   Erro ao gerar relatório de empenhos                                                            │   SLA ▸ #4802 Certificado digital do prefeito vencendo                    ▮▮▮▮  vencido há 01h05    
+   Bom dia, ao tentar gerar o relatório de empenhos do mês o sistema apresenta a mensagem…        │                                                                                                     
+                                                                                                  │     #4802   Certificado digital do prefeito vencendo                                    -01h05      
+   ▍07:33   Maria Souza         RE: Acesso ao portal da transparência                             │     #4821   Backup noturno não executa desde sexta                                      01h41       
+    07:02   Suporte Milldesk    [#4831] Novo chamado atribuído a você                             │     #4831   Impressora fiscal não imprime cupom                                         05h59       
+    05:14   Hércules Andrade    Certificado digital vencendo                                      │     #4744   Câmera do plenário sem imagem                                               23h59       
+    03:14   Diego Leone         Porta 21 continua fechada no firewall                             │     #4829   Acesso ao sistema de RH bloqueado                                           1d 01h      
+    ontem   Contabilidade       Fechamento do mês: relatório não abre                             │     #4815   Lentidão no portal da transparência                                         1d 23h      
+    ontem   Ana Paula           Solicitação de novo usuário                                       │     #4790   E-mail institucional não sincroniza no celular                              2d 23h      
+    14/09   GitHub              [cmd-all-in-one] Dependabot alert                                 │     #4798   Configurar VPN para home office                                             4d 23h      
+                                                                                                  │     #4771   Migração do servidor de arquivos                                            11d 23h     
+                                                                                                  │     #4750   Atualização do sistema contábil                                             19d 23h     
+                                                                                                  │     #4731   Licenças do Office vencidas                                                 29d 23h     
+                                                                                                  │     #4809   Troca de toner — 2º andar                                                   Em pausa    
+                                                                                                  │                                                                                                     
+                                                                                                  │                                                                                                     
+                                                                                                  │                                                                                                     
+                                                                                                  │                                                                                                     
+                                                                                                  │                                                                                                     
+                                                                                                                                                                                                        
+   ◉ CHATPANEL   3 conversas · 1 não lida                                                                                                                                                  15s · há 1s  
+                                                                                                                                                                                                        
+    ●  08:09  Diego Leone · PM Iaras      Prefeitura › Suporte    Porta 21 continua fechada, consegue verificar hoje ainda?                                                                      1      
+    ○  08:07  Hércules · CM Tatuí TI      Câmara › Suporte        Fabio: Hércules, consegue me mandar o print do erro do backup?                                                                        
+    ○  07:14  Ana Paula · CM Itu          Câmara › Suporte        Obrigada! Funcionou.                                                                                                                  
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+                                                                                                                                                                                                        
+  4 com outros técnicos · 6 não lidas na aba                                                                                                                                                            
+ ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  m silêncio  T tema  : launcher  ? ajuda                                                                                       

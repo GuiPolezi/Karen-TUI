@@ -54,18 +54,18 @@ async def test_counter_growth_flashes_panel_and_rings_bell(tmp_path: Path):
         await wait_until(lambda: source.calls == 1)
         await pilot.pause()
         panel = app.panel("email")
-        assert not panel.has_class("changed")
+        assert not bool(panel.highlighted_counters)
 
         await pilot.press("1")  # 3 -> 3: nada muda
         await wait_until(lambda: source.calls == 2)
         await pilot.pause()
-        assert not panel.has_class("changed")
+        assert not bool(panel.highlighted_counters)
         assert app.bell_count == 0
 
         await pilot.press("1")  # 3 -> 7: destaque + bell + marcador nas linhas novas
         await wait_until(lambda: source.calls == 3)
         await pilot.pause()
-        assert panel.has_class("changed")
+        assert bool(panel.highlighted_counters)
         assert app.bell_count == 1
         assert "▎" in screen_text(app, 120, 30)  # marcador de mudança (icons.change)
 
@@ -78,7 +78,7 @@ async def test_bell_disabled_still_flashes(tmp_path: Path):
         await pilot.press("1")
         await wait_until(lambda: source.calls == 2)
         await pilot.pause()
-        assert app.panel("email").has_class("changed")
+        assert bool(app.panel("email").highlighted_counters)
         assert app.bell_count == 0
 
 
@@ -92,7 +92,7 @@ async def test_silence_mode_suppresses_bell(tmp_path: Path):
         await pilot.press("1")
         await wait_until(lambda: source.calls == 2)
         await pilot.pause()
-        assert app.panel("email").has_class("changed")
+        assert bool(app.panel("email").highlighted_counters)
         assert app.bell_count == 0
         await pilot.press("m")
         assert "reativados" in app.last_message

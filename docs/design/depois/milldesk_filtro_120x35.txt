@@ -1,35 +1,35 @@
  ▍CMD ALL-IN-ONE  Milldesk                               ● ● ●                                      Guilherme  08:14:20 
- ╭─ ▣ MILLDESK ───────────────────────────────────────────────────────────────────────────────────────────────────────╮ 
- │ Abertos no meu nome 13  (todos: 37)  Em atendimento 7 · Aguardando cliente 4 · Pausado 1                           │ 
- │ SLA ▸ #4802 Certificado digital do prefeito vencendo · vencido há 01h05                                            │ 
- │ Histórico: 1184 chamados · 23,4% de 5061 · ordem: SLA mais próximo                                                 │ 
- │ bac                                                                                                                │ 
- │     #4821   16/09 05:14  Backup noturno não executa desde sexta                  Em atendimento        01h41       │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- ╰─────────────────────────────────────────────────────────────────────────────────────────────────── 60s · 08:13:53 ─╯ 
+                                                                                                                        
+  ▍▣ MILLDESK                                                                                             60s · há 27s  
+  13 abertos no meu nome · 1 vencido                                                                                    
+                                                                                                                        
+  Em atendimento 7 · Aguardando cliente 4 · Pausado 1                                                                   
+  SLA ▸ #4802 Certificado digital do prefeito vencendo                                        ▮▮▮▮  vencido há 01h05    
+  histórico: 1184 chamados · 23,4% de 5061 · 37 abertos no total                                                        
+                                                                                                                        
+   #        ABERTURA     ASSUNTO                                                     STATUS                SLA          
+   ▍#4821   16/09 05:14  Backup noturno não executa desde sexta                      Em atendimento        01h41        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
  ↑↓ mover  ⏎ abrir  s ordem: SLA mais próximo  / filtrar  o navegador  y copiar ID  2 atualizar  : launcher  ? ajuda    

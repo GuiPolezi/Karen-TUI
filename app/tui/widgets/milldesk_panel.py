@@ -1,8 +1,8 @@
 """Painel do Milldesk: chamados abertos no nome do técnico, com SLA e ordenação.
 
-As funções puras (`sla_token`, `sla_text`, `nearest_sla`, `sorted_tickets`) devolvem
-nomes de token (`danger`, `warn`, `ok`, `text-faint`), nunca cores; o painel converte
-com `self.style()`.
+As funções puras (`sla_token`, `sla_text`, `sla_bar`, `nearest_sla`, `sorted_tickets`)
+devolvem nomes de token (`danger`, `warn`, `ok`, `text-faint`), nunca cores; o painel
+converte com `self.style()`.
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ SORT_LABELS = {"sla": "SLA mais próximo", "data": "mais recente", "status": "st
 SLA_WARNING_HOURS = 4
 SLA_ALERT_MINUTES = 30
 HEADER_REFRESH_SECONDS = 30.0
+BAR_BLOCKS = 4
 
 
 def format_percentage(value: float) -> str:
@@ -51,6 +52,21 @@ def sla_text(ticket: MilldeskTicket, now: datetime | None = None) -> str:
     return format_remaining(remaining)
 
 
+def sla_bar(ticket: MilldeskTicket, now: datetime | None = None, icons: IconSet = UNICODE) -> str:
+    """Barra de 4 blocos: quanto mais perto do prazo, mais cheia (vencido = cheia)."""
+    remaining = ticket.sla_remaining(now)
+    if remaining is None:
+        return icons.bar_off * BAR_BLOCKS
+    hours = remaining.total_seconds() / 3600
+    filled = 4 if hours < 1 else 3 if hours < SLA_WARNING_HOURS else 2 if hours < 24 else 1
+    return icons.bar_on * filled + icons.bar_off * (BAR_BLOCKS - filled)
+
+
+def overdue_count(tickets: list[MilldeskTicket], now: datetime | None = None) -> int:
+    now = now or clock.now()
+    return sum(1 for t in tickets if (r := t.sla_remaining(now)) is not None and r.total_seconds() < 0)
+
+
 def nearest_sla(tickets: list[MilldeskTicket], now: datetime | None = None) -> MilldeskTicket | None:
     """Chamado com o prazo de SLA mais próximo (vencidos primeiro); None sem prazos."""
     with_deadline = [t for t in tickets if t.sla_deadline is not None]
@@ -60,11 +76,10 @@ def nearest_sla(tickets: list[MilldeskTicket], now: datetime | None = None) -> M
 
 
 def sla_highlight(ticket: MilldeskTicket, now: datetime | None = None, *, tokens: Tokens = CARBON,
-                  icons: IconSet = UNICODE) -> Text:
-    """Linha de destaque: 'SLA ▸ #id assunto · faltam 02h15' com a cor só no tempo."""
+                  icons: IconSet = UNICODE, width: int = 0) -> Text:
+    """'SLA ▸ #id assunto   ▮▮▮▯  faltam 02h15': a cor só na barra e no tempo."""
     now = now or clock.now()
     remaining = ticket.sla_remaining(now)
-    text = Text(no_wrap=True, overflow="ellipsis")
     minutes = (remaining.total_seconds() / 60) if remaining is not None else None
     if minutes is not None and minutes < 0:
         token, label = "danger", f"vencido há {format_remaining(-remaining)}"
@@ -72,12 +87,21 @@ def sla_highlight(ticket: MilldeskTicket, now: datetime | None = None, *, tokens
         token, label = "danger", f"faltam {format_remaining(remaining)} {icons.warn}"
     elif minutes is not None and minutes < SLA_WARNING_HOURS * 60:
         token, label = "warn", f"faltam {format_remaining(remaining)}"
-    else:
+    elif minutes is not None:
         token, label = "ok", f"faltam {format_remaining(remaining)}"
-    text.append(f"SLA {icons.sla} ", style=tokens.rich("text-faint"))
-    text.append(f"#{ticket.id} ", style=tokens.rich("text-muted")).append(ticket.subject[:40], style=tokens.rich("text"))
-    text.append(f" {icons.sep} ", style=tokens.rich("text-faint")).append(label, style=tokens.rich(token, bold=True))
-    return text
+    else:
+        token, label = "text-faint", "sem prazo"
+    left = Text(no_wrap=True)
+    left.append(f"SLA {icons.sla} ", style=tokens.rich("text-faint"))
+    left.append(f"#{ticket.id} ", style=tokens.rich("text-muted")).append(ticket.subject, style=tokens.rich("text"))
+    right = Text(no_wrap=True)
+    right.append(sla_bar(ticket, now, icons), style=tokens.rich(token)).append("  ")
+    right.append(label, style=tokens.rich(token, bold=True))
+    if width <= 0:
+        return Text.assemble(left, "  ", right)
+    from app.tui.widgets.base_panel import padded
+
+    return padded(left, right, width)
 
 
 def sorted_tickets(tickets: list[MilldeskTicket], mode: str, now: datetime | None = None) -> list[MilldeskTicket]:
@@ -94,14 +118,26 @@ class MilldeskPanel(BasePanel):
     SOURCE = "milldesk"
     ICON = "ticket"
     TITLE = "MILLDESK"
+    MORE_KEY = "F3"
+    SUMMARY = [("abertos", "aberto no meu nome|abertos no meu nome"), ("vencidos", "vencido|vencidos")]
     COLUMNS = [("id", "#", 6), ("time", "Abertura", 11), ("subject", "Assunto", None),
                ("status", "Status", 20), ("sla", "SLA", 9)]
-    COLUMNS_COMPACT = [("id", "#", 6), ("subject", "Assunto", None), ("status", "Status", 12), ("sla", "SLA", 8)]
+    COLUMNS_COMPACT = [("id", "#", 6), ("subject", "Assunto", None), ("sla", "SLA", 8)]
     COLUMNS_NARROW = [("id", "#", 6), ("subject", "Assunto", None), ("sla", "SLA", 8)]
     BINDINGS = [*BasePanel.BINDINGS, Binding("s", "cycle_sort", "Ordenar", show=False)]
 
     def counters(self, state: MilldeskState) -> dict[str, int]:
-        return {"abertos": state.my_tickets}
+        return {"abertos": state.my_tickets, "vencidos": overdue_count(state.tickets)}
+
+    def summary_values(self, state: MilldeskState) -> dict[str, tuple[str, str]]:
+        overdue = overdue_count(state.tickets)
+        return {
+            "abertos": (str(state.my_tickets), "text" if state.my_tickets else "text-faint"),
+            "vencidos": (str(overdue), "danger" if overdue else "text-faint"),
+        }
+
+    def empty_text(self) -> str:
+        return "nenhum chamado no seu nome"
 
     @property
     def sort_mode(self) -> str:
@@ -109,24 +145,23 @@ class MilldeskPanel(BasePanel):
         mode = getattr(prefs, "milldesk_sort", "sla")
         return mode if mode in SORT_MODES else "sla"
 
-    def header_text(self, state: MilldeskState) -> Text:
-        label, faint = self.style("text-muted"), self.style("text-faint")
-        sep = f" {self.icons.sep} "
+    def extra_text(self, state: MilldeskState) -> Text | None:
+        tokens, icons = self.tokens, self.icons
+        sep = f" {icons.sep} "
         text = Text(no_wrap=True, overflow="ellipsis")
-        text.append("Abertos no meu nome ", style=label).append(str(state.my_tickets), style=self.style("text", bold=True))
-        text.append(f"  (todos: {state.open_total})", style=faint)
-        if state.my_open_by_status:
-            text.append("  " + sep.join(f"{name} {n}" for name, n in state.my_open_by_status.items()), style=label)
+        parts = [f"{name} {n}" for name, n in state.my_open_by_status.items()]
+        text.append(sep.join(parts), style=tokens.rich("text-muted"))
         nearest = nearest_sla(state.tickets)
         if nearest is not None:
-            text.append("\n").append_text(sla_highlight(nearest, tokens=self.tokens, icons=self.icons))
-        text.append(
-            f"\nHistórico: {state.my_history} chamados{sep}{format_percentage(state.my_percentage)}% de "
-            f"{state.total_all_agents}{sep}ordem: {SORT_LABELS[self.sort_mode]}",
-            style=faint,
-        )
+            text.append("\n").append_text(sla_highlight(nearest, tokens=tokens, icons=icons, width=self.content_width))
+        if self.full:
+            text.append(
+                f"\nhistórico: {state.my_history} chamados{sep}{format_percentage(state.my_percentage)}% de "
+                f"{state.total_all_agents}{sep}{state.open_total} abertos no total",
+                style=tokens.rich("text-faint"),
+            )
         if state.note:
-            text.append(f"\n{self.icons.warn} {state.note}", style=self.style("warn"))
+            text.append(f"\n{icons.warn} {state.note}", style=tokens.rich("warn"))
         return text
 
     def on_mount(self) -> None:

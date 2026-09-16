@@ -58,15 +58,14 @@ async def test_email_worker_renders_state_and_manual_refresh():
         await wait_until(lambda: "email" in app.states)
         await pilot.pause()
         text = screen_text(app, 120, 30)
-        assert "Inbox 142" in text  # rótulo em text-muted, número em bold (sem dois-pontos)
-        assert "Não lidos 7" in text
-        assert "Spam 3" in text
+        summary = app.panel("email").summary_text  # em 120x30 os contadores são Digits
+        assert "142 inbox" in summary and "7 não lidos" in summary and "3 spam" in summary
         assert "Fulano" in text
-        assert "Erro ao gerar" in text  # o assunto é cortado na largura do painel compacto
+        assert "Erro ao gerar" in text  # o mais recente vira o cartão de 3 linhas
         assert "Beltrano" in text
-        assert "60s · 15:31:02" in text
+        assert "60s ·" in text  # intervalo e "há N" no título do painel
         assert source.calls == 1
-        assert app.panel("email").table.keys == ["10", "9"]
+        assert app.panel("email").table.keys == ["9"]  # o "10" está no cartão, não na lista
 
         await pilot.press("1")
         await wait_until(lambda: source.calls == 2)

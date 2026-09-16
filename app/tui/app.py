@@ -281,7 +281,7 @@ class CmdAllInOneApp(App[None]):
         label = SOURCE_PANELS.get(name, (name, name, 0))[1]
         log.info("aumentou em %s: %s", label, ", ".join(what))
         for panel in self.panels.get(name, []):
-            panel.flash()
+            panel.flash(what)
         if self.current_mode != "dashboard":
             self._away.setdefault(label, []).extend(what)
         if self.silenced:

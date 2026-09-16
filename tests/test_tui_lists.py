@@ -161,11 +161,11 @@ async def test_resize_across_narrow_threshold_with_data_keeps_rows_and_selection
         await pilot.pause()
         assert panel.table.keys == ["1", "2"]
         assert panel.table.selected_key == "2"
-        assert [key for key, _, _ in panel.table.column_specs] == ["mark", "id", "subject", "sla"]
+        assert [key for key, _, _ in panel.table.column_specs] == ["id", "subject", "sla"]
         await pilot.resize_terminal(120, 30)
         await pilot.pause()
         assert panel.table.keys == ["1", "2"]
-        assert [key for key, _, _ in panel.table.column_specs] == ["mark", "id", "subject", "status", "sla"]
+        assert [key for key, _, _ in panel.table.column_specs] == ["id", "subject", "sla"]  # compacto = estreito no Milldesk
 
 
 # --- ChatPanel: "com outros" e filtro -----------------------------------------------------

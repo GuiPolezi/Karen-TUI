@@ -1,30 +1,30 @@
  ▍CMD ALL-IN-ONE  Dashboard               ● ● ●                       Guilherme  08:14:20 
- ╭─ ✉ E-MAIL ───────────────────────────────────────────────────────────────────────────╮ 
- │ Inbox 142   Não lidos 7   Spam 3                                                     │ 
- │     08:11        Erro ao gerar relatório de empenhos                                 │ 
- │     07:33        RE: Acesso ao portal da transparência                               │ 
- │     07:02        [#4831] Novo chamado atribuído a você                               │ 
- │     05:14        Certificado digital vencendo                                        │ 
- │     03:14        Porta 21 continua fechada no firewall                               │ 
- │     15/09 06:14  Fechamento do mês: relatório não abre                               │ 
- │     15/09 02:14  Solicitação de novo usuário                                         │ 
- │     14/09 08:14  [cmd-all-in-one] Dependabot alert                                   │ 
- │                                                                                      │ 
- │                                                                                      │ 
- ╰───────────────────────────────────────────────────────────────────── 30s · 08:14:14 ─╯ 
- ╭─ ▣ MILLDESK ─────────────────────────────────────────────────────────────────────────╮ 
- │ Abertos no meu nome 13  (todos: 37)  Em atendimento 7 · Aguardando cliente 4 · Paus… │ 
- │ SLA ▸ #4802 Certificado digital do prefeito vencendo · vencido há 01h05              │ 
- │ Histórico: 1184 chamados · 23,4% de 5061 · ordem: SLA mais próximo                   │ 
- │     #4802   Certificado digital do prefeito vencendo                      -01h05     │ 
- │     #4821   Backup noturno não executa desde sexta                        01h41      │ 
- │  ▎  #4833   Novo: sistema de protocolo fora do ar                         03h59      │ 
- │     #4831   Impressora fiscal não imprime cupom                           05h59      │ 
- │     #4744   Câmera do plenário sem imagem                                 23h59      │ 
- │     #4829   Acesso ao sistema de RH bloqueado                             1d 01h     │ 
- │     #4815   Lentidão no portal da transparência                           1d 23h     │ 
- │     #4790   E-mail institucional não sincroniza no celular                2d 23h     │ 
- ╰───────────────────────────────────────────────────────────────────── 60s · 08:13:53 ─╯ 
- ╭─ ◉ CHATPANEL ────────────────────────────────────────────────────────────────────────╮ 
- │ Minhas conversas 3   Não lidas 1   ·   4 em atendimento por outros · 6 não lidas na… │ 
+  ▍✉ E-MAIL                                                                  30s · há 6s  
+  142 inbox · 7 não lidos · 3 spam                                                        
+                                                                                          
+   Fulano de Tal <fulano@cm.sp.gov.br>                                           08:11    
+   Erro ao gerar relatório de empenhos                                                    
+   Bom dia, ao tentar gerar o relatório de empenhos do mês o sistema apresenta a mensag…  
+                                                                                          
+   ▍07:33   RE: Acesso ao portal da transparência                                         
+    07:02   [#4831] Novo chamado atribuído a você                                      ▅  
+    05:14   Certificado digital vencendo                                                  
+  +4 · F2                                                                                 
+   ▣ MILLDESK                                                               60s · há 27s  
+  13 abertos no meu nome · 1 vencido                                                      
+                                                                                          
+  Em atendimento 7 · Aguardando cliente 4 · Pausado 1                                     
+  SLA ▸ #4802 Certificado digital do prefeito vencendo          ▮▮▮▮  vencido há 01h05    
+                                                                                          
+    #4802   Certificado digital do prefeito vencendo                          -01h05      
+    #4821   Backup noturno não executa desde sexta                            01h41    ▆  
+   ▎#4833   Novo: sistema de protocolo fora do ar                             03h59       
+    #4831   Impressora fiscal não imprime cupom                               05h59       
+  +9 · F3                                                                                 
+                                                                                          
+   ◉ CHATPANEL   3 conversas · 1 não lida                                    15s · há 1s  
+                                                                                          
+    ●  08:09  Diego Leone · PM Iar  Porta 21 continua fechada, consegue verificar  1      
+    ○  08:07  Hércules · CM Tatuí   Fabio: Hércules, consegue me mandar o print d      ▅  
+  +1 · F4   ·   4 com outros técnicos · 6 não lidas na aba                                
  ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  ? ajuda         

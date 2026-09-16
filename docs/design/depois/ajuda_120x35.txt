@@ -1,35 +1,35 @@
  ▍CMD ALL-IN-ONE  Dashboard                              ● ● ●                                      Guilherme  08:14:20 
- ╭─ ✉ E-MAIL ──────────────────────────────────────────────╮╭─ ▣ MILLDESK ────────────────────────────────────────────╮ 
- │ Inb╭──────────────────────────────────────────────────────────────────────────────────────────────────────────╮7 … │ 
- │    │                                                                                                          │ ·… │ 
- │    │  Atalhos                                            Launcher (:)                                         │A … │ 
- │    │    F1 / d               Dashboard                     termo  /  g termo                                  │    │ 
- │    │    F2                   E-mail (u: só não lidos)      ddg termo · yt termo                               │    │ 
- │    │    F3                   Milldesk (s: ordenar)         md 1234                                            │    │ 
- │    │    F4                   ChatPanel (t: com outros)     md! 1234                                           │    │ 
- │    │    F5 / l               Log (f: filtro de nível)      wa 5511999999999                                   │    │ 
- │    │    F6                   Notas                         cp · mail · mdweb                                  │    │ 
- │    │    F7                   Eventos do dia (x: limpar     open url                                           │    │ 
- │    │                         tela)                         fav nome                                           │    │ 
- ╰────│    F8                   Saúde das fontes              fav add nome url · fav rm nome · fav               │53 ─╯ 
- ╭─ ◉ │    ↑ ↓ j k PgUp PgDn    mover o cursor                email · tickets · chats · log · notes · dash       │────╮ 
- │ Min│    Enter                abrir o item                  refresh  /  refresh md|email|cp                    │    │ 
- │    │    Esc                  voltar / limpar filtro        help                                               │    │ 
- │    │    Tab                  trocar painel                                                                    │    │ 
- │    │    /                    filtrar a lista                                                                  │    │ 
- │    │    o                    abrir no navegador                                                               │    │ 
- │    │    y                    copiar                                                                           │    │ 
- │    │    e                    último e-mail                                                                    │    │ 
- │    │    r · 1 2 3            atualizar                                                                        │    │ 
- │    │    c                    login ChatPanel                                                                  │    │ 
- │    │    m                    silêncio 30 min                                                                  │    │ 
- │    │    T                    próximo tema                                                                     │    │ 
- │    │    :                    launcher                                                                         │    │ 
- │    │    ?                    esta ajuda                                                                       │    │ 
- │    │    q                    sair                                                                             │    │ 
- │    │                                                                                                          │    │ 
- │    │  Esc fecha                                                                                               │    │ 
- │    │                                                                                                          │    │ 
- │    ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────╯    │ 
- ╰─────────────────────────────────────────────────────────────────────────────────────────────────── 15s · 08:14:18 ─╯ 
+                                                                                                                        
+  ▍✉ E╭──────────────────────────────────────────────────────────────────────────────────────────────────────────╮ 27s  
+      │                                                                                                          │      
+  ╶╮ ╷│  Atalhos                                            Launcher (:)                                         │      
+   │ ╰│    F1 / d               Dashboard                     termo  /  g termo                                  │      
+  ╶┴╴ │    F2                   E-mail (u: só não lidos)      ddg termo · yt termo                               │      
+    in│    F3                   Milldesk (s: ordenar)         md 1234                                            │      
+      │    F4                   ChatPanel (t: com outros)     md! 1234                                           │      
+   Ful│    F5 / l               Log (f: filtro de nível)      wa 5511999999999                                   │      
+   Err│    F6                   Notas                         cp · mail · mdweb                                  │05    
+   Bom│    F7                   Eventos do dia (x: limpar     open url                                           │      
+      │                         tela)                         fav nome                                           │      
+   ▍07│    F8                   Saúde das fontes              fav add nome url · fav rm nome · fav               │      
+    07│    ↑ ↓ j k PgUp PgDn    mover o cursor                email · tickets · chats · log · notes · dash       │      
+    05│    Enter                abrir o item                  refresh  /  refresh md|email|cp                    │   ▁  
+    03│    Esc                  voltar / limpar filtro        help                                               │      
+    on│    Tab                  trocar painel                                                                    │      
+    on│    /                    filtrar a lista                                                                  │      
+    14│    o                    abrir no navegador                                                               │      
+      │    y                    copiar                                                                           │      
+   ◉ C│    e                    último e-mail                                                                    │á 1s  
+      │    r · 1 2 3            atualizar                                                                        │      
+    ● │    c                    login ChatPanel                                                                  │      
+    ○ │    m                    silêncio 30 min                                                                  │      
+    ○ │    T                    próximo tema                                                                     │      
+      │    :                    launcher                                                                         │      
+      │    ?                    esta ajuda                                                                       │      
+      │    q                    sair                                                                             │      
+      │                                                                                                          │      
+      │  Esc fecha                                                                                               │      
+      │                                                                                                          │      
+      ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────╯      
+  4 com outros técnicos · 6 não lidas na aba                                                                            
  ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  m silêncio  T tema  : launcher  ? ajuda       

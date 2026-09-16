@@ -13,9 +13,12 @@ class ChatPanelPanel(BasePanel):
     SOURCE = "chatpanel"
     ICON = "chat"
     TITLE = "CHATPANEL"
-    COLUMNS = [("online", "", 1), ("time", "Hora", 5), ("name", "Contato", 30), ("tag", "Tag", 12),
-               ("dept", "Depto", 12), ("message", "Última mensagem", None), ("unread", "", 3)]
-    COLUMNS_COMPACT = [("online", "", 1), ("time", "Hora", 5), ("name", "Contato", 26), ("tag", "Tag", 12),
+    MORE_KEY = "F4"
+    SUMMARY = [("conversas", "conversa|conversas"), ("não lidas", "não lida|não lidas")]
+    SUMMARY_IN_TITLE = True
+    COLUMNS = [("online", "", 1), ("time", "Hora", 5), ("name", "Contato", 30), ("tagdept", "Tag › Depto", 24),
+               ("message", "Última mensagem", None), ("unread", "", 3)]
+    COLUMNS_COMPACT = [("online", "", 1), ("time", "Hora", 5), ("name", "Contato", 26), ("tagdept", "Tag › Depto", 22),
                        ("message", "Última mensagem", None), ("unread", "", 3)]
     COLUMNS_NARROW = [("online", "", 1), ("time", "Hora", 5), ("name", "Contato", 20),
                       ("message", "Última mensagem", None), ("unread", "", 3)]
@@ -24,25 +27,29 @@ class ChatPanelPanel(BasePanel):
     def counters(self, state: ChatPanelState) -> dict[str, int]:
         return {"conversas": len(state.mine), "não lidas": state.mine_unread}
 
+    def summary_values(self, state: ChatPanelState) -> dict[str, tuple[str, str]]:
+        return {
+            "conversas": (str(len(state.mine)), "text" if state.mine else "text-faint"),
+            "não lidas": (str(state.mine_unread), "text" if state.mine_unread else "text-faint"),
+        }
+
+    def empty_text(self) -> str:
+        return "nenhuma conversa no seu nome"
+
     @property
     def show_others(self) -> bool:
         prefs = getattr(self.app, "prefs", None)
         return bool(self.full and prefs is not None and prefs.chatpanel_show_others)
 
-    def header_text(self, state: ChatPanelState) -> Text:
-        label, number, faint = self.style("text-muted"), self.style("text", bold=True), self.style("text-faint")
-        sep = f" {self.icons.sep} "
+    def foot_text(self, state: ChatPanelState) -> Text | None:
+        icons = self.icons
         text = Text(no_wrap=True, overflow="ellipsis")
-        text.append("Minhas conversas ", style=label).append(str(len(state.mine)), style=number)
-        text.append("   Não lidas ", style=label).append(str(state.mine_unread), style=number)
-        text.append(
-            f"   {sep.strip()}   {state.others_count} em atendimento por outros{sep}{state.total_unread_tab} não lidas na aba",
-            style=faint,
-        )
+        text.append(f"{state.others_count} com outros técnicos {icons.sep} {state.total_unread_tab} não lidas na aba",
+                    style=self.style("text-faint"))
         if self.full:
-            text.append("   t " + ("esconder" if self.show_others else "mostrar") + " com outros", style=faint)
-        if not state.mine:
-            text.append(f"\n{self.icons.ok} nenhuma conversa no meu nome", style=faint)
+            text.append(f"   {icons.sep}   t ", style=self.style("text-faint"))
+            text.append("esconder" if self.show_others else "mostrar", style=self.style("text-muted"))
+            text.append(" com outros", style=self.style("text-faint"))
         return text
 
     def items(self, state: ChatPanelState) -> list[tuple[ChatItem, bool]]:
@@ -58,14 +65,20 @@ class ChatPanelPanel(BasePanel):
             name = item.name if mine else f"{item.name}  ({item.agent or '?'})"
             name_style = self.style("mine" if mine else "other", bold=mine)
             body = self.style("text" if mine else "other")
+            tagdept = f" {icons.arrow} ".join(p for p in (item.tag, item.department) if p)
+            message = Text(style=body)
+            author, sep, rest = item.last_message.partition(": ")
+            if sep and len(author) <= 20 and " " not in author.strip():
+                message.append(f"{author}: ", style=self.style("text-faint")).append(rest)
+            else:
+                message.append(item.last_message)
             rows.append((item.number, {
                 "online": Text(icons.online if item.online else icons.offline,
                                style=self.style("text" if item.online else "text-faint")),
                 "time": Text(item.time, style=self.style("text-muted")),
                 "name": Text(name, style=name_style),
-                "tag": Text(item.tag or "", style=self.style("text-muted")),
-                "dept": Text(item.department or "", style=self.style("text-muted")),
-                "message": Text(item.last_message, style=body),
+                "tagdept": Text(tagdept, style=self.style("text-muted")),
+                "message": message,
                 "unread": Text(str(item.unread), style=self.style("accent", bold=True)) if item.unread else Text(""),
             }))
         return rows

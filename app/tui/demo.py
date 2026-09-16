@@ -247,7 +247,7 @@ class FakeSource(Source[Any]):
             if "sessão expirada" in self._error:
                 from app.sources.chatpanel import SessionExpiredError
 
-                raise SourceError(self._error, retry_after=self._retry_after) from SessionExpiredError(self._error)
+                raise SessionExpiredError(self._error)  # como a fonte real: vira SourceError com esta causa
             raise SourceError(self._error, retry_after=self._retry_after)
         return self._state
 

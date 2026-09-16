@@ -75,8 +75,15 @@ Toast .toast--title { color: $text-muted; text-style: none; }
     padding: 0 1;
 }
 
+/* a linha de cima e o ChatPanel dividem a altura 3:2; em terminal baixo a de cima é fixa */
 #top-row {
-    height: 13;
+    height: 3fr;
+    margin-top: 1;
+}
+
+DashboardScreen.-short #top-row {
+    height: 8;
+    margin-top: 0;
 }
 
 #top-row > BasePanel {
@@ -84,55 +91,104 @@ Toast .toast--title { color: $text-muted; text-style: none; }
     height: 100%;
 }
 
+#top-rule {
+    width: 3;
+    height: 100%;
+    margin: 0;
+    color: $border;
+}
+
 #chatpanel {
-    height: 1fr;
+    height: 2fr;
+    margin-top: 1;
 }
 
 /* Terminal estreito (< 100 colunas): empilha os painéis de cima */
-#main.narrow #top-row {
+DashboardScreen.-narrow #top-row {
     layout: vertical;
     height: auto;
+    margin-top: 0;
 }
 
-#main.narrow #top-row > BasePanel {
+DashboardScreen.-narrow #top-row > BasePanel {
     width: 1fr;
-    height: 13;
+    height: 11;
+}
+
+DashboardScreen.-narrow #top-rule {
+    display: none;
+}
+
+/* Terminal baixo: só contadores e SLA nos painéis de cima */
+DashboardScreen.-short #email .panel-extra,
+DashboardScreen.-short #top-row .panel-table,
+DashboardScreen.-short #top-row .panel-foot {
+    display: none;
 }
 
 /* Telas cheias: um painel ocupa tudo */
 #email-full, #milldesk-full, #chatpanel-full {
     height: 1fr;
-    margin: 0 1;
+    margin: 1 1 0 1;
 }
 
-/* Painéis ---------------------------------------------------------------------- */
+/* Painéis (sem borda; o foco é o título em accent + marcador) ------------------- */
 
 BasePanel {
-    border: round $border;
-    border-title-color: $text;
-    border-title-style: bold;
-    border-subtitle-color: $text-faint;
     padding: 0 1;
     height: auto;
-    min-height: 7;
+    min-height: 5;
 }
 
-BasePanel:focus-within {
-    border: round $accent;
-    border-title-color: $accent;
+BasePanel .panel-title {
+    height: 1;
 }
 
-BasePanel.error {
-    border: round $danger;
+BasePanel .panel-name {
+    width: 1fr;
 }
 
-BasePanel.unconfigured {
-    border: round $border;
-    border-title-color: $text-muted;
+BasePanel .panel-meta {
+    width: auto;
+    min-width: 12;
+    text-align: right;
 }
 
-BasePanel .panel-head {
+BasePanel .panel-digits {
+    height: 4;
+    margin-top: 1;
+}
+
+BasePanel .digit-block {
+    width: auto;
+    height: 4;
+    margin-right: 4;
+}
+
+BasePanel .digit-block .digit-value {
+    width: auto;
+    color: $text;
+}
+
+BasePanel .digit-block.-accent .digit-value { color: $accent; }
+BasePanel .digit-block.-danger .digit-value { color: $danger; }
+BasePanel .digit-block.-faint .digit-value { color: $text-faint; }
+
+BasePanel .digit-block .digit-label {
+    width: 100%;
+    text-align: center;
+    color: $text-muted;
+}
+
+BasePanel .panel-summary {
     height: auto;
+    text-wrap: nowrap;
+    text-overflow: ellipsis;
+}
+
+BasePanel .panel-extra {
+    height: auto;
+    margin-top: 1;
     text-wrap: nowrap;
     text-overflow: ellipsis;
 }
@@ -141,19 +197,27 @@ BasePanel .panel-filter {
     height: 1;
     border: none;
     padding: 0;
+    margin-top: 1;
     background: $surface;
 }
 
 BasePanel .panel-table {
     height: 1fr;
-    min-height: 3;
+    min-height: 2;
+    margin-top: 1;
     scrollbar-size: 1 1;
 }
 
-BasePanel .panel-error {
-    color: $danger;
+BasePanel .panel-table > .datatable--header {
+    color: $text-faint;
+    background: $bg;
+    text-style: none;
+}
+
+BasePanel .panel-foot {
     height: auto;
-    display: none;
+    text-wrap: nowrap;
+    text-overflow: ellipsis;
 }
 
 /* Log (F5) ------------------------------------------------------------------- */

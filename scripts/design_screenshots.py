@@ -164,8 +164,8 @@ async def capture_all(out: Path) -> None:
             await pilot.pause()
             _save(app, out, "dashboard_silencio", width, height)
 
-    # terminal muito baixo e terminal estreito extra
-    for width, height in ((120, 22), (80, 24)):
+    # tela cheia (alvo real), terminal muito baixo e terminal estreito
+    for width, height in ((200, 50), (120, 22), (80, 24)):
         print(f"-- {width}x{height}")
         app = make_app()
         async with app.run_test(size=(width, height)) as pilot:

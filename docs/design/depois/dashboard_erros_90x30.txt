@@ -1,5 +1,5 @@
- ▍CMD ALL-IN-ONE  Dashboard               ! ● ✗                       Guilherme  08:14:20 
-  ▍✉ E-MAIL                                                                 ✗ há 0s  30s  
+ ▍CMD ALL-IN-ONE  Dashboard               ⠴ ● ✗                       Guilherme  08:14:20 
+  ▍✉ E-MAIL                                                                      30s · ⠼  
   aguardando a primeira coleta…                                                           
                                                                                           
                                                                                           
@@ -9,7 +9,7 @@
                                                                                           
                                                                                           
                                                                                           
-  ✗ timeout · aguardando 600s · há 0s                                                     
+                                                                                          
    ▣ MILLDESK                                                               60s · há 27s  
   12 abertos no meu nome · 1 vencido                                                      
                                                                                           
@@ -23,8 +23,8 @@
   +8 · F3                                                                                 
                                                                                           
    ◉ CHATPANEL                                                              ✗ há 0s  15s  
-  aguardando a primeira coleta…                                                           
                                                                                           
                                                                                           
-                                                                                          
+                                            ✗                                             
+                            sessão expirada: faça o login (c)                             
  ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  ? ajuda         

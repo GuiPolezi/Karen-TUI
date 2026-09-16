@@ -1,4 +1,4 @@
- ▍CMD ALL-IN-ONE  Dashboard               ● ● ○                       Guilherme  08:14:20 
+ ▍CMD ALL-IN-ONE  Dashboard               ● ● ●                       Guilherme  08:14:20 
   ▍✉ E-MAIL                                                                  30s · há 6s  
   142 inbox · 7 não lidos · 3 spam                                                        
                                                                                           
@@ -11,20 +11,20 @@
     05:14   Certificado digital vencendo                                                  
   +4 · F2                                                                                 
    ▣ MILLDESK                                                               60s · há 27s  
-  12 abertos no meu nome · 1 vencido                                                      
-                                                                                          
-  Em atendimento 7 · Aguardando cliente 4 · Pausado 1                                     
-  SLA ▸ #4802 Certificado digital do prefeito vencendo          ▮▮▮▮  vencido há 01h05    
-                                                                                          
-    #4802   Certificado digital do prefeito vencendo                          -01h05      
-    #4821   Backup noturno não executa desde sexta                            01h41    ▅  
-    #4831   Impressora fiscal não imprime cupom                               05h59       
-    #4744   Câmera do plenário sem imagem                                     23h59       
-  +8 · F3                                                                                 
-                                                                                          
-   ◉ CHATPANEL                                                                   15s · –  
+  0 abertos no meu nome · 0 vencidos                                                      
                                                                                           
                                                                                           
-                                            –                                             
-                      não configurado · CHATPANEL_URL vazio no .env                       
+                                                                                          
+                                                                                          
+                               ✓ nenhum chamado no seu nome                               
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+   ◉ CHATPANEL   3 conversas · 1 não lida                                    15s · há 1s  
+                                                                                          
+    ●  08:09  Diego Leone · PM Iar  Porta 21 continua fechada, consegue verificar  1      
+    ○  08:07  Hércules · CM Tatuí   Fabio: Hércules, consegue me mandar o print d      ▅  
+  +1 · F4   ·   4 com outros técnicos · 6 não lidas na aba                                
  ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  ? ajuda         

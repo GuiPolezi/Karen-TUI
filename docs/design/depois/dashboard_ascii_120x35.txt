@@ -1,35 +1,35 @@
- ▍CMD ALL-IN-ONE  Dashboard                              ● ● ○                                      Guilherme  08:14:20 
+ |CMD ALL-IN-ONE  Dashboard                              o o o                                      Guilherme  08:14:20 
                                                                                                                         
-  ▍✉ E-MAIL                                   30s · há 6s │    ▣ MILLDESK                                 60s · há 27s  
+  |@ E-MAIL                                   30s . há 6s │    # MILLDESK                                 60s . há 27s  
                                                           │                                                             
   ╶╮ ╷ ╷╶─╮    ╶─┐          ╶─╮                           │   ╶╮ ╶─╮                 ╶╮                                 
    │ ╰─┤┌─┘      │           ─┤                           │    │ ┌─┘                  │                                 
   ╶┴╴  ╵╰─╴      ╵          ╶─╯                           │   ╶┴╴╰─╴                 ╶┴╴                                
     inbox      não lidos    spam                          │   abertos no meu nome    vencido                            
                                                           │                                                             
-   Fulano de Tal <fulano@cm.sp.gov.br>            08:11   │   Em atendimento 7 · Aguardando cliente 4 · Pausado 1       
-   Erro ao gerar relatório de empenhos                    │   SLA ▸ #4802 Certificado digita… ▮▮▮▮  vencido há 01h05    
+   Fulano de Tal <fulano@cm.sp.gov.br>            08:11   │   Em atendimento 7 . Aguardando cliente 4 . Pausado 1       
+   Erro ao gerar relatório de empenhos                    │   SLA > #4802 Certificado digita… ####  vencido há 01h05    
    Bom dia, ao tentar gerar o relatório de empenhos do m… │                                                             
                                                           │     #4802   Certificado digital do prefeito ve  -01h05      
-   ▍07:33   Maria Souza         RE: Acesso ao portal da   │     #4821   Backup noturno não executa desde s  01h41       
+   |07:33   Maria Souza         RE: Acesso ao portal da   │     #4821   Backup noturno não executa desde s  01h41       
     07:02   Suporte Milldesk    [#4831] Novo chamado at   │     #4831   Impressora fiscal não imprime cupo  05h59       
     05:14   Hércules Andrade    Certificado digital ven   │     #4744   Câmera do plenário sem imagem       23h59       
     03:14   Diego Leone         Porta 21 continua fecha   │     #4829   Acesso ao sistema de RH bloqueado   1d 01h   ▇  
     ontem   Contabilidade       Fechamento do mês: rela   │     #4815   Lentidão no portal da transparênci  1d 23h      
     ontem   Ana Paula           Solicitação de novo usu   │     #4790   E-mail institucional não sincroniz  2d 23h      
-    14/09   GitHub              [cmd-all-in-one] Depend   │   +4 · F3                                                   
+    14/09   GitHub              [cmd-all-in-one] Depend   │   +4 . F3                                                   
                                                                                                                         
-   ◉ CHATPANEL                                                                                                 15s · –  
+   * CHATPANEL   3 conversas . 1 não lida                                                                  15s . há 1s  
                                                                                                                         
-                                                                                                                        
-                                                                                                                        
-                                                                                                                        
-                                                                                                                        
-                                                                                                                        
-                                                           –                                                            
-                                     não configurado · CHATPANEL_URL vazio no .env                                      
+    o  08:09  Diego Leone · PM Iaras      Prefeitura > Suporte    Porta 21 continua fechada, consegue verificar  1      
+    .  08:07  Hércules · CM Tatuí TI      Câmara > Suporte        Fabio: Hércules, consegue me mandar o print d         
+    .  07:14  Ana Paula · CM Itu          Câmara > Suporte        Obrigada! Funcionou.                                  
                                                                                                                         
                                                                                                                         
                                                                                                                         
                                                                                                                         
- ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  m silêncio  T tema  : launcher  ? ajuda       
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+  4 com outros técnicos . 6 não lidas na aba                                                                            
+ ^v mover  Enter abrir  Tab painel  / filtrar  o navegador  y copiar  e e-mail  m silêncio  T tema  : launcher  ? ajuda 

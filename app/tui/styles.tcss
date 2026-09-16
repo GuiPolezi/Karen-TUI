@@ -217,6 +217,16 @@ BasePanel .panel-table {
     scrollbar-size: 1 1;
 }
 
+/* erro sem dados, não configurado, vazio, filtro sem resultado: no lugar da lista */
+BasePanel .panel-placeholder {
+    height: 1fr;
+    min-height: 3;
+    margin-top: 1;
+    content-align: center middle;
+    text-align: center;
+    display: none;
+}
+
 BasePanel .panel-table > .datatable--header {
     color: $text-faint;
     background: $bg;

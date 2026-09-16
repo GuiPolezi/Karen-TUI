@@ -38,12 +38,14 @@ async def test_panel_error_marks_border_and_clears():
         panel.set_error("timeout")
         await pilot.pause()
         assert panel.has_class("error")
-        assert panel.query_one(".panel-foot", Static).display is True  # linha de rodapé com ✗ mensagem
+        # sem dados: o erro é o desenho centralizado no lugar da lista (✗ + mensagem)
+        assert panel.query_one(".panel-placeholder", Static).display is True
+        assert "timeout" in str(panel.query_one(".panel-placeholder", Static).render())
 
         panel.set_error(None)
         await pilot.pause()
         assert not panel.has_class("error")
-        assert panel.query_one(".panel-foot", Static).display is False
+        assert panel.query_one(".panel-placeholder", Static).display is False
 
 
 async def test_function_keys_switch_modes_and_escape_returns_to_dashboard():

@@ -54,3 +54,52 @@ def test_dashboard_errors(snap_compare):
 
 def test_dashboard_not_configured(snap_compare):
     assert snap_compare(demo_app(chat_unconfigured=True), terminal_size=(120, 35), run_before=ready)
+
+
+def test_dashboard_empty_milldesk(snap_compare):
+    assert snap_compare(demo_app(milldesk_empty=True), terminal_size=(120, 35), run_before=ready)
+
+
+async def open_ticket(pilot) -> None:  # noqa: ANN001
+    await ready(pilot)
+    await pilot.press("f3")
+    await pilot.pause()
+    await pilot.press("enter")
+    for _ in range(50):
+        if pilot.app.screen.__class__.__name__ == "TicketDetailScreen" and getattr(pilot.app.screen, "detail", None):
+            break
+        await asyncio.sleep(0.02)
+    await pilot.pause()
+
+
+def test_ticket_detail_modal(snap_compare):
+    assert snap_compare(demo_app(), terminal_size=(120, 35), run_before=open_ticket)
+
+
+async def open_conversation(pilot) -> None:  # noqa: ANN001
+    await ready(pilot)
+    await pilot.press("f4")
+    await pilot.pause()
+    await pilot.press("enter")
+    for _ in range(50):
+        if pilot.app.screen.__class__.__name__ == "ConversationDetailScreen" and getattr(pilot.app.screen, "detail", None):
+            break
+        await asyncio.sleep(0.02)
+    await pilot.pause()
+    await pilot.pause()
+
+
+def test_conversation_detail_modal(snap_compare):
+    assert snap_compare(demo_app(), terminal_size=(120, 35), run_before=open_conversation)
+
+
+async def open_launcher(pilot) -> None:  # noqa: ANN001
+    await ready(pilot)
+    await pilot.press("colon")
+    await pilot.pause()
+    await pilot.press("m", "d")
+    await pilot.pause()
+
+
+def test_launcher_open(snap_compare):
+    assert snap_compare(demo_app(), terminal_size=(120, 35), run_before=open_launcher)

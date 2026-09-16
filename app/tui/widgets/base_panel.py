@@ -166,6 +166,7 @@ class BasePanel(Vertical):
         with Horizontal(classes="panel-filter-row"):
             yield Static("", classes="panel-filter-icon")
             yield Input(placeholder="filtrar… (Esc limpa)", classes="panel-filter")
+        yield Static("", classes="panel-placeholder")
         yield KeyedTable(self._columns_for_width(), classes="panel-table", show_header=self.full)
         yield Static("", classes="panel-foot")
 
@@ -310,6 +311,8 @@ class BasePanel(Vertical):
         self._error = message or None
         self.set_class(bool(message), "error")
         self._render_meta()
+        self._render_summary()
+        self._render_placeholder()
         self._render_foot()
 
     def set_not_configured(self, hint: str) -> None:
@@ -379,7 +382,56 @@ class BasePanel(Vertical):
         self._render_extra()
         if self.state is not None:
             self._render_rows()
+        else:
+            self._render_placeholder()
         self._render_foot()
+
+    # --- estados sem lista: erro sem dados, não configurado, vazio, sem resultado ------
+
+    RETRY_KEY: str = ""  # tecla que força a coleta desta fonte ("1", "2", "3")
+
+    def _placeholder(self) -> tuple[str, Text] | None:
+        """(tipo, desenho) quando a lista não deve aparecer; None quando há linhas."""
+        tokens, icons = self.tokens, self.icons
+        center = Text(justify="center")
+        if self._not_configured_hint is not None:
+            center.append(f"{icons.empty}\n", style=tokens.rich("text-faint"))
+            center.append(f"não configurado {icons.sep} {self._not_configured_hint}", style=tokens.rich("text-faint"))
+            return "unconfigured", center
+        if self.state is None and self._error:
+            kind = getattr(self.app, "error_kind", {}).get(self.SOURCE, "error")
+            center.append(f"{icons.error}\n", style=tokens.rich("danger", bold=True))
+            center.append(self._error.split(" · ")[0], style=tokens.rich("text-muted"))
+            if kind == "expired":
+                center.append("\n").append("c", style=tokens.rich("accent", bold=True))
+                center.append(" abre a janela de login", style=tokens.rich("text-faint"))
+            elif self.RETRY_KEY:
+                center.append("\n").append(self.RETRY_KEY, style=tokens.rich("accent", bold=True))
+                center.append(" tenta de novo", style=tokens.rich("text-faint"))
+            return "error", center
+        if self.state is None:
+            return "waiting", Text("")
+        if self._filter and self.table.row_count == 0:
+            center.append(f"{icons.search} ", style=tokens.rich("accent"))
+            center.append("nada encontrado", style=tokens.rich("text-faint"))
+            return "nomatch", center
+        if not self._filter and not self.rows(self.state):
+            center.append(f"{icons.ok} ", style=tokens.rich("ok"))
+            center.append(self.empty_text(), style=tokens.rich("text-faint"))
+            return "empty", center
+        return None
+
+    def _render_placeholder(self) -> None:
+        placeholder = self.query_one(".panel-placeholder", Static)
+        result = self._placeholder()
+        if result is None:
+            placeholder.display = False
+            self.table.display = True
+            return
+        kind, text = result
+        placeholder.update(text)
+        placeholder.display = kind != "waiting"
+        self.table.display = False
 
     @property
     def focused_within(self) -> bool:
@@ -404,7 +456,12 @@ class BasePanel(Vertical):
         tokens, icons = self.tokens, self.icons
         text = Text(no_wrap=True, justify="right")
         fetching = self.SOURCE in getattr(self.app, "fetching", set())
-        if self._error:
+        cooldown = getattr(self.app, "error_kind", {}).get(self.SOURCE) == "cooldown"
+        if self._error and cooldown:
+            remaining = max(int(getattr(self.app, "cooldown_until", {}).get(self.SOURCE, 0) - clock.epoch()), 0)
+            text.append(f"aguardando {remaining // 60}m{remaining % 60:02d}", style=tokens.rich("warn"))
+            text.append(f"  {self.interval}s", style=tokens.rich("text-faint"))
+        elif self._error:
             text.append(f"{icons.error} {relative_age(self._error_since)}", style=tokens.rich("danger"))
             text.append(f"  {self.interval}s", style=tokens.rich("text-faint"))
         elif fetching:
@@ -436,10 +493,10 @@ class BasePanel(Vertical):
     def _render_summary(self) -> None:
         summary = self.query_one(".panel-summary", Static)
         if self.state is None:
-            if self._not_configured_hint is not None:
-                summary.update(self._not_configured_text())
-            else:
-                summary.update(Text(self._waiting or "", style=self.style(getattr(self, "_waiting_token", "text-faint"))))
+            # sem estado: erro e "não configurado" têm desenho próprio (placeholder); aqui só
+            # o texto de espera (ou o aviso da janela de login)
+            waiting = "" if (self._error or self._not_configured_hint is not None) else (self._waiting or "")
+            summary.update(Text(waiting, style=self.style(getattr(self, "_waiting_token", "text-faint"))))
             summary.display = True
             self.query_one(".panel-digits").display = False
             return
@@ -457,12 +514,6 @@ class BasePanel(Vertical):
         else:
             summary.update(self._summary_line())
 
-    def _not_configured_text(self) -> Text:
-        text = Text()
-        text.append(f"{self.icons.empty} não configurado", style=self.style("text-muted"))
-        text.append(f"\n{self._not_configured_hint}", style=self.style("text-faint"))
-        return text
-
     def _render_extra(self) -> None:
         extra = self.query_one(".panel-extra", Static)
         content = self.extra_text(self.state) if self.state is not None else None
@@ -477,7 +528,7 @@ class BasePanel(Vertical):
         tokens, icons = self.tokens, self.icons
         foot = self.query_one(".panel-foot", Static)
         text = Text(no_wrap=True, overflow="ellipsis")
-        if self._error:
+        if self._error and self.state is not None:  # erro com dados antigos: uma linha no rodapé
             text.append(f"{icons.error} ", style=tokens.rich("danger", bold=True))
             text.append(self._error, style=tokens.rich("danger"))
             text.append(f" {icons.sep} {relative_age(self._error_since)}", style=tokens.rich("text-faint"))
@@ -540,19 +591,8 @@ class BasePanel(Vertical):
             first = self._with_prefix(self._prefix(key, now, cursor_key), cells.get(columns[0], NO_MARK))
             rows.append((key, [first, *(cells.get(column, NO_MARK) for column in columns[1:])]))
         self.table.set_rows(rows)
-        if self.state is not None and not items and not self._filter:
-            self._render_empty()
+        self._render_placeholder()
         self._render_foot()
-
-    def _render_empty(self) -> None:
-        """Vazio é boa notícia: ✓ em `ok` e o texto em `text-faint` no lugar da lista."""
-        extra = self.query_one(".panel-extra", Static)
-        if extra.display:
-            return
-        text = Text(justify="center")
-        text.append(f"\n{self.icons.ok} ", style=self.style("ok")).append(self.empty_text(), style=self.style("text-faint"))
-        extra.update(text)
-        extra.display = True
 
     def _refresh_cursor_prefix(self) -> None:
         """Só a primeira célula da linha do cursor (e da anterior) muda: nada de re-render da tabela."""

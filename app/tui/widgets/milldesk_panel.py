@@ -24,6 +24,7 @@ SORT_LABELS = {"sla": "SLA mais próximo", "data": "mais recente", "status": "st
 SLA_WARNING_HOURS = 4
 SLA_ALERT_MINUTES = 30
 HEADER_REFRESH_SECONDS = 30.0
+BLINK_SECONDS = 1.0
 BAR_BLOCKS = 4
 
 
@@ -75,16 +76,23 @@ def nearest_sla(tickets: list[MilldeskTicket], now: datetime | None = None) -> M
     return min(with_deadline, key=lambda t: t.sla_deadline or datetime.max)
 
 
+def sla_alert(ticket: MilldeskTicket, now: datetime | None = None) -> bool:
+    """True quando faltam menos de 30 min (e ainda não venceu): o tempo pisca."""
+    remaining = ticket.sla_remaining(now or clock.now())
+    return remaining is not None and 0 <= remaining.total_seconds() < SLA_ALERT_MINUTES * 60
+
+
 def sla_highlight(ticket: MilldeskTicket, now: datetime | None = None, *, tokens: Tokens = CARBON,
-                  icons: IconSet = UNICODE, width: int = 0) -> Text:
-    """'SLA ▸ #id assunto   ▮▮▮▯  faltam 02h15': a cor só na barra e no tempo."""
+                  icons: IconSet = UNICODE, width: int = 0, blink: bool = False) -> Text:
+    """'SLA ▸ #id assunto   ▮▮▮▯  faltam 02h15': a cor só na barra e no tempo.
+    `blink=True` é a fase apagada do piscar (< 30 min): o tempo fica em `text`."""
     now = now or clock.now()
     remaining = ticket.sla_remaining(now)
     minutes = (remaining.total_seconds() / 60) if remaining is not None else None
     if minutes is not None and minutes < 0:
         token, label = "danger", f"vencido há {format_remaining(-remaining)}"
     elif minutes is not None and minutes < SLA_ALERT_MINUTES:
-        token, label = "danger", f"faltam {format_remaining(remaining)} {icons.warn}"
+        token, label = ("text" if blink else "danger"), f"faltam {format_remaining(remaining)} {icons.warn}"
     elif minutes is not None and minutes < SLA_WARNING_HOURS * 60:
         token, label = "warn", f"faltam {format_remaining(remaining)}"
     elif minutes is not None:
@@ -119,6 +127,7 @@ class MilldeskPanel(BasePanel):
     ICON = "ticket"
     TITLE = "MILLDESK"
     MORE_KEY = "F3"
+    RETRY_KEY = "2"
     SUMMARY = [("abertos", "aberto no meu nome|abertos no meu nome"), ("vencidos", "vencido|vencidos")]
     COLUMNS = [("id", "#", 6), ("time", "Abertura", 11), ("subject", "Assunto", None),
                ("status", "Status", 20), ("sla", "SLA", 9)]
@@ -153,7 +162,8 @@ class MilldeskPanel(BasePanel):
         text.append(sep.join(parts), style=tokens.rich("text-muted"))
         nearest = nearest_sla(state.tickets)
         if nearest is not None:
-            text.append("\n").append_text(sla_highlight(nearest, tokens=tokens, icons=icons, width=self.content_width))
+            text.append("\n").append_text(sla_highlight(nearest, tokens=tokens, icons=icons, width=self.content_width,
+                                                        blink=self._blink_phase))
         if self.full:
             text.append(
                 f"\nhistórico: {state.my_history} chamados{sep}{format_percentage(state.my_percentage)}% de "
@@ -164,14 +174,41 @@ class MilldeskPanel(BasePanel):
             text.append(f"\n{icons.warn} {state.note}", style=tokens.rich("warn"))
         return text
 
+    _blink_phase = False  # fase apagada do piscar do SLA (< 30 min)
+
     def on_mount(self) -> None:
         super().on_mount()
         self.set_interval(HEADER_REFRESH_SECONDS, self._refresh_countdowns)
+        self.set_interval(BLINK_SECONDS, self._blink_tick)
 
     def _refresh_countdowns(self) -> None:
         """A contagem regressiva do SLA anda mesmo sem estado novo."""
         if self.state is not None:
             self.show_state(self.state)
+
+    @property
+    def blink_enabled(self) -> bool:
+        """SLA_BLINK no .env e animações ligadas (TEXTUAL_ANIMATIONS=none desliga)."""
+        settings = getattr(self.app, "settings", None)
+        if settings is not None and not getattr(settings, "sla_blink", True):
+            return False
+        return getattr(self.app, "animation_level", "full") != "none"
+
+    def _blink_tick(self) -> None:
+        """Só o tempo do SLA alterna danger/text a cada segundo, e só abaixo de 30 min."""
+        if self.state is None or not self.blink_enabled:
+            if self._blink_phase:
+                self._blink_phase = False
+                self._render_extra()
+            return
+        nearest = nearest_sla(self.state.tickets)
+        if nearest is None or not sla_alert(nearest):
+            if self._blink_phase:
+                self._blink_phase = False
+                self._render_extra()
+            return
+        self._blink_phase = not self._blink_phase
+        self._render_extra()
 
     def rows(self, state: MilldeskState) -> list[tuple[str, dict[str, Text]]]:
         now = clock.now()

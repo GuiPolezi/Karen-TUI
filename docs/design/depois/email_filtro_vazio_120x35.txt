@@ -1,16 +1,9 @@
- ▍CMD ALL-IN-ONE  Eventos                                ● ● ●                                      Guilherme  08:14:20 
+ ▍CMD ALL-IN-ONE  E-mail                                 ● ● ●                                      Guilherme  08:14:20 
                                                                                                                         
-  9 evento(s) hoje · derivados das diferenças entre coletas · logs/events-AAAA-MM-DD.jsonl                              
+  ▍✉ E-MAIL                                                                                                30s · há 6s  
+  142 inbox · 7 não lidos · 3 spam                                                                                      
                                                                                                                         
-  09:21   ▣   Milldesk   chamado #4833 entrou no seu nome: Novo: sistema de protocolo fora do ar                        
-  08:11   ✉   e-mail     e-mail novo de Fulano de Tal: Erro ao gerar relatório de empenhos                              
-  08:09   ◉   ChatPanel  Diego Leone · PM Iaras: 1 nova mensagem                                                        
-  08:02   ▣   Milldesk   chamado #4831 entrou: Impressora fiscal não imprime cupom                                      
-  07:33   ✉   e-mail     e-mail novo de Maria Souza: RE: Acesso ao portal da transparência                              
-  07:14   ▣   Milldesk   chamado #4829 mudou para Aguardando cliente                                                    
-  06:44   ◉   ChatPanel  conversa Ana Paula · CM Itu transferida para você                                              
-  06:14   ▣   Milldesk   chamado #4788 saiu do seu nome                                                                 
-  06:04   ◉   ChatPanel  conversa Marcos · PM Boituva encerrada                                                         
+  ⌕ zzz                                                                                                                 
                                                                                                                         
                                                                                                                         
                                                                                                                         
@@ -24,6 +17,7 @@
                                                                                                                         
                                                                                                                         
                                                                                                                         
+                                                   ⌕ nada encontrado                                                    
                                                                                                                         
                                                                                                                         
                                                                                                                         
@@ -32,4 +26,10 @@
                                                                                                                         
                                                                                                                         
                                                                                                                         
- ↑↓ mover  x limpar tela  : launcher  ? ajuda                                                                           
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+  ⌕ zzz · 0 de 8                                                                                                        
+ ↑↓ mover  ⏎ abrir  u só não lidos  / filtrar  o navegador  y copiar remetente  1 atualizar  : launcher  ? ajuda        

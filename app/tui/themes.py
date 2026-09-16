@@ -8,6 +8,7 @@ Este é o único módulo de `app/tui` autorizado a conter cores literais (o test
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 
 from textual.color import Color
 from textual.theme import BUILTIN_THEMES, Theme
@@ -114,9 +115,13 @@ def all_tokens(extra: dict[str, Tokens] | None = None) -> dict[str, Tokens]:
     return result
 
 
-def register_themes(app, extra: dict[str, Tokens] | None = None) -> dict[str, Tokens]:  # noqa: ANN001
-    """Registra todos os temas no App e devolve o dicionário nome -> Tokens."""
+def register_themes(app, extra: dict[str, Tokens] | None = None, *,  # noqa: ANN001
+                    legacy_console: bool = False) -> dict[str, Tokens]:
+    """Registra todos os temas no App e devolve o dicionário nome -> Tokens.
+    Em conhost (sem `dim`), `text-faint` vira `text-muted` para continuar legível."""
     catalog = all_tokens(extra)
+    if legacy_console:
+        catalog = {name: replace(tokens, text_faint=tokens.text_muted) for name, tokens in catalog.items()}
     for tokens in catalog.values():
         app.register_theme(build_theme(tokens))
     return catalog

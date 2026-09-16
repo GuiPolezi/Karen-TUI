@@ -34,6 +34,7 @@ class EmailPanel(BasePanel):
     ICON = "email"
     TITLE = "E-MAIL"
     MORE_KEY = "F2"
+    RETRY_KEY = "1"
     SUMMARY = [("total", "inbox"), ("não lidos", "não lido|não lidos"), ("spam", "spam")]
     COLUMNS = [("date", "Data", 6), ("from", "De", 28), ("subject", "Assunto", None)]
     COLUMNS_COMPACT = [("date", "Data", 6), ("from", "De", 18), ("subject", "Assunto", None)]

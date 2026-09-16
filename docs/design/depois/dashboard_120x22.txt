@@ -1,12 +1,12 @@
  ▍CMD ALL-IN-ONE  Dashboard                              ● ● ●                                      Guilherme  08:14:20 
-   ✉ E-MAIL                                   30s · há 6s │    ▣ MILLDESK                                 60s · há 27s  
+  ▍✉ E-MAIL                                   30s · há 6s │    ▣ MILLDESK                                 60s · há 27s  
   142 inbox · 7 não lidos · 3 spam                        │   12 abertos no meu nome · 1 vencido                        
                                                           │                                                             
    Fulano de Tal <fulano@cm.sp.gov.br>            08:11   │   Em atendimento 7 · Aguardando cliente 4 · Pausado 1       
    Erro ao gerar relatório de empenhos                    │   SLA ▸ #4802 Certificado digita… ▮▮▮▮  vencido há 01h05    
    Bom dia, ao tentar gerar o relatório de empenhos do m… │                                                             
-                                                          │                                                             
-                                                          │                                                             
+                                                          │     #4802   Certificado digital do prefeito ve  -01h05      
+   ▍07:33   Maria Souza         RE: Acesso ao portal da   │     #4821   Backup noturno não executa desde s  01h41       
                                                                                                                         
    ◉ CHATPANEL   3 conversas · 1 não lida                                                                  15s · há 1s  
                                                                                                                         

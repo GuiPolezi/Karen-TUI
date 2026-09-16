@@ -34,10 +34,12 @@ CLOCK = demo.Clock(FROZEN)
 
 
 def make_app(*, email_error: str | None = None, chat_unconfigured: bool = False, chat_expired: bool = False,
-             prefs: Prefs | None = None, theme: str | None = None) -> CmdAllInOneApp:
+             milldesk_empty: bool = False, prefs: Prefs | None = None, theme: str | None = None,
+             icons: str | None = None) -> CmdAllInOneApp:
     sources = demo.demo_sources(CLOCK, email_error=email_error, chat_unconfigured=chat_unconfigured,
-                                chat_expired=chat_expired)
-    settings = demo.demo_settings(theme=theme) if theme else demo.demo_settings()
+                                chat_expired=chat_expired, milldesk_empty=milldesk_empty)
+    overrides = {k: v for k, v in (("theme", theme), ("icons", icons)) if v}
+    settings = demo.demo_settings(**overrides)
     app = CmdAllInOneApp(settings, sources=sources, prefs=prefs or Prefs(), prefs_path=None)
     app.event_log.events.extend(demo.sample_events(CLOCK))
     return app
@@ -163,6 +165,28 @@ async def capture_all(out: Path) -> None:
             await _wait_states(app)
             await pilot.pause()
             _save(app, out, "dashboard_silencio", width, height)
+
+        # vazio (nenhum chamado no meu nome) e filtro sem resultado
+        app = make_app(milldesk_empty=True)
+        async with app.run_test(size=(width, height)) as pilot:
+            await _wait_states(app)
+            await pilot.pause()
+            _save(app, out, "dashboard_vazio", width, height)
+            await pilot.press("f2")
+            await pilot.pause()
+            await pilot.press("slash")
+            await pilot.press("z", "z", "z")
+            await pilot.pause()
+            _save(app, out, "email_filtro_vazio", width, height)
+
+    # conhost: ICONS=ascii (e text-faint = text-muted, sem dim) e tema terminal
+    for name, kwargs in (("dashboard_ascii", {"icons": "ascii"}), ("dashboard_terminal", {"theme": "terminal"}),
+                         ("dashboard_paper", {"theme": "paper"}), ("dashboard_phosphor", {"theme": "phosphor"})):
+        app = make_app(**kwargs)
+        async with app.run_test(size=(120, 35)) as pilot:
+            await _wait_states(app)
+            await pilot.pause()
+            _save(app, out, name, 120, 35)
 
     # tela cheia (alvo real), terminal muito baixo e terminal estreito
     for width, height in ((200, 50), (120, 22), (80, 24)):

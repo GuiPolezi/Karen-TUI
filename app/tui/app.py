@@ -26,7 +26,7 @@ from app.config import Settings
 from app.events import EventLog, diff_states
 from app.prefs import PREFS_PATH, Prefs, load_prefs, save_prefs
 from app.sources.base import Source, SourceError
-from app.tui.icons import IconSet, resolve_icons
+from app.tui.icons import IconSet, is_legacy_console, resolve_icons
 from app.tui.launcher import Action, parse_command
 from app.tui.themes import CARBON, register_themes, resolve_theme_name
 from app.tui.tokens import Tokens
@@ -138,8 +138,9 @@ class CmdAllInOneApp(App[None]):
         self.cooldown_until: dict[str, float] = {}        # fonte -> epoch até o qual está em cooldown (429)
         self.error_kind: dict[str, str] = {}              # fonte -> "cooldown" | "expired" | "error"
         # aparência: temas registrados, tema inicial (prefs > .env > carbon) e conjunto de ícones
-        self.token_sets: dict[str, Tokens] = register_themes(self)
         self.icons: IconSet = resolve_icons(settings.icons)
+        self.legacy_console = self.icons.mode == "ascii" or (settings.icons == "auto" and is_legacy_console())
+        self.token_sets: dict[str, Tokens] = register_themes(self, legacy_console=self.legacy_console)
         self._initial_theme = resolve_theme_name(self.prefs.theme or settings.theme, self.token_sets)
 
     # --- ciclo de vida --------------------------------------------------------

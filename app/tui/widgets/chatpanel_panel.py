@@ -14,6 +14,7 @@ class ChatPanelPanel(BasePanel):
     ICON = "chat"
     TITLE = "CHATPANEL"
     MORE_KEY = "F4"
+    RETRY_KEY = "3"
     SUMMARY = [("conversas", "conversa|conversas"), ("não lidas", "não lida|não lidas")]
     SUMMARY_IN_TITLE = True
     COLUMNS = [("online", "", 1), ("time", "Hora", 5), ("name", "Contato", 30), ("tagdept", "Tag › Depto", 24),

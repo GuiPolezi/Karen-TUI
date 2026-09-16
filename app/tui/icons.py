@@ -80,6 +80,11 @@ def detect_mode(environ: dict[str, str] | None = None, platform: str | None = No
     return "ascii"
 
 
+def is_legacy_console(environ: dict[str, str] | None = None, platform: str | None = None) -> bool:
+    """conhost (cmd.exe/powershell fora do Windows Terminal): 16 cores e sem `dim`."""
+    return detect_mode(environ, platform) == "ascii"
+
+
 def resolve_icons(mode: str = "auto", **detect_kwargs: object) -> IconSet:
     mode = (mode or "auto").strip().lower()
     if mode == "auto":

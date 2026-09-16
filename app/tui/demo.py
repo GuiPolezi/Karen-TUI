@@ -248,7 +248,9 @@ class FakeSource(Source[Any]):
                 from app.sources.chatpanel import SessionExpiredError
 
                 raise SessionExpiredError(self._error)  # como a fonte real: vira SourceError com esta causa
-            raise SourceError(self._error, retry_after=self._retry_after)
+            # só limite de requisições (429) tem cooldown; timeout etc. são erro comum
+            cooldown = any(word in self._error for word in ("429", "limite"))
+            raise SourceError(self._error, retry_after=self._retry_after if cooldown else None)
         return self._state
 
     async def fetch_ticket(self, ticket_id: int, force: bool = False) -> TicketDetail:
@@ -278,14 +280,22 @@ def demo_settings(**overrides: Any) -> Settings:
     return Settings(**base)
 
 
+def empty_milldesk_state(clock: Clock | None = None) -> MilldeskState:
+    """Nenhum chamado no meu nome (vazio é boa notícia)."""
+    c = clock or Clock()
+    return MilldeskState(my_tickets=0, tickets=[], open_total=37, my_history=1184, my_percentage=23.4,
+                         total_all_agents=5061, updated_at=c.at(minutes=-0.45))
+
+
 def demo_sources(clock: Clock | None = None, *, email_error: str | None = None,
                  milldesk_error: str | None = None, milldesk_retry_after: float | None = 600.0,
+                 milldesk_empty: bool = False,
                  chat_unconfigured: bool = False, chat_expired: bool = False) -> dict[str, FakeSource]:
     c = clock or Clock()
     return {
         "email": FakeSource("email", email_state(c), 30, error=email_error, clock=c),
-        "milldesk": FakeSource("milldesk", milldesk_state(c), 60, error=milldesk_error,
-                               retry_after=milldesk_retry_after, clock=c),
+        "milldesk": FakeSource("milldesk", empty_milldesk_state(c) if milldesk_empty else milldesk_state(c), 60,
+                               error=milldesk_error, retry_after=milldesk_retry_after, clock=c),
         "chatpanel": FakeSource("chatpanel", chatpanel_state(c), 15, configured=not chat_unconfigured,
                                 error="sessão expirada: faça o login (c)" if chat_expired else None,
                                 hint="CHATPANEL_URL vazio no .env", clock=c),

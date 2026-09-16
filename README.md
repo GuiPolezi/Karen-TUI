@@ -54,7 +54,9 @@ Na **primeira execução** o programa cria a pasta de dados
 `%LOCALAPPDATA%\CMD-ALL-IN-ONE`, copia o `.env` do modelo e abre o arquivo no bloco de
 notas: preencha `EMAIL_APP_PASSWORD` e `MILLDESK_API_KEY` e abra de novo. Na abertura
 seguinte ele baixa o Chromium do Playwright (~700 MB, uma vez por máquina; a barra de
-progresso aparece antes da TUI subir). `PLAYWRIGHT_SKIP_INSTALL=1` pula esse download.
+progresso aparece antes da TUI subir) para `%LOCALAPPDATA%\ms-playwright` — a mesma pasta
+que uma instalação de desenvolvimento usa, fora do programa e preservada nas atualizações.
+`PLAYWRIGHT_SKIP_INSTALL=1` pula esse download.
 
 Tudo que é seu — `.env`, `logs/`, `notes.md`, `prefs.json`, `themes/` e o perfil do
 Chromium — fica na pasta de dados e **sobrevive a atualizações e à desinstalação**. O
@@ -64,10 +66,13 @@ Deu problema e a TUI nem abre? Rode o diagnóstico no terminal:
 
 ```powershell
 & "$env:LOCALAPPDATA\Programs\CMD ALL-IN-ONE\CMD-ALL-IN-ONE.exe" --verificar
+# e, para abrir o Chromium de verdade (leva alguns segundos):
+& "$env:LOCALAPPDATA\Programs\CMD ALL-IN-ONE\CMD-ALL-IN-ONE.exe" --verificar --navegador
 ```
 
 Ele imprime, em JSON, versão, caminhos, se o `.env` existe, quais navegadores estão
-baixados e o que está faltando.
+baixados e o que está faltando. Com `--navegador`, abre e fecha o Chromium: é o teste que
+pega o erro `Executable doesn't exist at ...` do ChatPanel.
 
 ## Instalação para desenvolvimento (Windows)
 

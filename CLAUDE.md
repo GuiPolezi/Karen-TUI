@@ -38,7 +38,9 @@ as regras que valem em todo o projeto.
 
 - `app/paths.py` — `BUNDLE_DIR` (recursos embalados, só leitura) x `DATA_DIR` (dados do
   usuário; `%LOCALAPPDATA%\CMD-ALL-IN-ONE` no executável, raiz do repo em dev). Todo caminho
-  novo sai daqui, nunca de `__file__`.
+  novo sai daqui, nunca de `__file__`. `configure_browsers_path()` obriga o Playwright a
+  usar `%LOCALAPPDATA%\ms-playwright`: congelado, ele assumiria `.local-browsers`
+  dentro do pacote (que o instalador apaga a cada atualização).
 - `app/firstrun.py` — primeira execução: cria a pasta de dados, o `.env` a partir do
   `.env.example` e baixa o Chromium do Playwright.
 - `app/update.py` — dois modos: release do GitHub (executável, `Ctrl+U` instala) e git

@@ -61,6 +61,7 @@ from typing import Any
 from bs4 import BeautifulSoup, SoupStrainer, Tag
 
 from app.config import ChatPanelSettings
+from app.paths import configure_browsers_path
 from app.sources.base import Source, SourceError, describe_error
 from app.state import ChatItem, ChatMessage, ChatPanelState, ConversationDetail
 
@@ -463,15 +464,24 @@ class ChatPanelSource(Source[ChatPanelState]):
         self._page = page
         return page
 
+    async def _ensure_playwright(self) -> Any:
+        """Sobe o driver do Playwright (uma vez por fonte) com a pasta de navegadores certa.
+
+        `configure_browsers_path()` precisa vir ANTES do start: no executável o Playwright
+        assume que o navegador está embalado junto e, sem isso, procura em `.local-browsers`.
+        """
+        if self._playwright is None:
+            configure_browsers_path()
+            try:
+                from playwright.async_api import async_playwright
+            except ImportError as exc:  # pragma: no cover
+                raise RuntimeError("playwright não instalado: pip install playwright") from exc
+            self._playwright = await async_playwright().start()
+        return self._playwright
+
     async def _launch_context(self, headless: bool) -> Any:
         """Abre o Chromium no perfil persistente e devolve a primeira página."""
-        try:
-            from playwright.async_api import async_playwright
-        except ImportError as exc:  # pragma: no cover
-            raise RuntimeError("playwright não instalado: pip install playwright") from exc
-
-        if self._playwright is None:
-            self._playwright = await async_playwright().start()
+        await self._ensure_playwright()
         self.log.info(
             "abrindo Chromium %s com perfil %s",
             "headless" if headless else "visível",
@@ -521,12 +531,7 @@ class ChatPanelSource(Source[ChatPanelState]):
         await self._teardown()
         self.settings.profile_dir.mkdir(parents=True, exist_ok=True)
         self.login_profile_dir.mkdir(parents=True, exist_ok=True)
-        try:
-            from playwright.async_api import async_playwright
-        except ImportError as exc:  # pragma: no cover
-            raise RuntimeError("playwright não instalado: pip install playwright") from exc
-        if self._playwright is None:
-            self._playwright = await async_playwright().start()
+        await self._ensure_playwright()
         self.log.info("abrindo janela de login com perfil %s", self.login_profile_dir)
         login_context = await self._playwright.chromium.launch_persistent_context(
             str(self.login_profile_dir),

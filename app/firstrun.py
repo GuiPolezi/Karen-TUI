@@ -24,12 +24,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from app.paths import (
+    BROWSERS_DIR,
     DATA_DIR,
     ENV_EXAMPLE_PATH,
     ENV_PATH,
     FROZEN,
     LOG_DIR,
     THEMES_DIR,
+    configure_browsers_path,
     ensure_data_dir,
 )
 
@@ -88,6 +90,26 @@ def open_in_editor(path: Path) -> None:
 # --- navegador do Playwright --------------------------------------------------------------
 
 
+def probe_browser(timeout: float = 90.0) -> dict:
+    """Abre o Chromium e fecha: prova que driver e navegador se encontram.
+
+    É o teste que pega o erro clássico do executável ("Executable doesn't exist at ...");
+    usado pelo `--verificar --navegador` e pelo build.
+    """
+    configure_browsers_path()
+    try:
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as pw:
+            navegador = pw.chromium.launch(headless=True, timeout=timeout * 1000)
+            versao = navegador.version
+            navegador.close()
+        return {"ok": True, "versao": versao, "pasta": str(browsers_dir())}
+    except Exception as exc:
+        primeira = str(exc).strip().splitlines()[0] if str(exc).strip() else type(exc).__name__
+        return {"ok": False, "erro": f"{type(exc).__name__}: {primeira[:200]}", "pasta": str(browsers_dir())}
+
+
 def _playwright_version() -> str:
     from importlib.metadata import PackageNotFoundError, version
 
@@ -98,12 +120,8 @@ def _playwright_version() -> str:
 
 
 def browsers_dir() -> Path:
-    """Onde o Playwright guarda os navegadores nesta máquina."""
-    override = os.environ.get("PLAYWRIGHT_BROWSERS_PATH", "").strip()
-    if override and override != "0":
-        return Path(override)
-    base = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA")
-    return (Path(base) if base else Path.home()) / "ms-playwright"
+    """Onde o Playwright guarda os navegadores nesta máquina (e onde vamos baixá-los)."""
+    return configure_browsers_path()
 
 
 def installed_browsers(directory: Path | None = None) -> list[str]:
@@ -115,12 +133,18 @@ def installed_browsers(directory: Path | None = None) -> list[str]:
 
 
 def browser_ready(data_dir: Path | None = None, expected: str | None = None) -> bool:
-    """O Chromium desta versão do Playwright já foi instalado nesta máquina?"""
+    """O Chromium desta versão do Playwright já está instalado nesta máquina?
+
+    Marcador **e** navegador no disco: só o marcador mentiria se alguém limpasse a pasta
+    do Playwright (ou se ele tivesse ido para o lugar errado, como acontecia quando o
+    executável usava `.local-browsers`).
+    """
     marker = (DATA_DIR if data_dir is None else data_dir) / BROWSER_MARKER
     try:
-        return marker.read_text(encoding="utf-8").strip() == (expected or _playwright_version())
+        carimbo = marker.read_text(encoding="utf-8").strip()
     except OSError:
         return False
+    return carimbo == (expected or _playwright_version()) and bool(installed_browsers())
 
 
 def install_browser(data_dir: Path | None = None, timeout: float = INSTALL_TIMEOUT) -> None:
@@ -132,8 +156,9 @@ def install_browser(data_dir: Path | None = None, timeout: float = INSTALL_TIMEO
     from playwright._impl._driver import compute_driver_executable, get_driver_env
 
     data_dir = DATA_DIR if data_dir is None else data_dir
+    destino = configure_browsers_path()  # instalar e abrir têm de apontar para o mesmo lugar
     node, cli = compute_driver_executable()
-    print("Baixando o navegador usado pelo ChatPanel (uma vez só, ~700 MB)…", flush=True)
+    print(f"Baixando o navegador usado pelo ChatPanel (uma vez só, ~700 MB) em {destino}…", flush=True)
     result = subprocess.run([str(node), str(cli), "install", "chromium"],
                             env=get_driver_env(), timeout=timeout)
     if result.returncode != 0:
@@ -163,6 +188,7 @@ def bootstrap(*, install_browser_if_needed: bool | None = None) -> FirstRun:
         install_browser_if_needed = FROZEN  # em desenvolvimento quem instala é o `pip`/`playwright`
 
     result = FirstRun(data_dir=DATA_DIR, env_path=ENV_PATH)
+    configure_browsers_path()  # antes de qualquer uso do Playwright neste processo
     try:
         ensure_data_dir()
         LOG_DIR.mkdir(parents=True, exist_ok=True)

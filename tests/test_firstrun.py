@@ -54,6 +54,7 @@ def test_sem_modelo_embalado_vira_problema(dados, monkeypatch):
 def test_marcador_do_navegador(dados, monkeypatch):
     dados.mkdir(parents=True)
     monkeypatch.setattr(firstrun, "_playwright_version", lambda: "1.62.0")
+    monkeypatch.setattr(firstrun, "installed_browsers", lambda *a, **k: ["chromium-1234"])
     assert not firstrun.browser_ready(dados)
     (dados / firstrun.BROWSER_MARKER).write_text("1.62.0", encoding="utf-8")
     assert firstrun.browser_ready(dados)
@@ -61,9 +62,20 @@ def test_marcador_do_navegador(dados, monkeypatch):
     assert not firstrun.browser_ready(dados)  # atualização trocou a versão: baixa de novo
 
 
+def test_marcador_sem_navegador_no_disco_nao_vale(dados, monkeypatch):
+    """Marcador certo mas pasta do Playwright vazia (limpeza, ou navegador no lugar errado
+    como acontecia com o .local-browsers do executável): tem de baixar de novo."""
+    dados.mkdir(parents=True)
+    monkeypatch.setattr(firstrun, "_playwright_version", lambda: "1.62.0")
+    monkeypatch.setattr(firstrun, "installed_browsers", lambda *a, **k: [])
+    (dados / firstrun.BROWSER_MARKER).write_text("1.62.0", encoding="utf-8")
+    assert not firstrun.browser_ready(dados)
+
+
 def test_install_browser_escreve_o_marcador(dados, monkeypatch):
     dados.mkdir(parents=True)
     chamadas: list[list[str]] = []
+    monkeypatch.setattr(firstrun, "installed_browsers", lambda *a, **k: ["chromium-1234"])
 
     def fake_run(args, **kwargs):
         chamadas.append([str(a) for a in args])
@@ -87,6 +99,20 @@ def test_falha_no_download_vira_problema_sem_derrubar(dados, monkeypatch):
     assert result.problems and "navegador" in result.problems[0]
     assert not result.browser_installed
     assert not (dados / firstrun.BROWSER_MARKER).exists()
+
+
+def test_install_aponta_para_a_pasta_compartilhada(dados, monkeypatch):
+    """O download tem de ir para a mesma pasta que a abertura usa (o bug do .local-browsers)."""
+    import os
+
+    dados.mkdir(parents=True)
+    monkeypatch.setattr(firstrun, "_playwright_version", lambda: "1.62.0")
+    monkeypatch.delenv("PLAYWRIGHT_BROWSERS_PATH", raising=False)
+    monkeypatch.setattr(subprocess, "run",
+                        lambda args, **kwargs: subprocess.CompletedProcess(args, 0))
+    firstrun.install_browser(dados)
+    assert os.environ["PLAYWRIGHT_BROWSERS_PATH"] == str(firstrun.BROWSERS_DIR)
+    assert "local-browsers" not in os.environ["PLAYWRIGHT_BROWSERS_PATH"]
 
 
 def test_skip_install_pula_o_download(dados, monkeypatch):

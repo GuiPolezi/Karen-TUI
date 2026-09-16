@@ -62,6 +62,21 @@ if ($LASTEXITCODE -ne 0) { throw "o executavel nao passou no --verificar" }
 if ($saida -notmatch '"modo": "execut') { throw "o --verificar nao reconheceu o modo executavel" }
 if ($saida -notmatch '"css_existe": true') { throw "o styles.tcss nao foi empacotado: a TUI nao subiria" }
 if ($saida -match '"AUSENTE"') { throw "faltou alguma dependencia no pacote (veja o --verificar)" }
+
+# o erro classico do executavel: o Playwright procura o navegador dentro do pacote
+# (.local-browsers) em vez de %LOCALAPPDATA%\ms-playwright. So da para checar se esta
+# maquina ja tem os navegadores baixados; no CI nao tem, entao a checagem e pulada.
+$env:CMD_DATA_DIR = $dadosTeste
+$navegador = (& $exe --verificar --navegador) -join "`n"
+Remove-Item Env:\CMD_DATA_DIR
+if ($navegador -match '"baixados": \[\s*\]') {
+    Write-Host "sem navegador do Playwright nesta maquina: pulei o teste de abertura" -ForegroundColor Yellow
+}
+elseif ($navegador -notmatch '"ok": true') {
+    Write-Host $navegador
+    throw "o executavel nao conseguiu abrir o Chromium (veja o erro acima)"
+}
+else { Write-Host "navegador abre pelo executavel" -ForegroundColor Green }
 Write-Host "executável ok" -ForegroundColor Green
 
 # 6. instalador (Inno Setup)

@@ -60,6 +60,31 @@ THEMES_DIR = DATA_DIR / "themes"
 BUNDLED_THEMES_DIR = BUNDLE_DIR / "themes"
 WT_SCHEMES_DIR = DATA_DIR / "docs" / "design" / "windows-terminal"
 
+#: onde o Playwright guarda os navegadores. Fora da pasta do programa de propósito: o
+#: instalador substitui a pasta do programa a cada atualização, e são ~700 MB.
+BROWSERS_DIR = (Path(os.environ["LOCALAPPDATA"]) if os.environ.get("LOCALAPPDATA")
+                else Path.home() / "AppData" / "Local") / "ms-playwright"
+
+PLAYWRIGHT_BROWSERS_PATH = "PLAYWRIGHT_BROWSERS_PATH"
+
+
+def configure_browsers_path() -> Path:
+    """Aponta o Playwright para `BROWSERS_DIR` e devolve a pasta escolhida.
+
+    Dentro de um executável o Playwright assume `PLAYWRIGHT_BROWSERS_PATH=0`
+    (`playwright/_impl/_transport.py`), o que significa "o navegador está embalado junto,
+    em `.local-browsers`" — e não está: são 700 MB que baixamos à parte. Sem isto, a
+    instalação vai para um lugar e a abertura procura em outro
+    ("Executable doesn't exist at ...local-browsers...").
+
+    Respeita quem já definiu a variável na mão; idempotente.
+    """
+    atual = os.environ.get(PLAYWRIGHT_BROWSERS_PATH, "").strip()
+    if atual and atual != "0":
+        return Path(atual)
+    os.environ[PLAYWRIGHT_BROWSERS_PATH] = str(BROWSERS_DIR)
+    return BROWSERS_DIR
+
 
 def ensure_data_dir() -> Path:
     """Cria a pasta de dados (e a de logs) na primeira execução. Idempotente."""
@@ -71,6 +96,7 @@ def describe() -> dict[str, str]:
     """Caminhos em texto para a tela F8 e para o modo debug."""
     return {
         "modo": "executável" if FROZEN else "desenvolvimento",
+        "navegadores": str(BROWSERS_DIR),
         "pacote": str(BUNDLE_DIR),
         "dados": str(DATA_DIR),
         "instalação": str(INSTALL_DIR),

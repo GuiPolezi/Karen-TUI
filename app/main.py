@@ -1,8 +1,10 @@
 """Entrypoint: python -m app, o executável instalado ou o script `app`.
 
 Argumentos (úteis para suporte, já que a TUI toma a tela inteira):
-  --versao      mostra a versão e sai
-  --verificar   mostra caminhos, configuração e dependências em JSON e sai
+  --versao                  mostra a versão e sai
+  --verificar               mostra caminhos, configuração e dependências em JSON e sai
+  --verificar --navegador   idem, abrindo o Chromium de verdade (prova que o ChatPanel
+                            tem navegador; leva alguns segundos)
 """
 
 from __future__ import annotations
@@ -98,7 +100,12 @@ def main(argv: list[str] | None = None) -> int:
         import json
 
         bootstrap(install_browser_if_needed=False)
-        print(json.dumps(self_check(), indent=2, ensure_ascii=False))
+        dados = self_check()
+        if "--navegador" in argv:
+            from app.firstrun import probe_browser
+
+            dados["navegador"]["abre"] = probe_browser()
+        print(json.dumps(dados, indent=2, ensure_ascii=False))
         return 0  # sem pausa: é comando de terminal, roda no build e no CI
 
     first_run = bootstrap()

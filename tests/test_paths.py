@@ -86,3 +86,35 @@ def test_describe_mostra_os_caminhos(reload_paths):
     dados = paths.describe()
     assert dados["modo"] == "desenvolvimento"
     assert dados["dados"] == str(paths.DATA_DIR)
+
+
+# --- pasta dos navegadores do Playwright ------------------------------------------------
+
+
+def test_configure_browsers_path_aponta_para_ms_playwright(reload_paths, tmp_path, monkeypatch):
+    """Sem isso, o executável procura o navegador em .local-browsers (dentro do pacote)."""
+    local = tmp_path / "LocalAppData"
+    paths = reload_paths(frozen=True, meipass=str(tmp_path / "_MEI"), env={"LOCALAPPDATA": str(local)})
+    monkeypatch.delenv(paths.PLAYWRIGHT_BROWSERS_PATH, raising=False)
+
+    escolhida = paths.configure_browsers_path()
+    assert escolhida == local / "ms-playwright" == paths.BROWSERS_DIR
+    import os
+
+    assert os.environ[paths.PLAYWRIGHT_BROWSERS_PATH] == str(paths.BROWSERS_DIR)
+    assert paths.configure_browsers_path() == escolhida  # idempotente
+
+
+def test_configure_browsers_path_corrige_o_zero_do_playwright(reload_paths, tmp_path, monkeypatch):
+    paths = reload_paths(frozen=True, meipass=str(tmp_path / "_MEI"),
+                         env={"LOCALAPPDATA": str(tmp_path / "Local")})
+    monkeypatch.setenv(paths.PLAYWRIGHT_BROWSERS_PATH, "0")  # "está embalado junto" — não está
+    assert paths.configure_browsers_path() == paths.BROWSERS_DIR
+
+
+def test_configure_browsers_path_respeita_escolha_do_usuario(reload_paths, tmp_path, monkeypatch):
+    paths = reload_paths(frozen=True, meipass=str(tmp_path / "_MEI"),
+                         env={"LOCALAPPDATA": str(tmp_path / "Local")})
+    escolha = tmp_path / "navegadores-do-usuario"
+    monkeypatch.setenv(paths.PLAYWRIGHT_BROWSERS_PATH, str(escolha))
+    assert paths.configure_browsers_path() == escolha

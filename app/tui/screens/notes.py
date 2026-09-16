@@ -1,4 +1,4 @@
-"""Tela Notas (F6): bloco de notas persistente em notes.md (raiz, gitignored), autosave.
+"""Tela Notas (F6): bloco de notas persistente em notes.md (pasta de dados), autosave.
 `TextArea` sem borda e uma linha de status em text-faint ("salvo há 10s · 42 linhas")."""
 
 from __future__ import annotations
@@ -14,11 +14,10 @@ from textual.timer import Timer
 from textual.widgets import Static, TextArea
 
 from app import clock
-from app.config import ROOT_DIR
+from app.paths import NOTES_PATH
 from app.tui.screens.base import ModeScreen
 from app.tui.widgets.base_panel import relative_age
 
-NOTES_PATH = ROOT_DIR / "notes.md"
 AUTOSAVE_SECONDS = 1.0
 STATUS_TICK_SECONDS = 1.0
 log = logging.getLogger("notes")

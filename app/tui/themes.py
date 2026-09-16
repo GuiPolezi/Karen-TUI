@@ -16,7 +16,7 @@ from pathlib import Path
 from textual.color import Color
 from textual.theme import BUILTIN_THEMES, Theme
 
-from app.config import ROOT_DIR
+from app.paths import BUNDLED_THEMES_DIR, THEMES_DIR, WT_SCHEMES_DIR
 from app.tui.tokens import Tokens, check_contrast, ensure_contrast
 
 log = logging.getLogger("themes")
@@ -133,7 +133,6 @@ def register_themes(app, extra: dict[str, Tokens] | None = None, *,  # noqa: ANN
 
 # --- temas do usuário (themes/*.json) ---------------------------------------------------
 
-THEMES_DIR = ROOT_DIR / "themes"
 USER_THEME_KEYS = {
     "bg", "surface", "surface-raised", "border", "text", "text-muted", "text-faint",
     "accent", "accent-soft", "ok", "warn", "danger", "mine", "other",
@@ -177,8 +176,18 @@ def tokens_from_dict(name: str, data: dict) -> Tokens:
 
 def load_user_themes(directory: Path | None = None) -> dict[str, Tokens]:
     """Lê `themes/*.json`. Erro de parse ou de validação vira aviso no log e o arquivo é
-    ignorado; contraste ruim vira aviso, mas o tema entra."""
-    directory = THEMES_DIR if directory is None else directory
+    ignorado; contraste ruim vira aviso, mas o tema entra.
+
+    Sem argumento, lê os temas embalados e depois os do usuário (mesma pasta em
+    desenvolvimento); um tema do usuário com o mesmo nome substitui o embalado."""
+    directories = [BUNDLED_THEMES_DIR, THEMES_DIR] if directory is None else [directory]
+    result: dict[str, Tokens] = {}
+    for folder in dict.fromkeys(directories):  # sem repetir quando as duas coincidem
+        result.update(_load_themes_from(folder))
+    return result
+
+
+def _load_themes_from(directory: Path) -> dict[str, Tokens]:
     result: dict[str, Tokens] = {}
     if not directory.is_dir():
         return result
@@ -199,7 +208,7 @@ def load_user_themes(directory: Path | None = None) -> dict[str, Tokens]:
 
 # --- esquema de cores do Windows Terminal -------------------------------------------------
 
-WT_DIR = ROOT_DIR / "docs" / "design" / "windows-terminal"
+WT_DIR = WT_SCHEMES_DIR
 WT_PROFILE_SNIPPET = {
     "font": {"face": "Cascadia Code", "size": 11},
     "padding": "4",

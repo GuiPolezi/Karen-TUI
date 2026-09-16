@@ -14,8 +14,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
-ENV_PATH = ROOT_DIR / ".env"
+from app.paths import BUNDLE_DIR, DATA_DIR, ENV_PATH, LOG_DIR
+
+# mantido pelo que já importava daqui; é a pasta do código/pacote, não a do usuário
+ROOT_DIR = BUNDLE_DIR
 
 
 class ConfigError(Exception):
@@ -174,7 +176,7 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
 
     profile_dir = Path(env.str("CHATPANEL_PROFILE_DIR", ".chatpanel-profile"))
     if not profile_dir.is_absolute():
-        profile_dir = ROOT_DIR / profile_dir
+        profile_dir = DATA_DIR / profile_dir
     chatpanel = ChatPanelSettings(
         url=env.str("CHATPANEL_URL"),
         profile_dir=profile_dir,
@@ -238,7 +240,7 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
         chatpanel=chatpanel,
         notify_bell=notify_bell,
         log_level=log_level,
-        log_dir=ROOT_DIR / "logs",
+        log_dir=LOG_DIR,
         urls=urls,
         notify_toast=notify_toast,
         theme=theme,

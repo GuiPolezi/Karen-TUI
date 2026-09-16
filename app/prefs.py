@@ -1,4 +1,4 @@
-"""Preferências do usuário em prefs.json (raiz do projeto, gitignored). Nunca segredos.
+"""Preferências do usuário em prefs.json (pasta de dados; ver app/paths.py). Nunca segredos.
 
 Guarda coisas como a última tela aberta, ordenação escolhida, favoritos e histórico do
 launcher. Leitura tolerante: arquivo ausente ou corrompido vira preferências padrão.
@@ -11,9 +11,7 @@ import logging
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from app.config import ROOT_DIR
-
-PREFS_PATH = ROOT_DIR / "prefs.json"
+from app.paths import PREFS_PATH
 MAX_HISTORY = 50
 
 log = logging.getLogger("prefs")

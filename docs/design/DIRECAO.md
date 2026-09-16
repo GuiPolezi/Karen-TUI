@@ -346,7 +346,7 @@ Abaixo de 25 linhas: some o cartão do e-mail e a lista do Milldesk; ficam conta
 ### 5.4 Footer — por tela
 
 ```
-Dashboard  ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e último e-mail  m silêncio  : launcher  ? ajuda
+Dashboard  ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  m silêncio  : launcher  ? ajuda
 E-mail     ↑↓ mover  ⏎ abrir  u só não lidos  / filtrar  o navegador  y copiar remetente  : launcher  ? ajuda
 Milldesk   ↑↓ mover  ⏎ abrir  s ordenar: SLA  / filtrar  o navegador  y copiar ID  2 atualizar  : launcher  ? ajuda
 ChatPanel  ↑↓ mover  ⏎ abrir  t com outros  / filtrar  o navegador  y copiar número  c login  : launcher  ? ajuda

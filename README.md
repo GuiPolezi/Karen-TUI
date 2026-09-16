@@ -96,7 +96,8 @@ Copy-Item .env.example .env
 notepad .env
 ```
 
-Preencha pelo menos:
+O modelo vem **todo em branco**, com um comentário explicando cada variável (e o padrão de
+quem tem um). Preencha pelo menos:
 
 - `TECH_NAME` exatamente como aparece no ChatPanel e no Milldesk
 - `EMAIL_IMAP_HOST`, `EMAIL_USER` e `EMAIL_APP_PASSWORD` (se a senha tiver `#` ou `*`,
@@ -107,10 +108,14 @@ Preencha pelo menos:
 
 Regras de validação:
 
-- Variável **ausente** do `.env` aborta o app com a lista do que falta.
+- Variável obrigatória **em branco ou ausente** aborta o app com a lista do que falta
+  (`TECH_NAME`, `EMAIL_IMAP_HOST`, `EMAIL_USER`, `CHATPANEL_URL`).
+- Variável com padrão pode ficar em branco: o app usa o padrão.
 - Segredo **vazio** (`EMAIL_APP_PASSWORD`, `MILLDESK_API_KEY`) não aborta: o painel
   correspondente mostra "não configurado" e os outros continuam funcionando.
 - Intervalos de atualização precisam ser de pelo menos 5 segundos.
+- Nunca escreva comentário na mesma linha de uma variável: o `python-dotenv` transforma o
+  comentário em valor.
 
 ## Como rodar
 

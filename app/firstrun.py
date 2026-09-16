@@ -217,8 +217,10 @@ SETUP_MESSAGE = """\
 Primeira execução: criei a configuração em
   {env_path}
 
-Preencha pelo menos EMAIL_APP_PASSWORD e MILLDESK_API_KEY (o arquivo está abrindo no
-editor) e abra o CMD ALL-IN-ONE de novo.
+O arquivo está abrindo no editor, todo em branco e com um comentário explicando cada
+variável. Preencha as obrigatórias — TECH_NAME, EMAIL_IMAP_HOST, EMAIL_USER e
+CHATPANEL_URL — mais EMAIL_APP_PASSWORD e MILLDESK_API_KEY, e abra o CMD ALL-IN-ONE de
+novo. O que ficar em branco usa o padrão indicado no comentário.
 
 Seus dados (configuração, logs, notas, preferências) ficam em
   {data_dir}

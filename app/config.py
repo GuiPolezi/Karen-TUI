@@ -113,14 +113,20 @@ class _Env:
         self.invalid: list[str] = []
 
     def str(self, name: str, default: str | None = None, required: bool = True) -> str:
-        value = os.environ.get(name)
-        if value is None:
-            if default is not None:
-                return default
-            if required:
-                self.missing.append(name)
-            return ""
-        return value.strip()
+        """Ausente e em branco dão no mesmo.
+
+        O `.env.example` é um modelo todo em branco: quem tem padrão cai no padrão, quem é
+        obrigatória entra na lista do que falta preencher (em vez de virar valor vazio ou,
+        pior, erro de "esperado inteiro" para um número em branco).
+        """
+        value = (os.environ.get(name) or "").strip()
+        if value:
+            return value
+        if default is not None:
+            return default
+        if required:
+            self.missing.append(name)
+        return ""
 
     def int(self, name: str, default: int) -> int:
         raw = self.str(name, str(default))
@@ -205,11 +211,9 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
 
     problems: list[str] = []
     if env.missing:
-        problems.append("Variáveis obrigatórias ausentes: " + ", ".join(env.missing))
+        problems.append("Preencha estas variáveis obrigatórias: " + ", ".join(env.missing))
     if env.invalid:
         problems.append("Valores inválidos: " + "; ".join(env.invalid))
-    if not tech_name:
-        problems.append("TECH_NAME não pode ser vazio")
     for label, seconds in (
         ("EMAIL_REFRESH_SECONDS", email.refresh_seconds),
         ("MILLDESK_REFRESH_SECONDS", milldesk.refresh_seconds),

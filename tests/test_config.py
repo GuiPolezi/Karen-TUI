@@ -119,27 +119,54 @@ def test_secrets_are_masked_in_logs(clean_env, tmp_path: Path, caplog):
     assert record.getMessage() == "GET https://x/api/****1776/ticketsByAgent senha=******** chat=********"
 
 
-def test_env_example_abre_com_as_fontes_secretas_nao_configuradas(clean_env, monkeypatch):
-    """O .env.example é o .env de quem acabou de instalar (app/firstrun.py o copia).
+def test_env_example_e_um_modelo_em_branco():
+    """O `.env.example` é o `.env` de quem acabou de instalar (`app/firstrun.py` o copia).
 
-    Comentário na mesma linha de uma variável vazia vira valor para o python-dotenv
-    (`EMAIL_APP_PASSWORD=  # preencher` = senha "# preencher"), e aí a fonte se diz
-    configurada e falha no login em vez de mostrar "não configurada". Por isso, no
-    exemplo, variável vazia tem o comentário na linha de cima.
+    Ele não pode levar dado de ninguém (servidor, caixa, endereço do painel) e não pode ter
+    comentário na mesma linha de uma variável: para o python-dotenv o comentário vira o
+    valor (`EMAIL_APP_PASSWORD=  # preencher` = senha "# preencher"), e aí a fonte se diz
+    configurada e falha no login em vez de mostrar "não configurada".
     """
+    from dotenv import dotenv_values
+
+    from app.paths import BUNDLE_DIR
+
+    valores = dotenv_values(BUNDLE_DIR / ".env.example")
+    assert valores, "o modelo precisa listar as variáveis"
+    preenchidas = {nome: valor for nome, valor in valores.items() if valor}
+    assert not preenchidas, f"o modelo tem que vir em branco: {preenchidas}"
+    assert {"TECH_NAME", "EMAIL_IMAP_HOST", "EMAIL_USER", "CHATPANEL_URL"} <= set(valores)
+
+
+def test_env_example_em_branco_pede_o_que_falta(clean_env):
+    """Abrir com o modelo em branco lista as obrigatórias, sem barulho de valor inválido."""
     import os
 
     from app.paths import BUNDLE_DIR
 
     antes = dict(os.environ)
     try:
-        settings = load_settings(BUNDLE_DIR / ".env.example")
+        with pytest.raises(ConfigError) as info:
+            load_settings(BUNDLE_DIR / ".env.example")
     finally:  # load_dotenv escreve no ambiente; não deixa vazar para os outros testes
         os.environ.clear()
         os.environ.update(antes)
-    assert settings.tech_name
-    assert not settings.email.configured, "senha do e-mail não deveria vir preenchida"
-    assert not settings.milldesk.configured
-    assert settings.milldesk.masked_key == "(vazia)"
-    assert not settings.chatpanel.prefill_login
-    assert settings.urls.webmail == "" and settings.urls.milldesk == ""
+    mensagem = str(info.value)
+    for obrigatoria in ("TECH_NAME", "EMAIL_IMAP_HOST", "EMAIL_USER", "CHATPANEL_URL"):
+        assert obrigatoria in mensagem
+    # número em branco cai no padrão, não vira "esperado inteiro"
+    assert "esperado inteiro" not in mensagem and "esperado true/false" not in mensagem
+
+
+def test_variavel_em_branco_usa_o_padrao(clean_env, tmp_path: Path):
+    """Em branco == ausente: quem tem padrão cai no padrão, quem é obrigatória é cobrada."""
+    for key, value in MINIMAL_ENV.items():
+        clean_env.setenv(key, value)
+    clean_env.setenv("EMAIL_IMAP_PORT", "")
+    clean_env.setenv("EMAIL_IMAP_STARTTLS", "")
+    clean_env.setenv("EMAIL_INBOX_FOLDER", "   ")
+    clean_env.setenv("THEME", "")
+
+    settings = load_settings(tmp_path / "nao-existe.env")
+    assert settings.email.port == 143 and settings.email.starttls is True
+    assert settings.email.inbox_folder == "INBOX" and settings.theme == "carbon"

@@ -18,6 +18,8 @@ class DashboardScreen(ModeScreen):
     MODE = "dashboard"
     TITLE_PT = "Dashboard"
     AUTO_FOCUS = "#email .panel-table"
+    FOOTER = [("{key_up_down}", "mover"), ("{key_enter}", "abrir"), ("{key_tab}", "painel"), ("/", "filtrar"),
+              ("o", "navegador"), ("y", "copiar"), ("e", "e-mail"), ("m", "silêncio"), ("T", "tema")]
     BINDINGS = [
         Binding("tab", "focus_next", "Próximo painel", show=False),
         Binding("shift+tab", "focus_previous", "Painel anterior", show=False),

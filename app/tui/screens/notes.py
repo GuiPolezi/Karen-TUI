@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.timer import Timer
@@ -39,7 +40,8 @@ class NotesScreen(ModeScreen):
     MODE = "notes"
     TITLE_PT = "Notas"
     AUTO_FOCUS = "TextArea"
-    BINDINGS = [Binding("ctrl+s", "save_now", "Salvar", show=True)]
+    FOOTER = [("^s", "salvar agora"), ("{key_escape}", "dashboard")]
+    BINDINGS = [Binding("ctrl+s", "save_now", "Salvar", show=False)]
 
     def __init__(self, path: Path | None = None) -> None:
         super().__init__()
@@ -48,8 +50,11 @@ class NotesScreen(ModeScreen):
         self.dirty = False
 
     def body(self) -> ComposeResult:
-        yield Static(f"{self.path.name} · salva sozinho 1 s após parar de digitar", id="notes-status")
+        yield Static(self._status(f"{self.path.name} · salva sozinho 1 s após parar de digitar"), id="notes-status")
         yield TextArea(load_notes(self.path), id="notes-text")
+
+    def _status(self, message: str) -> Text:
+        return Text(message, style=self.app.tokens.rich("text-faint"))  # type: ignore[attr-defined]
 
     def on_text_area_changed(self, event: TextArea.Changed) -> None:
         self.dirty = True
@@ -62,6 +67,6 @@ class NotesScreen(ModeScreen):
         text = self.query_one("#notes-text", TextArea).text
         ok = save_notes(text, self.path)
         self.dirty = not ok
-        self.query_one("#notes-status", Static).update(
+        self.query_one("#notes-status", Static).update(self._status(
             f"{self.path.name} · {'salvo' if ok else 'ERRO ao salvar (veja o log)'} · {len(text)} caracteres"
-        )
+        ))

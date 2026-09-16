@@ -122,7 +122,7 @@ def test_sla_line_colors():
     detail = ticket_detail_from_api(FIXTURE)
     now = datetime(2026, 10, 27, 12, 34)
     assert "faltam 02h00" in sla_line(detail, now).plain
-    assert "VENCIDO" in sla_line(detail, now + timedelta(hours=3)).plain
+    assert "vencido" in sla_line(detail, now + timedelta(hours=3)).plain
     detail.sla_expiration = "Em pausa"
     assert sla_line(detail, now).plain == "SLA: Em pausa"
 

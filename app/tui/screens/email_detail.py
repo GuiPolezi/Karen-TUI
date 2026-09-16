@@ -26,11 +26,16 @@ class EmailDetailScreen(ModalScreen[None]):
         self.latest = latest
         self.loading_uid = loading_uid
 
+    @property
+    def tokens(self):  # noqa: ANN201
+        return self.app.tokens  # type: ignore[attr-defined]
+
     def compose(self) -> ComposeResult:
         with VerticalScroll(id="email-detail"):
             yield Static(self._header(), id="email-detail-header")
             yield Static(self._body_text(), id="email-detail-body")
-            yield Static(Text("[Esc] voltar  [y] copiar remetente", style="dim"), id="email-detail-footer")
+            yield Static(Text("Esc voltar  y copiar remetente", style=self.tokens.rich("text-faint")),
+                         id="email-detail-footer")
 
     def show(self, latest: LatestEmail) -> None:
         """Preenche a tela quando o corpo chega (abriu com 'carregando…')."""
@@ -41,24 +46,26 @@ class EmailDetailScreen(ModalScreen[None]):
         self.query_one("#email-detail-body", Static).update(self._body_text())
 
     def _header(self) -> Text:
+        label = self.tokens.rich("text-faint")
         header = Text()
         if self.latest is None:
-            header.append("carregando e-mail…", style="dim")
+            header.append("carregando e-mail…", style=self.tokens.rich("text-muted"))
             return header
         latest = self.latest
         sender = latest.from_name or latest.from_addr
         if latest.from_name and latest.from_addr:
             sender = f"{latest.from_name} <{latest.from_addr}>"
         when = latest.date.strftime("%d/%m/%Y %H:%M") if latest.date else "--"
-        header.append("De:      ", style="dim").append(sender + "\n")
-        header.append("Assunto: ", style="dim").append(latest.subject + "\n", style="bold")
-        header.append("Data:    ", style="dim").append(f"{when}  ({format_email_date(latest.date)})")
+        header.append("De:      ", style=label).append(sender + "\n", style=self.tokens.rich("text"))
+        header.append("Assunto: ", style=label).append(latest.subject + "\n", style=self.tokens.rich("text", bold=True))
+        header.append("Data:    ", style=label).append(f"{when}  ({format_email_date(latest.date)})",
+                                                        style=self.tokens.rich("text-muted"))
         return header
 
     def _body_text(self) -> Text:
         if self.latest is None:
             return Text("")
-        return Text(self.latest.body or self.latest.preview or "(sem conteúdo)")
+        return Text(self.latest.body or self.latest.preview or "(sem conteúdo)", style=self.tokens.rich("text"))
 
     def action_copy_sender(self) -> None:
         if self.latest is not None:

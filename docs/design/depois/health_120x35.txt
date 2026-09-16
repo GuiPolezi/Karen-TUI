@@ -1,0 +1,35 @@
+ ▍CMD ALL-IN-ONE  Saúde                                  ● ● ●                                      Guilherme  08:14:20 
+  Fontes                                                                                                                
+    Fonte        Status    Última coleta    Duração    Próximo ciclo    Detalhe                                         
+    e-mail       ok        há 0s            0.0s       em 30s           intervalo 30s                                   
+    Milldesk     ok        há 0s            0.0s       em 60s           intervalo 60s                                   
+    ChatPanel    ok        há 0s            0.0s       em 15s           intervalo 15s                                   
+                                                                                                                        
+  Milldesk  0 chamada(s) no último minuto · cooldown 429: não                                                           
+  ChatPanel  logado como User CMD · ressincronização: desligada · session.bin: ausente                                  
+  Log  logs\app.log · 28 KB                                                                                             
+  Eventos hoje  9                                                                                                       
+  Versões  textual 8.2.8                                                                                                
+  Uptime  0h00min   ·   atualizado 08:14:20                                                                             
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+ r atualizar tudo  Esc dashboard  : launcher  ? ajuda                                                                   

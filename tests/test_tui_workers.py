@@ -58,9 +58,9 @@ async def test_email_worker_renders_state_and_manual_refresh():
         await wait_until(lambda: "email" in app.states)
         await pilot.pause()
         text = screen_text(app, 120, 30)
-        assert "Inbox: 142" in text
-        assert "Não lidos: 7" in text
-        assert "Spam: 3" in text
+        assert "Inbox 142" in text  # rótulo em text-muted, número em bold (sem dois-pontos)
+        assert "Não lidos 7" in text
+        assert "Spam 3" in text
         assert "Fulano" in text
         assert "Erro ao gerar" in text  # o assunto é cortado na largura do painel compacto
         assert "Beltrano" in text

@@ -97,6 +97,9 @@ class Settings:
     log_dir: Path
     urls: UrlSettings = UrlSettings()
     notify_toast: bool = False
+    theme: str = "carbon"      # THEME: tema padrão (prefs.json tem prioridade)
+    icons: str = "auto"        # ICONS: nerd | unicode | ascii | auto
+    sla_blink: bool = True     # SLA_BLINK: SLA < 30 min pisca
 
 
 class _Env:
@@ -186,6 +189,9 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
     notify_bell = env.bool("NOTIFY_BELL", True)
     notify_toast = env.bool("NOTIFY_TOAST", False)
     log_level = env.str("LOG_LEVEL", "INFO").upper()
+    theme = env.str("THEME", "carbon") or "carbon"
+    icons = env.str("ICONS", "auto").lower() or "auto"
+    sla_blink = env.bool("SLA_BLINK", True)
     urls = UrlSettings(
         webmail=env.str("WEBMAIL_URL", "", required=False),
         milldesk=env.str("MILLDESK_WEB_URL", "", required=False),
@@ -233,4 +239,7 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
         log_dir=ROOT_DIR / "logs",
         urls=urls,
         notify_toast=notify_toast,
+        theme=theme,
+        icons=icons,
+        sla_blink=sla_blink,
     )

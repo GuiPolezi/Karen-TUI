@@ -29,6 +29,7 @@ def fake_settings(**overrides) -> Settings:
         notify_bell=False,
         log_level="INFO",
         log_dir=Path("logs"),
+        icons="unicode",  # não depender do terminal que roda os testes
     )
     base.update(overrides)
     return Settings(**base)

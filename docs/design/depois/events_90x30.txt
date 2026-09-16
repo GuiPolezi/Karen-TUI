@@ -1,0 +1,30 @@
+ ▍CMD ALL-IN-ONE  Eventos                 ● ● ●                       Guilherme  08:14:20 
+ 9 evento(s) hoje · derivados das diferenças entre coletas · arquivo                      
+ logs/events-AAAA-MM-DD.jsonl                                                             
+  Hora      Fonte      Evento                                                             
+  08:50:22  Milldesk   chamado #4833 entrou no seu nome: Novo: sistema de protocolo fora  
+  08:11:20  e-mail     e-mail novo de Fulano de Tal: Erro ao gerar relatório de empenhos  
+  08:09:20  ChatPanel  Diego Leone · PM Iaras: 1 nova mensagem                            
+  08:02:20  Milldesk   chamado #4831 entrou: Impressora fiscal não imprime cupom          
+  07:33:20  e-mail     e-mail novo de Maria Souza: RE: Acesso ao portal da transparência  
+  07:14:20  Milldesk   chamado #4829 mudou para Aguardando cliente                        
+  06:44:20  ChatPanel  conversa Ana Paula · CM Itu transferida para você                  
+  06:14:20  Milldesk   chamado #4788 saiu do seu nome                                     
+  06:04:20  ChatPanel  conversa Marcos · PM Boituva encerrada                             
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                   ▌      
+ ↑↓ mover  x limpar tela  : launcher  ? ajuda                                             

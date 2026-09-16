@@ -6,7 +6,7 @@ from rich.table import Table
 from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Vertical, VerticalScroll
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Input, Static
 
@@ -29,15 +29,18 @@ class LauncherScreen(ModalScreen[None]):
         self._draft = ""
 
     def compose(self) -> ComposeResult:
+        tokens = self.app.tokens  # type: ignore[attr-defined]
         with Vertical(id="launcher"):
             yield Input(placeholder="comando… (ex.: g erro 500 · md 1234 · tickets)", id="launcher-input")
-            yield Static(Text(HINT, style="dim"), id="launcher-hint")
+            yield Static(Text(HINT, style=tokens.rich("text-faint")), id="launcher-hint")
 
     def on_mount(self) -> None:
         self.query_one("#launcher-input", Input).focus()
 
     def set_message(self, message: str, error: bool = False) -> None:
-        self.query_one("#launcher-hint", Static).update(Text(message, style="bold red" if error else "green"))
+        tokens = self.app.tokens  # type: ignore[attr-defined]
+        style = tokens.rich("danger", bold=True) if error else tokens.rich("ok")
+        self.query_one("#launcher-hint", Static).update(Text(message, style=style))
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         # o App fecha este modal antes de executar ações que trocam de tela
@@ -68,20 +71,22 @@ class HelpScreen(ModalScreen[None]):
         ("↑ ↓ j k PgUp PgDn", "mover o cursor"), ("Enter", "abrir o item"), ("Esc", "voltar / limpar filtro"),
         ("Tab", "trocar painel"), ("/", "filtrar a lista"), ("o", "abrir no navegador"), ("y", "copiar"),
         ("e", "último e-mail"), ("r · 1 2 3", "atualizar"), ("c", "login ChatPanel"),
-        ("m", "silêncio 30 min"), (":", "launcher"), ("?", "esta ajuda"), ("q", "sair"),
+        ("m", "silêncio 30 min"), ("T", "próximo tema"), (":", "launcher"), ("?", "esta ajuda"), ("q", "sair"),
     ]
 
     def compose(self) -> ComposeResult:
         with VerticalScroll(id="help"):
-            yield Static(self._table("Atalhos", self.SHORTCUTS), id="help-keys")
-            yield Static(self._table("Launcher (:)", HELP_LINES), id="help-commands")
-            yield Static(Text("[Esc] fechar", style="dim"), id="help-footer")
+            with Horizontal(id="help-columns"):
+                yield Static(self._table("Atalhos", self.SHORTCUTS), id="help-keys")
+                yield Static(self._table("Launcher (:)", HELP_LINES), id="help-commands")
+            yield Static(Text("Esc fecha", style=self.app.tokens.rich("text-faint")), id="help-footer")  # type: ignore[attr-defined]
 
-    @staticmethod
-    def _table(title: str, rows: list[tuple[str, str]]) -> Table:
-        table = Table(title=title, title_justify="left", box=None, show_header=False, padding=(0, 2))
-        table.add_column("k", style="bold cyan", no_wrap=True)
-        table.add_column("v")
+    def _table(self, title: str, rows: list[tuple[str, str]]) -> Table:
+        tokens = self.app.tokens  # type: ignore[attr-defined]
+        table = Table(title=title, title_justify="left", title_style=tokens.rich("text-muted", bold=True),
+                      box=None, show_header=False, padding=(0, 2))
+        table.add_column("k", style=tokens.rich("accent", bold=True), no_wrap=True)
+        table.add_column("v", style=tokens.rich("text"))
         for key, description in rows:
             table.add_row(key, description)
         return table

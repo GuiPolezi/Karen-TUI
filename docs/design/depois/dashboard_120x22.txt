@@ -1,0 +1,22 @@
+ ▍CMD ALL-IN-ONE  Dashboard                              ● ● ●                                      Guilherme  08:14:20 
+ ╭─ ✉ E-MAIL ──────────────────────────────────────────────╮╭─ ▣ MILLDESK ────────────────────────────────────────────╮ 
+ │ Inbox 142   Não lidos 7   Spam 3                        ││ Abertos no meu nome 12  (todos: 37)  Em atendimento 7 … │ 
+ │     08:11        Fulano de Tal     Erro ao gerar rela   ││ SLA ▸ #4802 Certificado digital do prefeito vencendo ·… │ 
+ │     07:33        Maria Souza       RE: Acesso ao port   ││ Histórico: 1184 chamados · 23,4% de 5061 · ordem: SLA … │ 
+ │     07:02        Suporte Milldesk  [#4831] Novo chama   ││     #4802   Certificado digit  Em atendimen  -01h05     │ 
+ │     05:14        Hércules Andrade  Certificado digita   ││     #4821   Backup noturno nã  Em atendimen  01h41      │ 
+ │     03:14        Diego Leone       Porta 21 continua    ││     #4831   Impressora fiscal  Em atendimen  05h59      │ 
+ │     15/09 06:14  Contabilidade     Fechamento do mês:   ││     #4744   Câmera do plenári  Aguardando c  23h59      │ 
+ │     15/09 02:14  Ana Paula         Solicitação de nov   ││     #4829   Acesso ao sistema  Aguardando c  1d 01h     │ 
+ │     14/09 08:14  GitHub            [cmd-all-in-one] D   ││     #4815   Lentidão no porta  Aguardando c  1d 23h   ▅ │ 
+ │                                                         ││     #4790   E-mail institucio  Aguardando c  2d 23h     │ 
+ │                                                         ││     #4798   Configurar VPN pa  Aguardando c  4d 23h     │ 
+ ╰──────────────────────────────────────── 30s · 08:14:14 ─╯╰──────────────────────────────────────── 60s · 08:13:53 ─╯ 
+ ╭─ ◉ CHATPANEL ──────────────────────────────────────────────────────────────────────────────────────────────────────╮ 
+ │ Minhas conversas 3   Não lidas 1   ·   4 em atendimento por outros · 6 não lidas na aba                            │ 
+ │     ●  08:09  Diego Leone · PM Iaras      Prefeitura    Porta 21 continua fechada, consegue verificar hoje   1     │ 
+ │     ○  08:07  Hércules · CM Tatuí TI      Câmara        Fabio: Hércules, consegue me mandar o print do erro        │ 
+ │     ○  07:14  Ana Paula · CM Itu          Câmara        Obrigada! Funcionou.                                       │ 
+ │                                                                                                                    │ 
+ ╰─────────────────────────────────────────────────────────────────────────────────────────────────── 15s · 08:14:18 ─╯ 
+ ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  m silêncio  T tema  : launcher  ? ajuda       

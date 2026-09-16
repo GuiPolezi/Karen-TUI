@@ -80,8 +80,8 @@ def test_nearest_sla_and_highlight():
     tickets = [ticket(1, sla="16/09/2026 12:00"), ticket(2, sla="Em pausa"), ticket(3, sla="15/09/2026 12:20")]
     assert nearest_sla(tickets, now).id == 3
     assert nearest_sla([ticket(2, sla="Em pausa")], now) is None
-    assert "⚠" in sla_highlight(tickets[2], now).plain  # < 30 min
-    assert "VENCIDO" in sla_highlight(ticket(4, sla="15/09/2026 11:00"), now).plain
+    assert "!" in sla_highlight(tickets[2], now).plain  # < 30 min: ícone de aviso (unicode "!")
+    assert "vencido" in sla_highlight(ticket(4, sla="15/09/2026 11:00"), now).plain
     assert "faltam 1d 00h" in sla_highlight(tickets[0], now).plain
 
 

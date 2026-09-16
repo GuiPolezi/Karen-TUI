@@ -28,6 +28,7 @@ class Prefs:
     favorites: dict[str, str] = field(default_factory=dict)  # launcher: nome -> url
     history: list[str] = field(default_factory=list)          # launcher: últimos comandos
     silenced_until: float = 0.0                               # modo silêncio (epoch)
+    theme: str = ""                                           # tema escolhido em tempo de execução (vazio = THEME do .env)
 
     def push_history(self, command: str) -> None:
         command = command.strip()

@@ -13,7 +13,7 @@ from app.prefs import Prefs, load_prefs, save_prefs
 from app.sources.base import Source
 from app.state import ChatItem, ChatPanelState, MilldeskState, MilldeskTicket, format_remaining, parse_datetime_br
 from app.tui.widgets.keyed_table import KeyedTable
-from app.tui.widgets.milldesk_panel import sla_style, sla_text, sorted_tickets
+from app.tui.widgets.milldesk_panel import sla_text, sla_token, sorted_tickets
 from tests.helpers import fake_settings, make_app, wait_until
 
 # --- KeyedTable ----------------------------------------------------------------------
@@ -111,10 +111,11 @@ def test_sorted_tickets_and_sla_colors():
     assert [t.id for t in sorted_tickets(tickets, "sla", now)] == [1, 2, 3, 4]
     assert [t.id for t in sorted_tickets(tickets, "data", now)] == [4, 2, 1, 3]
     assert [t.id for t in sorted_tickets(tickets, "status", now)] == [2, 1, 3, 4]
-    assert sla_style(late, now) == "bold red" and sla_text(late, now) == "-01h00"
-    assert sla_style(soon, now) == "bold yellow" and sla_text(soon, now) == "02h00"
-    assert sla_style(far, now) == "green"
-    assert sla_style(paused, now) == "dim" and sla_text(paused, now) == "Em pausa"
+    # tokens semânticos, nunca cores: o tema decide a cor (Ciclo 3)
+    assert sla_token(late, now) == "danger" and sla_text(late, now) == "-01h00"
+    assert sla_token(soon, now) == "warn" and sla_text(soon, now) == "02h00"
+    assert sla_token(far, now) == "ok"
+    assert sla_token(paused, now) == "text-faint" and sla_text(paused, now) == "Em pausa"
 
 
 class FakeMilldeskSource(Source[MilldeskState]):

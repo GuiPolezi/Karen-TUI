@@ -1,24 +1,74 @@
-/* Layout geral ------------------------------------------------------------ */
+/* CMD ALL-IN-ONE — folha de estilo.
+ *
+ * Só tokens: $bg $surface $surface-raised $border $text $text-muted $text-faint
+ *            $accent $accent-soft $ok $warn $danger $mine $other
+ * (ver app/tui/tokens.py e app/tui/themes.py). Nenhuma cor literal aqui — o teste
+ * tests/test_design.py garante isso. Espaçamento: 0, 1 ou 2 células.
+ */
 
 Screen {
     layout: vertical;
+    background: $bg;
+    color: $text;
 }
 
-#header {
+/* Barras ------------------------------------------------------------------- */
+
+#topbar {
     height: 1;
-    background: $primary;
-    color: $text;
+    background: $surface;
     padding: 0 1;
 }
 
-#header #title {
+#topbar-title {
     width: 1fr;
-    text-style: bold;
 }
 
-#header #clock {
+#topbar-health {
     width: auto;
+    height: 1;
 }
+
+#topbar-health .topbar-dot {
+    width: 2;
+    text-align: center;
+}
+
+#topbar-status {
+    width: 1fr;
+    text-align: right;
+}
+
+#footer {
+    dock: bottom;
+    height: 1;
+    background: $surface;
+}
+
+/* Widgets nativos que aparecem por cima --------------------------------------- */
+
+Tooltip {
+    background: $surface-raised;
+    color: $text;
+    border: round $border;
+    padding: 0 1;
+}
+
+Toast {
+    background: $surface-raised;
+    color: $text;
+    padding: 0 1;
+    width: auto;
+    min-width: 24;
+    max-width: 60;
+}
+
+Toast.-information { border-left: outer $ok; }
+Toast.-warning { border-left: outer $warn; }
+Toast.-error { border-left: outer $danger; }
+Toast .toast--title { color: $text-muted; text-style: none; }
+
+/* Corpo do Dashboard ----------------------------------------------------------- */
 
 #main {
     height: 1fr;
@@ -55,13 +105,13 @@ Screen {
     margin: 0 1;
 }
 
-/* Painéis ----------------------------------------------------------------- */
+/* Painéis ---------------------------------------------------------------------- */
 
 BasePanel {
-    border: round $primary;
+    border: round $border;
     border-title-color: $text;
     border-title-style: bold;
-    border-subtitle-color: $text-muted;
+    border-subtitle-color: $text-faint;
     padding: 0 1;
     height: auto;
     min-height: 7;
@@ -73,17 +123,12 @@ BasePanel:focus-within {
 }
 
 BasePanel.error {
-    border: round $error;
-    border-title-color: $error;
+    border: round $danger;
 }
 
 BasePanel.unconfigured {
-    border: round $warning;
-}
-
-BasePanel.changed {
-    border: heavy $warning;
-    border-title-color: $warning;
+    border: round $border;
+    border-title-color: $text-muted;
 }
 
 BasePanel .panel-head {
@@ -105,17 +150,13 @@ BasePanel .panel-table {
     scrollbar-size: 1 1;
 }
 
-BasePanel .panel-table > .datatable--cursor {
-    background: $accent 30%;
-}
-
 BasePanel .panel-error {
-    color: $error;
+    color: $danger;
     height: auto;
     display: none;
 }
 
-/* Log (F5) ---------------------------------------------------------------- */
+/* Log (F5) ------------------------------------------------------------------- */
 
 #log-status {
     height: 1;
@@ -126,11 +167,11 @@ BasePanel .panel-error {
 #log-lines {
     height: 1fr;
     margin: 0 1;
-    border: round $secondary;
+    border: round $border;
     scrollbar-size: 1 1;
 }
 
-/* Notas (F6) -------------------------------------------------------------- */
+/* Notas (F6) ----------------------------------------------------------------- */
 
 #notes-status {
     height: 1;
@@ -143,11 +184,11 @@ BasePanel .panel-error {
     margin: 0 1;
 }
 
-/* Launcher (:) e ajuda (?) ------------------------------------------------- */
+/* Launcher (:) e ajuda (?) ----------------------------------------------------- */
 
 LauncherScreen {
     align: center top;
-    background: $background 40%;
+    background: $bg 40%;
 }
 
 #launcher {
@@ -172,23 +213,32 @@ LauncherScreen {
 
 HelpScreen {
     align: center middle;
-    background: $background 60%;
+    background: $bg 60%;
 }
 
 #help {
     width: 90%;
     height: 90%;
-    border: round $primary;
+    border: round $accent;
     background: $surface;
     padding: 1 2;
 }
 
-#help-keys, #help-commands, #help-footer {
+#help-columns {
+    height: auto;
+}
+
+#help-keys, #help-commands {
+    width: 1fr;
     height: auto;
     margin-bottom: 1;
 }
 
-/* Eventos (F7) e Saúde (F8) ----------------------------------------------- */
+#help-footer {
+    height: auto;
+}
+
+/* Eventos (F7) e Saúde (F8) --------------------------------------------------- */
 
 #events-status, #health-sources, #health-extra {
     height: auto;
@@ -216,99 +266,37 @@ HelpScreen {
     color: $text;
 }
 
-/* Detalhe da conversa (Enter no ChatPanel) --------------------------------- */
+/* Modais de detalhe (e-mail, chamado, conversa) --------------------------------- */
 
-ConversationDetailScreen {
+ConversationDetailScreen, TicketDetailScreen, EmailDetailScreen {
     align: center middle;
-    background: $background 60%;
+    background: $bg 60%;
 }
 
-#conversation {
+#conversation, #ticket-detail, #email-detail {
     width: 92%;
     height: 92%;
-    border: round $primary;
+    border: round $accent;
     background: $surface;
     padding: 1 2;
 }
 
-#conversation-header {
+#conversation-header, #ticket-header, #email-detail-header {
     height: auto;
     margin-bottom: 1;
-    border-bottom: solid $secondary;
+    border-bottom: solid $border;
 }
 
-#conversation-messages {
+#conversation-messages, #email-detail-body {
     height: auto;
 }
 
-#conversation-footer {
-    height: auto;
-    margin-top: 1;
-}
-
-/* Detalhe do chamado (Enter no Milldesk) ----------------------------------- */
-
-TicketDetailScreen {
-    align: center middle;
-    background: $background 60%;
-}
-
-#ticket-detail {
-    width: 92%;
-    height: 92%;
-    border: round $primary;
-    background: $surface;
-    padding: 1 2;
-}
-
-#ticket-header {
-    height: auto;
-    margin-bottom: 1;
-    border-bottom: solid $secondary;
-}
-
-#ticket-sla {
+#ticket-sla, #ticket-body, #ticket-resolution, #ticket-communications {
     height: auto;
     margin-bottom: 1;
 }
 
-#ticket-body, #ticket-resolution, #ticket-communications {
-    height: auto;
-    margin-bottom: 1;
-}
-
-#ticket-footer {
-    height: auto;
-    margin-top: 1;
-}
-
-/* Detalhe do e-mail (e / Enter) ------------------------------------------- */
-
-EmailDetailScreen {
-    align: center middle;
-    background: $background 60%;
-}
-
-#email-detail {
-    width: 90%;
-    height: 90%;
-    border: round $primary;
-    border-title-color: $text;
-    background: $surface;
-    padding: 1 2;
-}
-
-#email-detail-header {
-    height: auto;
-    margin-bottom: 1;
-    border-bottom: solid $secondary;
-}
-
-#email-detail-body {
-    height: auto;
-}
-
-#email-detail-footer {
+#conversation-footer, #ticket-footer, #email-detail-footer {
     height: auto;
     margin-top: 1;
 }

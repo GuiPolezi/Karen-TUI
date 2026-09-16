@@ -20,11 +20,15 @@ from textual.binding import Binding
 from textual.screen import ModalScreen
 from textual.widgets import Input
 
+from app import clock
 from app.config import Settings
 from app.events import EventLog, diff_states
 from app.prefs import PREFS_PATH, Prefs, load_prefs, save_prefs
 from app.sources.base import Source, SourceError
+from app.tui.icons import IconSet, resolve_icons
 from app.tui.launcher import Action, parse_command
+from app.tui.themes import CARBON, register_themes, resolve_theme_name
+from app.tui.tokens import Tokens
 from app.tui.screens import (
     MODE_SCREENS,
     ConversationDetailScreen,
@@ -92,6 +96,7 @@ class CmdAllInOneApp(App[None]):
         Binding("e", "open_email", "Último e-mail", show=True),
         Binding("c", "chatpanel_login", "Login ChatPanel", show=False),
         Binding("m", "toggle_silence", "Silenciar", show=False),
+        Binding("T", "next_theme", "Próximo tema", show=False),
         Binding("colon", "launcher", "Launcher", show=True, key_display=":"),
         Binding("question_mark", "help", "Ajuda", show=True, key_display="?"),
     ]
@@ -123,17 +128,103 @@ class CmdAllInOneApp(App[None]):
         self._login_in_progress = False
         self._login_on_start_used = False
         self.login_count = 0
-        self.started_at = time.time()
+        self.started_at = clock.epoch()
         self.event_log = EventLog(settings.log_dir if prefs_path is not None else None)
         self.health_info: dict[str, dict[str, Any]] = {}  # por fonte: duração, próximo ciclo, última ok
+        self.fetching: set[str] = set()                   # fontes coletando neste instante
+        self.cooldown_until: dict[str, float] = {}        # fonte -> epoch até o qual está em cooldown (429)
+        self.error_kind: dict[str, str] = {}              # fonte -> "cooldown" | "expired" | "error"
+        # aparência: temas registrados, tema inicial (prefs > .env > carbon) e conjunto de ícones
+        self.token_sets: dict[str, Tokens] = register_themes(self)
+        self.icons: IconSet = resolve_icons(settings.icons)
+        self._initial_theme = resolve_theme_name(self.prefs.theme or settings.theme, self.token_sets)
 
     # --- ciclo de vida --------------------------------------------------------
 
     def on_mount(self) -> None:
+        self.theme = self._initial_theme
+        self.theme_changed_signal.subscribe(self, self._on_theme_changed)
         mode = self.prefs.last_screen if self.prefs.last_screen in self.MODES else "dashboard"
         self.switch_mode(mode)
         for name, source in self._sources.items():
             self._start_source(name, source)
+
+    # --- aparência ----------------------------------------------------------------
+
+    @property
+    def tokens(self) -> Tokens:
+        """Paleta do tema atual (para estilos Rich fora do CSS)."""
+        return self.token_sets.get(self.theme, CARBON)
+
+    def get_theme_variable_defaults(self) -> dict[str, str]:
+        """Os tokens do `carbon` como padrão: o CSS é validado antes de o tema inicial ser
+        aplicado, e um tema do Textual não mapeado ainda precisa de `$bg`, `$text-faint`..."""
+        return {**super().get_theme_variable_defaults(), **CARBON.css_variables()}
+
+    def _on_theme_changed(self, theme: Any) -> None:
+        """Tema trocado: nada é recriado; painéis re-renderizam as células e as barras
+        refazem os textos Rich. A escolha vai para prefs.json."""
+        for panels in self.panels.values():
+            for panel in panels:
+                panel.refresh_theme()
+        for screen in self.mode_screens.values():
+            screen.refresh_theme()
+        current = self.screen
+        refresh = getattr(current, "refresh_theme", None)
+        if refresh is not None and current not in self.mode_screens.values():
+            refresh()
+        if self.prefs.theme != self.theme:
+            self.prefs.theme = self.theme
+            self.save_prefs()
+
+    def set_theme(self, name: str) -> bool:
+        """Aplica um tema pelo nome (com `notify`); False se não existir."""
+        if name not in self.token_sets:
+            self.notify(f"tema '{name}' não existe (theme lista os disponíveis)", severity="warning")
+            return False
+        self.theme = name
+        self.notify(f"tema: {name}")
+        return True
+
+    def action_next_theme(self) -> None:
+        names = list(self.token_sets)
+        index = names.index(self.theme) if self.theme in names else -1
+        self.set_theme(names[(index + 1) % len(names)])
+
+    def source_status(self, name: str) -> tuple[str, str]:
+        """Estado curto de uma fonte para a TopBar: (ok|busy|wait|warn|danger|off, motivo)."""
+        source = self._sources.get(name)
+        if source is None:
+            return "off", "não implementada"
+        if not source.configured:
+            return "off", f"não configurada · {getattr(source, 'config_hint', 'veja o .env')}"
+        if name in self.fetching:
+            return "busy", "coletando…"
+        error = self.errors.get(name)
+        if error:
+            kind = self.error_kind.get(name, "error")
+            if kind == "cooldown":
+                remaining = int(self.cooldown_until.get(name, 0) - clock.epoch())
+                return "warn", f"aguardando {max(remaining, 0)}s · {error}"
+            return "danger", error
+        info = self.health_info.get(name, {})
+        if name in self.states:
+            last_ok = info.get("last_ok")
+            ago = f"há {int(clock.epoch() - last_ok)}s" if last_ok else ""
+            next_at = info.get("next_at")
+            soon = f"próxima em {max(int(next_at - clock.epoch()), 0)}s" if next_at else ""
+            return "ok", " · ".join(p for p in ("ok", ago, soon) if p)
+        return "wait", "primeira coleta"
+
+    def topbar_extras(self) -> list[tuple[str, str]]:
+        """Estados transitórios mostrados à direita da TopBar: (texto, token de cor)."""
+        extras: list[tuple[str, str]] = []
+        if self._login_in_progress:
+            extras.append((f"{self.icons.login} login", "accent"))
+        if self.silenced:
+            remaining = max(int((self.prefs.silenced_until - clock.epoch()) / 60), 0)
+            extras.append((f"{self.icons.mute} {remaining}m", "warn"))
+        return extras
 
     def register_mode_screen(self, screen: ModeScreen) -> None:
         self.mode_screens[screen.MODE] = screen
@@ -183,11 +274,7 @@ class CmdAllInOneApp(App[None]):
 
     @property
     def silenced(self) -> bool:
-        return time.time() < self.prefs.silenced_until
-
-    @property
-    def header_extra(self) -> str:
-        return "🔇 " if self.silenced else ""
+        return clock.epoch() < self.prefs.silenced_until
 
     def notify_change(self, name: str, what: list[str]) -> None:
         """Contador aumentou: destaca os painéis da fonte por 3 s, toca o bell/toast."""
@@ -225,7 +312,7 @@ class CmdAllInOneApp(App[None]):
             self.prefs.silenced_until = 0.0
             self.notify("som e toasts reativados")
         else:
-            self.prefs.silenced_until = time.time() + SILENCE_MINUTES * 60
+            self.prefs.silenced_until = clock.epoch() + SILENCE_MINUTES * 60
             self.notify(f"modo silêncio por {SILENCE_MINUTES} min (m desliga)")
         self.save_prefs()
 
@@ -297,7 +384,7 @@ class CmdAllInOneApp(App[None]):
             log_size_kb = log_path.stat().st_size / 1024 if log_path.exists() else 0.0
         except OSError:
             log_size_kb = 0.0
-        uptime = int(time.time() - self.started_at)
+        uptime = int(clock.epoch() - self.started_at)
         try:
             import textual
 
@@ -618,12 +705,19 @@ class CmdAllInOneApp(App[None]):
                 return float(source.interval)
         started = time.monotonic()
         info = self.health_info.setdefault(name, {"duration": None, "next_at": None, "last_ok": None})
+        self.fetching.add(name)
         try:
             state = await source.fetch_with_retry()
         except SourceError as exc:
             log.error("fonte %s falhou: %s", name, exc)
             wait = max(float(source.interval), exc.retry_after or 0.0)
-            info.update(duration=time.monotonic() - started, next_at=time.time() + wait)
+            info.update(duration=time.monotonic() - started, next_at=clock.epoch() + wait)
+            expired = self._is_session_expired(exc)
+            if exc.retry_after and not expired:
+                self.error_kind[name] = "cooldown"
+                self.cooldown_until[name] = clock.epoch() + wait
+            else:
+                self.error_kind[name] = "expired" if expired else "error"
             self._set_error(name, str(exc) + (f" · aguardando {int(wait)}s" if exc.retry_after else ""))
             if self._should_login_on_start(name, source, exc):
                 self._login_on_start_used = True
@@ -632,13 +726,24 @@ class CmdAllInOneApp(App[None]):
             return wait
         except Exception as exc:  # bug na fonte: mostra, registra e segue vivo
             log.exception("erro inesperado na fonte %s", name)
-            info.update(duration=time.monotonic() - started, next_at=time.time() + source.interval)
+            info.update(duration=time.monotonic() - started, next_at=clock.epoch() + source.interval)
+            self.error_kind[name] = "error"
             self._set_error(name, f"erro inesperado: {exc}")
             return float(source.interval)
+        finally:
+            self.fetching.discard(name)
 
-        info.update(duration=time.monotonic() - started, next_at=time.time() + source.interval, last_ok=time.time())
+        info.update(duration=time.monotonic() - started, next_at=clock.epoch() + source.interval, last_ok=clock.epoch())
+        self.error_kind.pop(name, None)
+        self.cooldown_until.pop(name, None)
         self._publish(name, state)
         return float(source.interval)
+
+    @staticmethod
+    def _is_session_expired(exc: SourceError) -> bool:
+        from app.sources.chatpanel import SessionExpiredError
+
+        return isinstance(exc.__cause__, SessionExpiredError)
 
     def _publish(self, name: str, state: Any) -> None:
         previous = self.states.get(name)
@@ -701,7 +806,7 @@ class CmdAllInOneApp(App[None]):
         self._login_in_progress = True
         self._set_error(LOGIN_SOURCE, None)
         for panel in self.panels.get(LOGIN_SOURCE, []):
-            panel.set_waiting("[yellow]janela de login aberta[/] · faça o login no Chromium (o captcha é seu)")
+            panel.set_waiting("janela de login aberta · faça o login no Chromium (o captcha é seu)", token="warn")
         self.notify("faça o login na janela do Chromium…", timeout=20)
         try:
             user = await login()

@@ -1,0 +1,30 @@
+ ▍CMD ALL-IN-ONE  Dashboard               ● ● ●                       Guilherme  08:14:20 
+ ╭─ ╭────────────────────────────────────────────────────────────────────────────────╮──╮ 
+ │ I│                                                                                │  │ 
+ │  │  De:      Fulano de Tal <fulano@cm.sp.gov.br>                                  │  │ 
+ │  │  Assunto: Erro ao gerar relatório de empenhos                                  │  │ 
+ │  │  Data:    16/09/2026 08:11  (08:11)                                            │  │ 
+ │  │  ────────────────────────────────────────────────────────────────────────────  │  │ 
+ │  │                                                                                │  │ 
+ │  │  Bom dia,                                                                      │  │ 
+ │  │                                                                                │  │ 
+ │  │  Ao tentar gerar o relatório de empenhos do mês o sistema apresenta a          │  │ 
+ │  │  mensagem "Erro interno (500)" e não gera o PDF. Já tentei em outro            │  │ 
+ │  │  navegador.                                                                    │  │ 
+ ╰──│                                                                                │ ─╯ 
+ ╭─ │  Podem verificar?                                                              │──╮ 
+ │ A│                                                                                │… │ 
+ │ S│  Atenciosamente,                                                               │  │ 
+ │ H│  Fulano de Tal                                                                 │  │ 
+ │  │  Contabilidade — Câmara Municipal                                              │  │ 
+ │  │                                                                                │  │ 
+ │  │  Esc voltar  y copiar remetente                                                │  │ 
+ │  │                                                                                │  │ 
+ │  │                                                                                │  │ 
+ │  │                                                                                │  │ 
+ │  │                                                                                │  │ 
+ │  │                                                                                │  │ 
+ ╰──│                                                                                │ ─╯ 
+ ╭─ ╰────────────────────────────────────────────────────────────────────────────────╯──╮ 
+ │ Minhas conversas 3   Não lidas 1   ·   4 em atendimento por outros · 6 não lidas na… │ 
+ ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  ? ajuda         

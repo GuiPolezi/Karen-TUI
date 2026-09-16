@@ -6,6 +6,7 @@ from datetime import datetime
 
 from rich.text import Text
 
+from app import clock
 from app.state import EmailState, EmailSummary, LatestEmail
 from app.tui.widgets.base_panel import BasePanel
 
@@ -13,7 +14,7 @@ from app.tui.widgets.base_panel import BasePanel
 def format_email_date(date: datetime | None) -> str:
     if date is None:
         return "--:--"
-    if date.date() == datetime.now().date():
+    if date.date() == clock.now().date():
         return date.strftime("%H:%M")
     return date.strftime("%d/%m %H:%M")
 
@@ -26,7 +27,7 @@ def summary_from_latest(latest: LatestEmail) -> EmailSummary:
 
 class EmailPanel(BasePanel):
     SOURCE = "email"
-    ICON = "📧"
+    ICON = "email"
     TITLE = "E-MAIL"
     COLUMNS = [("date", "Data", 11), ("from", "De", 28), ("subject", "Assunto", None)]
     COLUMNS_COMPACT = [("date", "Data", 11), ("from", "De", 16), ("subject", "Assunto", None)]
@@ -36,13 +37,13 @@ class EmailPanel(BasePanel):
         return {"total": state.total, "não lidos": state.unseen}
 
     def header_text(self, state: EmailState) -> Text:
-        unseen_style = "bold yellow" if state.unseen else "bold"
+        label, number = self.style("text-muted"), self.style("text", bold=True)
         text = Text(no_wrap=True, overflow="ellipsis")
-        text.append("Inbox: ").append(str(state.total), style="bold")
-        text.append("   Não lidos: ").append(str(state.unseen), style=unseen_style)
-        text.append("   Spam: ").append("-" if state.spam is None else str(state.spam), style="bold")
+        text.append("Inbox ", style=label).append(str(state.total), style=number)
+        text.append("   Não lidos ", style=label).append(str(state.unseen), style=number)
+        text.append("   Spam ", style=label).append("-" if state.spam is None else str(state.spam), style=number)
         if not state.recent and state.latest is None:
-            text.append("   caixa vazia", style="dim")
+            text.append("   caixa vazia", style=self.style("text-faint"))
         return text
 
     def summaries(self, state: EmailState) -> list[EmailSummary]:
@@ -59,11 +60,11 @@ class EmailPanel(BasePanel):
     def rows(self, state: EmailState) -> list[tuple[str, dict[str, Text]]]:
         rows = []
         for item in self.summaries(state):
-            style = "bold" if item.unseen else ""
+            body = self.style("text", bold=item.unseen)
             rows.append((item.uid, {
-                "date": Text(format_email_date(item.date), style="cyan"),
-                "from": Text(item.sender, style=style),
-                "subject": Text(item.subject or "(sem assunto)", style=style),
+                "date": Text(format_email_date(item.date), style=self.style("text-muted")),
+                "from": Text(item.sender, style=body),
+                "subject": Text(item.subject or "(sem assunto)", style=body),
             }))
         return rows
 

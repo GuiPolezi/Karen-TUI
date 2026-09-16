@@ -12,17 +12,14 @@ from app.tui.screens.base import ModeScreen
 from app.tui.widgets.keyed_table import KeyedTable
 
 SOURCE_LABEL = {"email": "e-mail", "milldesk": "Milldesk", "chatpanel": "ChatPanel"}
-KIND_STYLE = {
-    "new_email": "cyan", "ticket_in": "green", "ticket_out": "yellow", "ticket_status": "",
-    "chat_in": "green", "chat_out": "yellow", "chat_message": "cyan",
-}
 
 
 class EventsScreen(ModeScreen):
     MODE = "events"
     TITLE_PT = "Eventos"
     AUTO_FOCUS = "KeyedTable"
-    BINDINGS = [Binding("x", "clear_view", "Limpar tela", show=True)]
+    FOOTER = [("{key_up_down}", "mover"), ("x", "limpar tela")]
+    BINDINGS = [Binding("x", "clear_view", "Limpar tela", show=False)]
 
     def __init__(self) -> None:
         super().__init__()
@@ -37,22 +34,25 @@ class EventsScreen(ModeScreen):
         super().on_mount()
         self.refresh_events()
 
+    def refresh_content(self) -> None:
+        self.refresh_events()
+
     def refresh_events(self) -> None:
+        tokens = self.app.tokens  # type: ignore[attr-defined]
         events = self.app.event_log.latest(300)  # type: ignore[attr-defined]
-        total = len(self.app.event_log.events)  # type: ignore[attr-defined]
         visible = [e for e in events if id(e) not in self._hidden]
         rows = []
         for index, event in enumerate(visible):
             rows.append((f"{event.when.isoformat()}#{index}", [
-                Text(event.when.strftime("%H:%M:%S"), style="dim"),
-                Text(SOURCE_LABEL.get(event.source, event.source), style="bold"),
-                Text(event.text, style=KIND_STYLE.get(event.kind, "")),
+                Text(event.when.strftime("%H:%M:%S"), style=tokens.rich("text-faint")),
+                Text(SOURCE_LABEL.get(event.source, event.source), style=tokens.rich("text-muted")),
+                Text(event.text, style=tokens.rich("text")),
             ]))
         table = self.query_one("#events-table", KeyedTable)
         table.set_rows(rows)
         self.query_one("#events-status", Static).update(Text(
             f"{len(visible)} evento(s) hoje · derivados das diferenças entre coletas · "
-            f"arquivo logs/events-AAAA-MM-DD.jsonl  [x] limpa a tela", style="dim",
+            f"arquivo logs/events-AAAA-MM-DD.jsonl", style=tokens.rich("text-faint"),
         ))
 
     def action_clear_view(self) -> None:

@@ -18,49 +18,58 @@ from textual.screen import ModalScreen
 from textual.widgets import Static
 
 from app.state import ConversationDetail
+from app.tui.icons import UNICODE, IconSet
+from app.tui.themes import CARBON
+from app.tui.tokens import Tokens
 
 
-def header_text(number: str, item: Any, detail: ConversationDetail | None) -> Text:
+def header_text(number: str, item: Any, detail: ConversationDetail | None, *, tokens: Tokens = CARBON,
+                icons: IconSet = UNICODE) -> Text:
     name = (detail.name if detail is not None and detail.name else getattr(item, "name", "")) or number
+    muted, faint = tokens.rich("text-muted"), tokens.rich("text-faint")
     text = Text()
-    text.append(name, style="bold").append(f"  {number}", style="dim")
+    text.append(name, style=tokens.rich("text", bold=True)).append(f"  {number}", style=faint)
     if item is not None:
         text.append("   ")
-        text.append("● online" if item.online else "○ offline", style="green" if item.online else "dim")
+        if item.online:
+            text.append(f"{icons.online} online", style=tokens.rich("text"))
+        else:
+            text.append(f"{icons.offline} offline", style=faint)
         if item.tag:
-            text.append(f"   [{item.tag}]", style="cyan")
+            text.append(f"   {item.tag}", style=muted)
         if item.department:
-            text.append(f"   {item.department}", style="dim")
+            text.append(f" {icons.arrow} {item.department}", style=muted)
         if item.agent:
-            text.append(f"   atendente: {item.agent}", style="dim")
+            text.append(f"   atendente: {item.agent}", style=faint)
         if item.unread:
-            text.append(f"   {item.unread} não lida(s)", style="bold yellow")
+            text.append(f"   {item.unread} não lida(s)", style=tokens.rich("accent", bold=True))
     return text
 
 
-def messages_text(detail: ConversationDetail) -> Text:
+def messages_text(detail: ConversationDetail, *, tokens: Tokens = CARBON) -> Text:
     text = Text()
+    faint = tokens.rich("text-faint")
     if detail.has_more:
-        text.append("… mensagens mais antigas não carregadas (abra no navegador com o)\n\n", style="dim")
+        text.append("… mensagens mais antigas não carregadas (abra no navegador com o)\n\n", style=faint)
     if not detail.messages:
-        text.append("(sem mensagens)", style="dim")
+        text.append("(sem mensagens)", style=faint)
         return text
     for index, message in enumerate(detail.messages):
         if index:
             text.append("\n")
         if message.kind == "system":
-            text.append(f"── {message.text} ──\n", style="dim")
+            text.append(f"── {message.text} ──\n", style=faint)
             continue
-        style = "green" if message.mine else "cyan"
+        token = "accent" if message.mine else "text-muted"
         marker = "▐ " if message.mine else "▌ "
         author = "você/empresa" if message.mine and message.author == "técnico" else message.author
-        text.append(marker, style=style).append(author, style=f"bold {style}")
+        text.append(marker, style=tokens.rich(token)).append(author, style=tokens.rich(token, bold=True))
         if message.when:
-            text.append(f"  {message.when}", style="dim")
+            text.append(f"  {message.when}", style=faint)
         text.append("\n")
         body = message.text or "(vazio)"
         for line in body.split("\n"):
-            text.append("  " + line + "\n", style="italic" if message.kind == "media" else "")
+            text.append("  " + line + "\n", style=tokens.rich("text", italic=message.kind == "media"))
     return text
 
 
@@ -82,12 +91,20 @@ class ConversationDetailScreen(ModalScreen[None]):
         self.snapshot = (getattr(item, "unread", 0), getattr(item, "last_message", ""), getattr(item, "time", ""))
         self._pending_error: str | None = None
 
+    @property
+    def tokens(self) -> Tokens:
+        return self.app.tokens  # type: ignore[attr-defined]
+
+    def _header(self) -> Text:
+        return header_text(self.number, self.item, self.detail, tokens=self.tokens,
+                           icons=self.app.icons)  # type: ignore[attr-defined]
+
     def compose(self) -> ComposeResult:
         with VerticalScroll(id="conversation"):
             yield Static("", id="conversation-header")
             yield Static("", id="conversation-messages")
-            yield Static(Text("[Esc] voltar  [r] recarregar  [o] abrir no navegador  [y] copiar número", style="dim"),
-                         id="conversation-footer")
+            yield Static(Text("Esc voltar  r recarregar  o abrir no navegador  y copiar número",
+                              style=self.tokens.rich("text-faint")), id="conversation-footer")
 
     def on_mount(self) -> None:
         if self._pending_error is not None:
@@ -103,25 +120,28 @@ class ConversationDetailScreen(ModalScreen[None]):
     def set_loading(self) -> None:
         if not self._ready():
             return
-        self.query_one("#conversation-header", Static).update(header_text(self.number, self.item, self.detail))
+        self.query_one("#conversation-header", Static).update(self._header())
         if self.detail is None:
-            self.query_one("#conversation-messages", Static).update(Text("carregando conversa…", style="dim"))
+            self.query_one("#conversation-messages", Static).update(
+                Text("carregando conversa…", style=self.tokens.rich("text-muted")))
 
     def show_error(self, message: str) -> None:
         if not self._ready():
             self._pending_error = message
             return
         self._pending_error = None
-        self.query_one("#conversation-header", Static).update(header_text(self.number, self.item, self.detail))
-        self.query_one("#conversation-messages", Static).update(Text(f"✖ {message}", style="bold red"))
+        icons = self.app.icons  # type: ignore[attr-defined]
+        self.query_one("#conversation-header", Static).update(self._header())
+        self.query_one("#conversation-messages", Static).update(
+            Text(f"{icons.error} {message}", style=self.tokens.rich("danger", bold=True)))
 
     def show(self, detail: ConversationDetail) -> None:
         self.detail = detail
         self._pending_error = None
         if not self._ready():
             return
-        self.query_one("#conversation-header", Static).update(header_text(self.number, self.item, detail))
-        self.query_one("#conversation-messages", Static).update(messages_text(detail))
+        self.query_one("#conversation-header", Static).update(self._header())
+        self.query_one("#conversation-messages", Static).update(messages_text(detail, tokens=self.tokens))
         self.call_after_refresh(self.action_scroll_end)
 
     def action_scroll_end(self) -> None:

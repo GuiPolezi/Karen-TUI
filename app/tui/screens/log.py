@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import deque
 from pathlib import Path
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.widgets import RichLog, Static
@@ -41,10 +42,14 @@ class LogScreen(ModeScreen):
     MODE = "log"
     TITLE_PT = "Log"
     AUTO_FOCUS = "RichLog"
+    FOOTER = [("{key_up_down}", "rolar"), ("f", "filtro de nível"), ("End", "fim")]
     BINDINGS = [
-        Binding("f", "cycle_level", "Filtro de nível", show=True),
+        Binding("f", "cycle_level", "Filtro de nível", show=False),
         Binding("end", "scroll_end", "Fim", show=False),
     ]
+
+    def refresh_content(self) -> None:
+        self.refresh_lines(force=True)
 
     def __init__(self) -> None:
         super().__init__()
@@ -68,9 +73,11 @@ class LogScreen(ModeScreen):
         level = LEVELS[self.level_index]
         lines = filter_lines(tail(self.log_path), level)
         snapshot = tuple(lines)
-        self.query_one("#log-status", Static).update(
-            f"{self.log_path.name} · últimas {MAX_LINES} linhas · filtro: {level} · {len(lines)} linhas  [f] muda o filtro"
-        )
+        tokens = self.app.tokens  # type: ignore[attr-defined]
+        status = Text(style=tokens.rich("text-faint"))
+        status.append(f"{self.log_path.name} · últimas {MAX_LINES} linhas · filtro: ")
+        status.append(level, style=tokens.rich("text-muted", bold=True)).append(f" · {len(lines)} linhas")
+        self.query_one("#log-status", Static).update(status)
         if snapshot == self._last_rendered and not force:
             return
         self._last_rendered = snapshot

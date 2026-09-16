@@ -67,7 +67,7 @@ async def test_counter_growth_flashes_panel_and_rings_bell(tmp_path: Path):
         await pilot.pause()
         assert panel.has_class("changed")
         assert app.bell_count == 1
-        assert "●" in screen_text(app, 120, 30)
+        assert "▎" in screen_text(app, 120, 30)  # marcador de mudança (icons.change)
 
 
 async def test_bell_disabled_still_flashes(tmp_path: Path):

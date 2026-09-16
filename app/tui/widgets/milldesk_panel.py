@@ -1,4 +1,9 @@
-"""Painel do Milldesk: chamados abertos no nome do técnico, com SLA e ordenação."""
+"""Painel do Milldesk: chamados abertos no nome do técnico, com SLA e ordenação.
+
+As funções puras (`sla_token`, `sla_text`, `nearest_sla`, `sorted_tickets`) devolvem
+nomes de token (`danger`, `warn`, `ok`, `text-faint`), nunca cores; o painel converte
+com `self.style()`.
+"""
 
 from __future__ import annotations
 
@@ -7,7 +12,11 @@ from datetime import datetime
 from rich.text import Text
 from textual.binding import Binding
 
+from app import clock
 from app.state import MilldeskState, MilldeskTicket, format_remaining
+from app.tui.icons import UNICODE, IconSet
+from app.tui.themes import CARBON
+from app.tui.tokens import Tokens
 from app.tui.widgets.base_panel import BasePanel
 
 SORT_MODES = ("sla", "data", "status")
@@ -22,16 +31,17 @@ def format_percentage(value: float) -> str:
     return text[:-2] if text.endswith(",0") else text
 
 
-def sla_style(ticket: MilldeskTicket, now: datetime | None = None) -> str:
+def sla_token(ticket: MilldeskTicket, now: datetime | None = None) -> str:
+    """Token de cor do SLA: `danger` vencido, `warn` < 4 h, `ok` folgado, `text-faint` sem prazo."""
     remaining = ticket.sla_remaining(now)
     if remaining is None:
-        return "dim"
+        return "text-faint"
     hours = remaining.total_seconds() / 3600
     if hours < 0:
-        return "bold red"
+        return "danger"
     if hours < SLA_WARNING_HOURS:
-        return "bold yellow"
-    return "green"
+        return "warn"
+    return "ok"
 
 
 def sla_text(ticket: MilldeskTicket, now: datetime | None = None) -> str:
@@ -49,28 +59,29 @@ def nearest_sla(tickets: list[MilldeskTicket], now: datetime | None = None) -> M
     return min(with_deadline, key=lambda t: t.sla_deadline or datetime.max)
 
 
-def sla_highlight(ticket: MilldeskTicket, now: datetime | None = None) -> Text:
-    """Linha de destaque: '⏱ SLA mais próximo: #id assunto · faltam 02h15' com cor/alerta."""
-    now = now or datetime.now()
+def sla_highlight(ticket: MilldeskTicket, now: datetime | None = None, *, tokens: Tokens = CARBON,
+                  icons: IconSet = UNICODE) -> Text:
+    """Linha de destaque: 'SLA ▸ #id assunto · faltam 02h15' com a cor só no tempo."""
+    now = now or clock.now()
     remaining = ticket.sla_remaining(now)
     text = Text(no_wrap=True, overflow="ellipsis")
     minutes = (remaining.total_seconds() / 60) if remaining is not None else None
     if minutes is not None and minutes < 0:
-        style, label = "bold white on red", f"VENCIDO há {format_remaining(-remaining)}"
+        token, label = "danger", f"vencido há {format_remaining(-remaining)}"
     elif minutes is not None and minutes < SLA_ALERT_MINUTES:
-        style, label = "bold white on red", f"faltam {format_remaining(remaining)} ⚠"
+        token, label = "danger", f"faltam {format_remaining(remaining)} {icons.warn}"
     elif minutes is not None and minutes < SLA_WARNING_HOURS * 60:
-        style, label = "bold yellow", f"faltam {format_remaining(remaining)}"
+        token, label = "warn", f"faltam {format_remaining(remaining)}"
     else:
-        style, label = "green", f"faltam {format_remaining(remaining)}"
-    text.append("⏱ SLA mais próximo: ", style="dim")
-    text.append(f"#{ticket.id} ", style="cyan").append(ticket.subject[:40])
-    text.append(" · ").append(label, style=style)
+        token, label = "ok", f"faltam {format_remaining(remaining)}"
+    text.append(f"SLA {icons.sla} ", style=tokens.rich("text-faint"))
+    text.append(f"#{ticket.id} ", style=tokens.rich("text-muted")).append(ticket.subject[:40], style=tokens.rich("text"))
+    text.append(f" {icons.sep} ", style=tokens.rich("text-faint")).append(label, style=tokens.rich(token, bold=True))
     return text
 
 
 def sorted_tickets(tickets: list[MilldeskTicket], mode: str, now: datetime | None = None) -> list[MilldeskTicket]:
-    now = now or datetime.now()
+    now = now or clock.now()
     if mode == "status":
         return sorted(tickets, key=lambda t: (t.status, -(t.opened_at or datetime.min).timestamp()))
     if mode == "data":
@@ -81,7 +92,7 @@ def sorted_tickets(tickets: list[MilldeskTicket], mode: str, now: datetime | Non
 
 class MilldeskPanel(BasePanel):
     SOURCE = "milldesk"
-    ICON = "🎫"
+    ICON = "ticket"
     TITLE = "MILLDESK"
     COLUMNS = [("id", "#", 6), ("time", "Abertura", 11), ("subject", "Assunto", None),
                ("status", "Status", 20), ("sla", "SLA", 9)]
@@ -99,22 +110,23 @@ class MilldeskPanel(BasePanel):
         return mode if mode in SORT_MODES else "sla"
 
     def header_text(self, state: MilldeskState) -> Text:
-        count_style = "bold yellow" if state.my_tickets else "bold green"
+        label, faint = self.style("text-muted"), self.style("text-faint")
+        sep = f" {self.icons.sep} "
         text = Text(no_wrap=True, overflow="ellipsis")
-        text.append("Abertos no meu nome: ").append(str(state.my_tickets), style=count_style)
-        text.append(f"  (todos: {state.open_total})", style="dim")
+        text.append("Abertos no meu nome ", style=label).append(str(state.my_tickets), style=self.style("text", bold=True))
+        text.append(f"  (todos: {state.open_total})", style=faint)
         if state.my_open_by_status:
-            text.append("  ·  " + " · ".join(f"{name} {n}" for name, n in state.my_open_by_status.items()), style="dim")
+            text.append("  " + sep.join(f"{name} {n}" for name, n in state.my_open_by_status.items()), style=label)
         nearest = nearest_sla(state.tickets)
         if nearest is not None:
-            text.append("\n").append_text(sla_highlight(nearest))
+            text.append("\n").append_text(sla_highlight(nearest, tokens=self.tokens, icons=self.icons))
         text.append(
-            f"\nHistórico: {state.my_history} chamados · {format_percentage(state.my_percentage)}% de "
-            f"{state.total_all_agents}  ·  ordem: {SORT_LABELS[self.sort_mode]}",
-            style="dim",
+            f"\nHistórico: {state.my_history} chamados{sep}{format_percentage(state.my_percentage)}% de "
+            f"{state.total_all_agents}{sep}ordem: {SORT_LABELS[self.sort_mode]}",
+            style=faint,
         )
         if state.note:
-            text.append(f"\n⚠ {state.note}", style="yellow")
+            text.append(f"\n{self.icons.warn} {state.note}", style=self.style("warn"))
         return text
 
     def on_mount(self) -> None:
@@ -127,17 +139,19 @@ class MilldeskPanel(BasePanel):
             self.show_state(self.state)
 
     def rows(self, state: MilldeskState) -> list[tuple[str, dict[str, Text]]]:
-        now = datetime.now()
+        now = clock.now()
+        muted = self.style("text-muted")
         rows = []
         for ticket in sorted_tickets(state.tickets, self.sort_mode, now):
             opened = ticket.opened_at
             when = opened.strftime("%d/%m %H:%M") if opened else ticket.starttime
+            token = sla_token(ticket, now)
             rows.append((str(ticket.id), {
-                "id": Text(f"#{ticket.id}", style="cyan"),
-                "time": Text(when, style="dim"),
-                "subject": Text(ticket.subject),
-                "status": Text(ticket.status, style="dim"),
-                "sla": Text(sla_text(ticket, now), style=sla_style(ticket, now)),
+                "id": Text(f"#{ticket.id}", style=muted),
+                "time": Text(when, style=muted),
+                "subject": Text(ticket.subject, style=self.style("text")),
+                "status": Text(ticket.status, style=muted),
+                "sla": Text(sla_text(ticket, now), style=self.style(token, bold=token == "danger")),
             }))
         return rows
 
@@ -155,6 +169,9 @@ class MilldeskPanel(BasePanel):
         self.app.save_prefs()  # type: ignore[attr-defined]
         self.app.notify(f"Milldesk ordenado por {SORT_LABELS[prefs.milldesk_sort]}")
         self.app.refresh_panels("milldesk")  # type: ignore[attr-defined]
+        refresh = getattr(self.screen, "refresh_footer", None)
+        if refresh is not None:
+            refresh()
 
     def browser_url(self, key: str) -> str | None:
         return self.app.settings.urls.milldesk or None  # type: ignore[attr-defined]

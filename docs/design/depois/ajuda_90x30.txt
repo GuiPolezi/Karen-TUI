@@ -1,0 +1,30 @@
+ ▍CMD ALL-IN-ONE  Dashboard               ● ● ●                       Guilherme  08:14:20 
+ ╭─ ╭───────────────────────────────────────────────────────────────────────────────╮───╮ 
+ │ I│                                                                               │   │ 
+ │  │  Atalhos                             Launcher (:)                             │   │ 
+ │  │    F1 / d               Dashboard      termo  /  g termo                      │   │ 
+ │  │    F2                   E-mail (u:     ddg termo · yt termo                   │   │ 
+ │  │                         só não         md 1234                                │   │ 
+ │  │                         lidos)         md! 1234                               │   │ 
+ │  │    F3                   Milldesk       wa 5511999999999                       │   │ 
+ │  │                         (s:            cp · mail · mdweb                      │   │ 
+ │  │                         ordenar)       open url                               │   │ 
+ │  │    F4                   ChatPanel      fav nome                               │   │ 
+ │  │                         (t: com        fav add nome url · fav rm nome ·…      │   │ 
+ ╰──│                         outros)        email · tickets · chats · log · …  ▁▁  │4 ─╯ 
+ ╭─ │    F5 / l               Log (f:        refresh  /  refresh md|email|cp        │───╮ 
+ │ A│                         filtro de      help                                   │s… │ 
+ │ S│                         nível)                                                │   │ 
+ │ H│    F6                   Notas                                                 │   │ 
+ │  │    F7                   Eventos do                                            │   │ 
+ │  │                         dia (x:                                               │   │ 
+ │  │                         limpar                                                │   │ 
+ │  │                         tela)                                                 │   │ 
+ │  │    F8                   Saúde das                                             │   │ 
+ │  │                         fontes                                                │   │ 
+ │  │    ↑ ↓ j k PgUp PgDn    mover o                                               │   │ 
+ │  │                         cursor                                                │   │ 
+ ╰──│                                                                               │3 ─╯ 
+ ╭─ ╰───────────────────────────────────────────────────────────────────────────────╯───╮ 
+ │ Minhas conversas 3   Não lidas 1   ·   4 em atendimento por outros · 6 não lidas na… │ 
+ ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  ? ajuda         

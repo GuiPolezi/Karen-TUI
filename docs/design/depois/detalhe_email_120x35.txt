@@ -1,0 +1,35 @@
+ ▍CMD ALL-IN-ONE  Dashboard                              ● ● ●                                      Guilherme  08:14:20 
+ ╭─ ✉╭────────────────────────────────────────────────────────────────────────────────────────────────────────────╮───╮ 
+ │ In│                                                                                                            │ … │ 
+ │   │  De:      Fulano de Tal <fulano@cm.sp.gov.br>                                                              │·… │ 
+ │   │  Assunto: Erro ao gerar relatório de empenhos                                                              │ … │ 
+ │   │  Data:    16/09/2026 08:11  (08:11)                                                                        │   │ 
+ │   │  ────────────────────────────────────────────────────────────────────────────────────────────────────────  │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  Bom dia,                                                                                                  │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  Ao tentar gerar o relatório de empenhos do mês o sistema apresenta a mensagem "Erro interno (500)" e não  │   │ 
+ │   │  gera o PDF. Já tentei em outro navegador.                                                                 │   │ 
+ │   │                                                                                                            │   │ 
+ ╰───│  Podem verificar?                                                                                          │3 ─╯ 
+ ╭─ ◉│                                                                                                            │───╮ 
+ │ Mi│  Atenciosamente,                                                                                           │   │ 
+ │   │  Fulano de Tal                                                                                             │   │ 
+ │   │  Contabilidade — Câmara Municipal                                                                          │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  Esc voltar  y copiar remetente                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯   │ 
+ ╰─────────────────────────────────────────────────────────────────────────────────────────────────── 15s · 08:14:18 ─╯ 
+ ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  m silêncio  T tema  : launcher  ? ajuda       

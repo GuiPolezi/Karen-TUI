@@ -1,0 +1,35 @@
+ ▍CMD ALL-IN-ONE  Dashboard                              ● ● ●                                      Guilherme  08:14:20 
+ ╭─ ✉╭────────────────────────────────────────────────────────────────────────────────────────────────────────────╮───╮ 
+ │ In│                                                                                                            │ … │ 
+ │   │  Diego Leone · PM Iaras  5515999990001   ● online   Prefeitura › Suporte   atendente: Guilherme   1 não    │·… │ 
+ │   │  lida(s)                                                                                                   │ … │ 
+ │   │  ────────────────────────────────────────────────────────────────────────────────────────────────────────  │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  … mensagens mais antigas não carregadas (abra no navegador com o)                                         │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  ── Conversa transferida para Guilherme ──                                                                 │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  ▌ Diego Leone  16/09/2026 06:44                                                                           │   │ 
+ │   │    Bom dia! O FTP da prefeitura parou de responder de novo.                                                │   │ 
+ ╰───│                                                                                                            │3 ─╯ 
+ ╭─ ◉│  ▐ você/empresa  16/09/2026 06:54                                                                          │───╮ 
+ │ Mi│    Bom dia, Diego. Vou olhar o firewall agora.                                                             │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  ▐ você/empresa  16/09/2026 07:14                                                                          │   │ 
+ │   │    Liberei a porta 21 na regra de saída, testa aí por favor.                                               │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  ▌ Diego Leone  16/09/2026 07:44                                                                           │   │ 
+ │   │    Ainda não conecta. Print:                                                                               │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  ▌ Diego Leone  16/09/2026 07:45                                                                           │   │ 
+ │   │    [imagem]                                                                                                │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  ▌ Diego Leone  16/09/2026 08:09                                                                           │   │ 
+ │   │    Porta 21 continua fechada, consegue verificar hoje ainda?                                               │   │ 
+ │   │                                                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  Esc voltar  r recarregar  o abrir no navegador  y copiar número                                           │   │ 
+ │   │                                                                                                            │   │ 
+ │   ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯   │ 
+ ╰─────────────────────────────────────────────────────────────────────────────────────────────────── 15s · 08:14:18 ─╯ 
+ ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  m silêncio  T tema  : launcher  ? ajuda       

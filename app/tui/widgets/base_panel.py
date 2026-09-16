@@ -23,12 +23,12 @@ from textual.containers import Vertical
 from textual.timer import Timer
 from textual.widgets import DataTable, Input, Static
 
+from app import clock
 from app.tui.widgets.keyed_table import ColumnSpec, KeyedTable, Row
 
-WAITING_TEXT = "[dim]aguardando…[/]"
+WAITING_TEXT = "aguardando…"
 FLASH_SECONDS = 3.0
 MARK_SECONDS = 3.0
-MARK = Text("●", style="bold yellow")
 NO_MARK = Text("")
 NARROW_WIDTH = 100
 
@@ -37,7 +37,7 @@ class BasePanel(Vertical):
     """Container com borda. Subclasses definem ícone/título e como renderizar o estado."""
 
     SOURCE: str = "source"
-    ICON: str = "▪"
+    ICON: str = "ticket"   # nome do ícone em app.tui.icons.IconSet
     TITLE: str = "PAINEL"
     COLUMNS: list[ColumnSpec] = []                    # tela cheia (full=True)
     COLUMNS_COMPACT: list[ColumnSpec] | None = None   # Dashboard (padrão: COLUMNS)
@@ -59,13 +59,39 @@ class BasePanel(Vertical):
         self._marked: dict[str, float] = {}  # chave -> instante em que o marcador some
         self._filter = ""
         self._narrow = False
-        self.border_title = f"{self.ICON} {self.TITLE}"
+        self._waiting: str | None = WAITING_TEXT  # texto do cabeçalho enquanto não há estado
+        self._not_configured_hint: str | None = None
+        self.border_title = self.TITLE
         self._refresh_subtitle()
+
+    # --- tokens e ícones ----------------------------------------------------------
+
+    @property
+    def tokens(self):  # noqa: ANN201 — Tokens; evita import circular com o App
+        return self.app.tokens  # type: ignore[attr-defined]
+
+    @property
+    def icons(self):  # noqa: ANN201
+        return self.app.icons  # type: ignore[attr-defined]
+
+    def style(self, token: str, **flags: bool) -> str:
+        """Atalho: estilo Rich do token do tema atual (`self.style("danger", bold=True)`)."""
+        return self.tokens.rich(token, **flags)
+
+    def refresh_theme(self) -> None:
+        """O tema mudou: refaz cabeçalho e células (estilos Rich carregam a cor)."""
+        self.border_title = f"{getattr(self.icons, self.ICON, '')} {self.TITLE}".strip()
+        if self.state is not None:
+            self.show_state(self.state)
+        elif self._not_configured_hint is not None:
+            self.set_not_configured(self._not_configured_hint)
+        elif self._waiting is not None:
+            self.set_waiting(self._waiting)
 
     # --- montagem ---------------------------------------------------------------
 
     def compose(self) -> ComposeResult:
-        yield Static(WAITING_TEXT, classes="panel-head")
+        yield Static("", classes="panel-head")
         yield Input(placeholder="filtrar… (Esc limpa)", classes="panel-filter")
         yield KeyedTable(self._columns_for_width(), classes="panel-table")
         yield Static("", classes="panel-error")
@@ -73,6 +99,8 @@ class BasePanel(Vertical):
     def on_mount(self) -> None:
         self.query_one(".panel-filter", Input).display = False
         self._narrow = self._is_narrow()
+        self.border_title = f"{getattr(self.icons, self.ICON, '')} {self.TITLE}".strip()
+        self.set_waiting()
         register = getattr(self.app, "register_panel", None)
         if register is not None:
             register(self)
@@ -124,6 +152,9 @@ class BasePanel(Vertical):
     def show_state(self, state: object) -> None:
         previous = self.state
         self.state = state
+        self._waiting = None
+        self._not_configured_hint = None
+        self.remove_class("unconfigured")
         self._fit_columns()
         self.query_one(".panel-head", Static).update(self.header_text(state))
         if previous is not None:
@@ -137,19 +168,23 @@ class BasePanel(Vertical):
         """Contadores cujo AUMENTO dispara destaque e bell. Subclasses sobrescrevem."""
         return {}
 
-    def set_waiting(self, text: str = WAITING_TEXT) -> None:
-        self.query_one(".panel-head", Static).update(text)
+    def set_waiting(self, text: str = WAITING_TEXT, token: str = "text-faint") -> None:
+        self._waiting = text
+        self.query_one(".panel-head", Static).update(Text(text, style=self.style(token)))
 
     def mark_updated(self, when: datetime | None = None) -> None:
-        self._last_update = when or datetime.now()
+        self._last_update = when or clock.now()
         self._refresh_subtitle()
 
     def set_error(self, message: str | None) -> None:
-        """Mostra erro (borda vermelha) mantendo a última lista válida visível."""
+        """Mostra erro (borda `danger`) mantendo a última lista válida visível."""
         error_widget = self.query_one(".panel-error", Static)
         if message:
             self.add_class("error")
-            error_widget.update(f"[bold]✖[/] {message}")
+            text = Text(no_wrap=True, overflow="ellipsis")
+            text.append(f"{self.icons.error} ", style=self.style("danger", bold=True))
+            text.append(message, style=self.style("danger"))
+            error_widget.update(text)
             error_widget.display = True
         else:
             self.remove_class("error")
@@ -157,9 +192,13 @@ class BasePanel(Vertical):
             error_widget.display = False
 
     def set_not_configured(self, hint: str) -> None:
-        """Fonte sem credencial: aviso amarelo, sem borda de erro."""
+        """Fonte sem credencial: neutro (`text-faint`), nunca âmbar; sem borda de erro."""
+        self._not_configured_hint = hint
         self.add_class("unconfigured")
-        self.set_waiting(f"[yellow]não configurado[/]\n[dim]{hint}[/]")
+        text = Text()
+        text.append(f"{self.icons.empty} não configurado", style=self.style("text-muted"))
+        text.append(f"\n{hint}", style=self.style("text-faint"))
+        self.query_one(".panel-head", Static).update(text)
 
     def flash(self, seconds: float = FLASH_SECONDS) -> None:
         """Destaque temporário da borda (contador aumentou)."""
@@ -211,8 +250,9 @@ class BasePanel(Vertical):
         now = time.monotonic()
         columns = [key for key, _, _ in self.table.column_specs if key != "mark"]
         rows: list[Row] = []
+        marker = Text(self.icons.change, style=self.style("accent", bold=True))
         for key, cells in items:
-            mark = MARK if self._marked.get(key, 0) > now else NO_MARK
+            mark = marker if self._marked.get(key, 0) > now else NO_MARK
             rows.append((key, [mark, *(cells.get(column, NO_MARK) for column in columns)]))
         self.table.set_rows(rows)
 

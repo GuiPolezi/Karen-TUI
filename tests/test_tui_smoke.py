@@ -4,7 +4,7 @@ from textual.containers import Container
 from textual.widgets import Static
 
 from app.tui.widgets.base_panel import BasePanel
-from tests.helpers import make_app
+from tests.helpers import make_app, screen_text
 
 
 async def test_three_panels_waiting_and_clock_running():
@@ -16,8 +16,7 @@ async def test_three_panels_waiting_and_clock_running():
         assert len(panels) == 3
         for panel in panels:
             assert "aguardando" in str(panel.query_one(".panel-head", Static).content)
-        clock = app.dashboard.query_one("#clock", Static)
-        assert "Guilherme ·" in str(clock.content)
+        assert "Guilherme" in screen_text(app, 120, 40)  # técnico e relógio na TopBar
         assert not app.dashboard.query_one("#main", Container).has_class("narrow")
 
         await pilot.press("1")

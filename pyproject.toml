@@ -18,6 +18,7 @@ dependencies = [
 dev = [
     "pytest>=8",
     "pytest-asyncio>=0.24",
+    "pytest-textual-snapshot>=1.1",
 ]
 toast = [
     "winotify>=1.1; sys_platform == 'win32'",

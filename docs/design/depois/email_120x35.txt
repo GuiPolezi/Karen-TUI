@@ -1,0 +1,35 @@
+ ▍CMD ALL-IN-ONE  E-mail                                 ● ● ●                                      Guilherme  08:14:20 
+ ╭─ ✉ E-MAIL ─────────────────────────────────────────────────────────────────────────────────────────────────────────╮ 
+ │ Inbox 142   Não lidos 7   Spam 3                                                                                   │ 
+ │     08:11        Fulano de Tal                 Erro ao gerar relatório de empenhos                                 │ 
+ │     07:33        Maria Souza                   RE: Acesso ao portal da transparência                               │ 
+ │     07:02        Suporte Milldesk              [#4831] Novo chamado atribuído a você                               │ 
+ │     05:14        Hércules Andrade              Certificado digital vencendo                                        │ 
+ │     03:14        Diego Leone                   Porta 21 continua fechada no firewall                               │ 
+ │     15/09 06:14  Contabilidade                 Fechamento do mês: relatório não abre                               │ 
+ │     15/09 02:14  Ana Paula                     Solicitação de novo usuário                                         │ 
+ │     14/09 08:14  GitHub                        [cmd-all-in-one] Dependabot alert                                   │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ ╰─────────────────────────────────────────────────────────────────────────────────────────────────── 30s · 08:14:14 ─╯ 
+ ↑↓ mover  ⏎ abrir  u só não lidos  / filtrar  o navegador  y copiar remetente  1 atualizar  : launcher  ? ajuda        

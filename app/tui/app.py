@@ -198,6 +198,18 @@ class CmdAllInOneApp(App[None]):
         self.notify(f"tema: {name}")
         return True
 
+    def terminal_info(self) -> str:
+        """Diagnóstico da tela Saúde: profundidade de cor, tema, ícones e onde o app roda.
+        Se aparecer "16 cores", o terminal não é o Windows Terminal e os temas ficam iguais."""
+        import os
+
+        color_system = getattr(self.console, "color_system", None) or "?"
+        depth = {"truecolor": "16 milhões de cores", "256": "256 cores", "standard": "16 cores",
+                 "windows": "16 cores (conhost)"}.get(color_system, color_system)
+        host = "Windows Terminal" if os.environ.get("WT_SESSION") else (os.environ.get("TERM_PROGRAM") or "conhost/outro")
+        return (f"{host} {self.icons.sep} {depth} {self.icons.sep} tema {self.theme} "
+                f"{self.icons.sep} ícones {self.icons.mode}" + (" (modo conhost: sem dim)" if self.legacy_console else ""))
+
     def export_windows_terminal_scheme(self) -> Path | None:
         """`theme export wt`: grava o esquema do tema atual em docs/design/windows-terminal/
         e copia o JSON para a área de transferência."""
@@ -450,6 +462,7 @@ class CmdAllInOneApp(App[None]):
             "log_size_kb": log_size_kb,
             "events_today": len(self.event_log.events),
             "latency": {name: list(values) for name, values in self.latency.items()},
+            "terminal": self.terminal_info(),
             "versions": versions,
             "uptime": f"{uptime // 3600}h{(uptime % 3600) // 60:02d}min",
         }

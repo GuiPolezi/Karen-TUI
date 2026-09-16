@@ -118,6 +118,7 @@ class HealthScreen(ModeScreen):
         extra.append("Log  ", style=label).append(f"{info['log_path']}{sep}{info['log_size_kb']:.0f} KB\n")
         extra.append("Eventos hoje  ", style=label).append(str(info["events_today"])).append("\n")
         extra.append("Versões  ", style=label).append(info["versions"]).append("\n")
+        extra.append("Terminal  ", style=label).append(info.get("terminal", "?")).append("\n")
         extra.append("Uptime  ", style=label).append(info["uptime"])
         extra.append(f"   {icons.sep}   atualizado {clock.now():%H:%M:%S}", style=tokens.rich("text-faint"))
         self.query_one("#health-extra", Static).update(extra)

@@ -1,12 +1,12 @@
- ▍CMD ALL-IN-ONE  Dashboard               ⠴ ● ✗                       Guilherme  08:14:20 
-  ▍✉ E-MAIL                                                                      30s · ⠼  
-  aguardando a primeira coleta…                                                           
+ ▍CMD ALL-IN-ONE  Dashboard               ✗ ● ✗                       Guilherme  08:14:20 
+  ▍✉ E-MAIL                                                                 ✗ há 0s  30s  
                                                                                           
                                                                                           
                                                                                           
                                                                                           
-                                                                                          
-                                                                                          
+                                            ✗                                             
+                                         timeout                                          
+                                     1 tenta de novo                                      
                                                                                           
                                                                                           
                                                                                           

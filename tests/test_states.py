@@ -21,7 +21,10 @@ def placeholder(panel) -> str:  # noqa: ANN001
     return str(widget.render()) if widget.display else ""
 
 
-async def test_error_without_data_shows_centered_drawing_with_retry_key():
+async def test_error_without_data_shows_centered_drawing_with_retry_key(monkeypatch):
+    import app.sources.base as base
+
+    monkeypatch.setattr(base, "RETRY_DELAYS", (0.01, 0.01, 0.01))  # sem esperar 2/4/8 s
     sources = demo.demo_sources(email_error="timeout")
     app = make_app(sources=sources)
     async with app.run_test(size=(120, 35)) as pilot:

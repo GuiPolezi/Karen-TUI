@@ -72,6 +72,9 @@ def _save(app: CmdAllInOneApp, out: Path, name: str, width: int, height: int) ->
 async def capture_all(out: Path) -> None:
     out.mkdir(parents=True, exist_ok=True)
     clock.freeze(FROZEN)
+    from app.sources import base as sources_base
+
+    sources_base.RETRY_DELAYS = (0.01, 0.01, 0.01)  # erros de fixture falham na hora, sem 2/4/8 s
     log_screen.tail = lambda path, lines=300: demo.sample_log(CLOCK)  # type: ignore[assignment]
     notes_screen.load_notes = lambda path=None: demo.SAMPLE_NOTES  # type: ignore[assignment]
 

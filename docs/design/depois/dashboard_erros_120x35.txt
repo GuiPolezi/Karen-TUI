@@ -1,7 +1,7 @@
- ▍CMD ALL-IN-ONE  Dashboard                              ⠴ ● ✗                                      Guilherme  08:14:20 
+ ▍CMD ALL-IN-ONE  Dashboard                              ✗ ● ✗                                      Guilherme  08:14:20 
                                                                                                                         
-  ▍✉ E-MAIL                                       30s · ⠼ │    ▣ MILLDESK                                 60s · há 27s  
-  aguardando a primeira coleta…                           │                                                             
+  ▍✉ E-MAIL                                  ✗ há 0s  30s │    ▣ MILLDESK                                 60s · há 27s  
+                                                          │                                                             
                                                           │   ╶╮ ╶─╮                 ╶╮                                 
                                                           │    │ ┌─┘                  │                                 
                                                           │   ╶┴╴╰─╴                 ╶┴╴                                
@@ -9,15 +9,15 @@
                                                           │                                                             
                                                           │   Em atendimento 7 · Aguardando cliente 4 · Pausado 1       
                                                           │   SLA ▸ #4802 Certificado digita… ▮▮▮▮  vencido há 01h05    
-                                                          │                                                             
-                                                          │     #4802   Certificado digital do prefeito ve  -01h05      
-                                                          │     #4821   Backup noturno não executa desde s  01h41       
+                             ✗                            │                                                             
+                          timeout                         │     #4802   Certificado digital do prefeito ve  -01h05      
+                      1 tenta de novo                     │     #4821   Backup noturno não executa desde s  01h41       
                                                           │     #4831   Impressora fiscal não imprime cupo  05h59       
                                                           │     #4744   Câmera do plenário sem imagem       23h59       
                                                           │     #4829   Acesso ao sistema de RH bloqueado   1d 01h   ▇  
                                                           │     #4815   Lentidão no portal da transparênci  1d 23h      
                                                           │     #4790   E-mail institucional não sincroniz  2d 23h      
-                                                          │   +5 · F3                                                   
+                                                          │   +4 · F3                                                   
                                                                                                                         
    ◉ CHATPANEL                                                                                            ✗ há 0s  15s  
                                                                                                                         

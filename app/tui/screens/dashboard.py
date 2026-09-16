@@ -32,9 +32,11 @@ class DashboardScreen(ModeScreen):
     VERTICAL_BREAKPOINTS = [(0, "-short"), (SHORT_HEIGHT, "-mid"), (TALL_HEIGHT, "-tall")]
     FOOTER = [("{key_up_down}", "mover"), ("{key_enter}", "abrir"), ("{key_tab}", "painel"), ("/", "filtrar"),
               ("o", "navegador"), ("y", "copiar"), ("e", "e-mail"), ("m", "silêncio"), ("T", "tema")]
+    # `focus_next`/`focus_previous` são ações do App (não da Screen): sem o prefixo `app.`
+    # o Textual não acha a ação e descarta a tecla em silêncio
     BINDINGS = [
-        Binding("tab", "focus_next", "Próximo painel", show=False),
-        Binding("shift+tab", "focus_previous", "Painel anterior", show=False),
+        Binding("tab", "app.focus_next", "Próximo painel", show=False),
+        Binding("shift+tab", "app.focus_previous", "Painel anterior", show=False),
     ]
 
     def body(self) -> ComposeResult:

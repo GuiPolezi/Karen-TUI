@@ -4,7 +4,7 @@ from textual.containers import Container
 from textual.widgets import Static
 
 from app.tui.widgets.base_panel import BasePanel
-from tests.helpers import make_app, screen_text
+from tests.helpers import make_app, screen_text, wait_until
 
 
 async def test_three_panels_waiting_and_clock_running():
@@ -21,6 +21,36 @@ async def test_three_panels_waiting_and_clock_running():
 
         await pilot.press("1")
         assert "Fase 1" in app.last_message
+
+
+async def test_tab_cycles_panels_and_title_marker_follows_focus():
+    """Regressão: o binding apontava para `focus_next` (ação do App, não da tela) e o Tab
+    era descartado em silêncio."""
+    from app.tui import demo
+
+    app = make_app(sources=demo.demo_sources())
+    async with app.run_test(size=(120, 35)) as pilot:
+        await wait_until(lambda: len(app.states) == 3)
+        await pilot.pause()
+
+        def focused_panel() -> str:
+            return next(node.id for node in app.focused.ancestors if isinstance(node, BasePanel))
+
+        assert focused_panel() == "email"
+        await pilot.press("tab")
+        await pilot.pause()
+        assert focused_panel() == "milldesk"
+        assert "▍" in str(app.panel("milldesk").query_one(".panel-name", Static).render())
+        assert "▍" not in str(app.panel("email").query_one(".panel-name", Static).render())
+        await pilot.press("tab")
+        await pilot.pause()
+        assert focused_panel() == "chatpanel"
+        await pilot.press("tab")
+        await pilot.pause()
+        assert focused_panel() == "email"  # dá a volta
+        await pilot.press("shift+tab")
+        await pilot.pause()
+        assert focused_panel() == "chatpanel"
 
 
 async def test_narrow_terminal_stacks_top_row():

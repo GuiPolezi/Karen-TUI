@@ -60,6 +60,8 @@ Remove-Item Env:\CMD_DATA_DIR; Remove-Item Env:\PLAYWRIGHT_SKIP_INSTALL
 if ($LASTEXITCODE -ne 0) { throw "o executavel nao passou no --verificar" }
 # sem acento na comparacao: o console devolve a saida na codepage do Windows
 if ($saida -notmatch '"modo": "execut') { throw "o --verificar nao reconheceu o modo executavel" }
+if ($saida -notmatch '"css_existe": true') { throw "o styles.tcss nao foi empacotado: a TUI nao subiria" }
+if ($saida -match '"AUSENTE"') { throw "faltou alguma dependencia no pacote (veja o --verificar)" }
 Write-Host "executável ok" -ForegroundColor Green
 
 # 6. instalador (Inno Setup)

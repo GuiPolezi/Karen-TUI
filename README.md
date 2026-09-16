@@ -25,14 +25,51 @@ A especificação completa está em `PROMPT_CMD_ALL_IN_ONE.md`.
 - [x] Fase 7 — design: tokens e temas (`carbon`, `phosphor`, `amber`, `paper`, `terminal` e
   temas do Textual), TopBar com saúde das fontes, rodapé próprio, Dashboard sem bordas com
   números grandes, estados desenhados, tela de temas (`F9`), esquemas para o Windows Terminal
+- [x] Fase 8 — executável: instalador do Windows, pasta de dados do usuário separada do
+  programa, primeira execução que cria o `.env` e baixa o Chromium, atualização pelos
+  releases do GitHub (`Ctrl+U`) e build automático no GitHub Actions
 
 ## Requisitos
 
-- Windows 10/11 com Windows Terminal (funciona também no CMD/PowerShell comum)
-- Python 3.11 ou superior
-- Git
+Para **usar** (instalador): Windows 10/11 com Windows Terminal (funciona também no
+CMD/PowerShell comum) e acesso à internet na primeira execução. Não precisa de Python nem
+de Git — eles vão dentro do executável.
 
-## Instalação (Windows)
+Para **desenvolver**: o mesmo, mais Python 3.11+ e Git.
+
+## Instalar (uso no dia a dia)
+
+Baixe o instalador mais recente em
+[Releases](https://github.com/GuiPolezi/Karen-TUI/releases/latest)
+(`CMD-ALL-IN-ONE-Setup-<versao>.exe`) e execute.
+
+- Instala **por usuário**, em `%LOCALAPPDATA%\Programs\CMD ALL-IN-ONE`: não pede senha de
+  administrador.
+- Cria os atalhos no menu Iniciar e (se você marcar) na área de trabalho, já abrindo no
+  **Windows Terminal**.
+- Como o executável não é assinado, o SmartScreen mostra "O Windows protegeu o seu
+  computador" na primeira vez: **Mais informações → Executar assim mesmo**.
+
+Na **primeira execução** o programa cria a pasta de dados
+`%LOCALAPPDATA%\CMD-ALL-IN-ONE`, copia o `.env` do modelo e abre o arquivo no bloco de
+notas: preencha `EMAIL_APP_PASSWORD` e `MILLDESK_API_KEY` e abra de novo. Na abertura
+seguinte ele baixa o Chromium do Playwright (~700 MB, uma vez por máquina; a barra de
+progresso aparece antes da TUI subir). `PLAYWRIGHT_SKIP_INSTALL=1` pula esse download.
+
+Tudo que é seu — `.env`, `logs/`, `notes.md`, `prefs.json`, `themes/` e o perfil do
+Chromium — fica na pasta de dados e **sobrevive a atualizações e à desinstalação**. O
+caminho aparece na linha "Dados" do `F8`.
+
+Deu problema e a TUI nem abre? Rode o diagnóstico no terminal:
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\CMD ALL-IN-ONE\CMD-ALL-IN-ONE.exe" --verificar
+```
+
+Ele imprime, em JSON, versão, caminhos, se o `.env` existe, quais navegadores estão
+baixados e o que está faltando.
+
+## Instalação para desenvolvimento (Windows)
 
 ```powershell
 # 1. clonar/abrir a pasta do projeto e criar o ambiente virtual
@@ -77,15 +114,26 @@ Regras de validação:
 python -m app
 ```
 
-### Atalho na área de trabalho e atualização automática
+### Atualização
 
-Dois cliques em `iniciar.cmd` (ou no atalho) abrem a TUI no **Windows Terminal**: o script
-faz `git fetch` (limite de 20 s) e `git pull --ff-only` se houver commits novos no GitHub,
-reinstala as dependências se o `pyproject.toml` mudou e só então roda `python -m app`.
-Sem internet, sem Git ou com alterações locais, ele avisa e abre a versão que já está na
-máquina. `ATUALIZAR=0` no ambiente pula a atualização.
+**Quem usa o instalador:** ao abrir, a TUI pergunta ao GitHub qual é o último release e
+compara com a versão instalada. Havendo versão nova, aparece `⇡ 0.2.0` na barra superior,
+um aviso e a linha "Atualização" no `F8`. **`Ctrl+U`** (ou `:atualizar` no launcher) baixa
+o instalador, mostra o progresso, fecha a TUI, instala em silêncio e reabre o programa
+sozinho — a pasta de dados não é tocada. Se o release não tiver instalador anexado,
+`Ctrl+U` só abre a página no navegador.
 
-Para criar o atalho (uma vez):
+**Quem roda do repositório:** dois cliques em `iniciar.cmd` (ou no atalho) abrem a TUI no
+**Windows Terminal**: o script faz `git fetch` (limite de 20 s) e `git pull --ff-only` se
+houver commits novos, reinstala as dependências se o `pyproject.toml` mudou e só então
+roda `python -m app`. Sem internet, sem Git ou com alterações locais, ele avisa e abre a
+versão que já está na máquina. `ATUALIZAR=0` pula a atualização. Nesse modo a TUI mostra
+`⇡ N` (N = commits atrás) e quem atualiza de fato é o `iniciar.cmd` na próxima abertura.
+
+Em ambos os casos, `UPDATE_CHECK=false` no `.env` desliga a verificação, e nada disso pede
+senha: o repositório é público e o `git` roda com `GIT_TERMINAL_PROMPT=0`.
+
+Para criar o atalho do modo desenvolvimento (uma vez):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\criar_atalho.ps1
@@ -93,15 +141,32 @@ powershell -ExecutionPolicy Bypass -File scripts\criar_atalho.ps1
 powershell -ExecutionPolicy Bypass -File scripts\criar_atalho.ps1 -Perfil "Windows PowerShell"
 ```
 
-Dentro da TUI, ao abrir, um `git fetch` em segundo plano compara a versão local com o
-GitHub (nunca pede senha; sem credencial salva só registra no log). Se houver commits
-novos, aparece `⇡ N` na barra superior, um aviso, e a linha "Atualização" no `F8`.
-`UPDATE_CHECK=false` no `.env` desliga. Quem atualiza de fato é o `iniciar.cmd` na
-próxima abertura.
+### Gerar o executável e publicar uma versão
 
-Pré-requisito para atualizar sozinho: o Git precisa conseguir acessar o repositório sem
-perguntar nada (repositório público, ou credencial salva no Git Credential Manager pelo
-primeiro `git pull` feito à mão).
+O build roda no Windows e produz a pasta do programa e o instalador:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\build.ps1
+#   -PularTestes      pula o pytest
+#   -PularInstalador   só a pasta dist\CMD-ALL-IN-ONE
+```
+
+Ele roda os testes, gera o ícone, empacota com o PyInstaller
+(`packaging\cmd-all-in-one.spec`), confere o executável com `--verificar` e, se o
+[Inno Setup 6](https://jrsoftware.org/isdl.php) estiver instalado
+(`winget install JRSoftware.InnoSetup`), monta `dist\CMD-ALL-IN-ONE-Setup-<versao>.exe`.
+O Chromium **não** entra no pacote (são 700 MB): quem baixa é a primeira execução.
+
+Publicar para os colegas é uma linha:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\publicar.ps1 -Versao 0.2.0
+```
+
+Isso carimba `app/__init__.py`, commita, cria a tag `v0.2.0` e empurra. O GitHub Actions
+(`.github/workflows/release.yml`) roda os testes, monta o instalador no `windows-latest` e
+anexa ao release — é exatamente o arquivo que o `Ctrl+U` das outras máquinas vai baixar. A
+tag precisa bater com o `__version__`, senão o workflow falha de propósito.
 
 ### Telas e atalhos
 

@@ -20,10 +20,13 @@ as regras que valem em todo o projeto.
    timeout em tudo; retry com backoff 2/4/8 s (`Source.fetch_with_retry`).
 4. **Modo debug por fonte:** `python -m app.sources.<nome>` imprime o estado em JSON e sai.
 5. **Windows-first:** `pathlib`, sem dependências que exijam compilação.
-6. **Não inventar endpoints:** se a doc do Milldesk não tiver algo, perguntar.
-7. **Perguntar antes de decisões irreversíveis:** trocar estratégia de scraping, mudar
+6. **Versão e dados:** `app/__init__.py.__version__` é a fonte única da versão (a tag do
+   release tem de bater). Nada do usuário (`.env`, logs, notas, prefs, perfil) pode ser
+   gravado na pasta do programa: só em `DATA_DIR`.
+7. **Não inventar endpoints:** se a doc do Milldesk não tiver algo, perguntar.
+8. **Perguntar antes de decisões irreversíveis:** trocar estratégia de scraping, mudar
    stack, adicionar servidor HTTP local.
-8. Ao terminar cada fase: listar o que foi feito, como testar e o que depende do usuário.
+9. Ao terminar cada fase: listar o que foi feito, como testar e o que depende do usuário.
    Commit a cada fase.
 
 ## Ambiente
@@ -33,6 +36,15 @@ as regras que valem em todo o projeto.
 
 ## Mapa rápido
 
+- `app/paths.py` — `BUNDLE_DIR` (recursos embalados, só leitura) x `DATA_DIR` (dados do
+  usuário; `%LOCALAPPDATA%\CMD-ALL-IN-ONE` no executável, raiz do repo em dev). Todo caminho
+  novo sai daqui, nunca de `__file__`.
+- `app/firstrun.py` — primeira execução: cria a pasta de dados, o `.env` a partir do
+  `.env.example` e baixa o Chromium do Playwright.
+- `app/update.py` — dois modos: release do GitHub (executável, `Ctrl+U` instala) e git
+  (desenvolvimento). `python -m app --verificar` imprime o diagnóstico em JSON.
+- `packaging/` — `cmd-all-in-one.spec` (PyInstaller) e `instalador.iss` (Inno Setup);
+  build por `scripts/build.ps1`, publicação por `scripts/publicar.ps1` + GitHub Actions.
 - `app/config.py` — `load_settings()` lê `.env`; variável ausente aborta, segredo vazio
   marca a fonte como `configured=False`.
 - `app/state.py` — dataclasses publicadas pelas fontes + `to_json()`.

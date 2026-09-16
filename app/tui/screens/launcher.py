@@ -122,7 +122,8 @@ class HelpScreen(ModalScreen[None]):
         ]),
         ("Geral", [
             ("e", "último e-mail"), ("r · 1 2 3", "atualizar tudo · uma fonte"), ("c", "login ChatPanel"),
-            ("m", "silêncio 30 min"), ("T", "próximo tema"), (":", "launcher"), ("?", "esta ajuda"), ("q", "sair"),
+            ("m", "silêncio 30 min"), ("T", "próximo tema"), ("Ctrl+U", "instalar atualização"),
+            (":", "launcher"), ("?", "esta ajuda"), ("q", "sair"),
         ]),
         ("Listas", [
             ("↑ ↓ j k PgUp PgDn", "mover o cursor"), ("Enter", "abrir o item"), ("Tab", "trocar painel"),

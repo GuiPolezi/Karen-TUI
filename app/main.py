@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from pathlib import Path
 
 from app.config import ConfigError, load_settings
 from app.firstrun import SETUP_MESSAGE, bootstrap, open_in_editor
@@ -65,7 +66,18 @@ def self_check() -> dict:
                   "milldesk_key": settings.milldesk.masked_key}
     except ConfigError as exc:
         config = {"ok": False, "erro": str(exc).splitlines()[0]}
-    return {"versao": __version__, "caminhos": describe(), "env": str(ENV_PATH),
+    # a TUI é o que mais sofre no executável (CSS e temas vêm como arquivo, não como código)
+    try:
+        from app.tui.app import CmdAllInOneApp
+
+        css = Path(CmdAllInOneApp.CSS_PATH)
+        if not css.is_absolute():
+            css = Path(sys.modules["app.tui.app"].__file__).parent / css
+        tui = {"importa": True, "css": str(css), "css_existe": css.exists()}
+    except Exception as exc:
+        tui = {"importa": False, "erro": f"{type(exc).__name__}: {exc}"}
+
+    return {"versao": __version__, "caminhos": describe(), "env": str(ENV_PATH), "tui": tui,
             "env_existe": ENV_PATH.exists(),
             "navegador": {"instalado_por_nos": browser_ready(), "pasta": str(browsers_dir()),
                           "baixados": installed_browsers()},

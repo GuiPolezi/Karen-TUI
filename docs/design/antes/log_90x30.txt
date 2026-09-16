@@ -1,0 +1,30 @@
+ CMD ALL-IN-ONE  ·  Log                                   Guilherme · 16/09/2026 08:16:52 
+ app.log · últimas 300 linhas · filtro: TODOS · 11 linhas   muda o filtro                 
+ ╭──────────────────────────────────────────────────────────────────────────────────────╮ 
+ │2026-09-16 07:46:41 INFO app: CMD ALL-IN-ONE iniciado (textual 8.2.8)                 │ 
+ │2026-09-16 07:46:41 INFO source.email: conectado a imap.example.com:143 (STARTTLS, re │ 
+ │2026-09-16 07:47:41 INFO source.milldesk: ticketsByStatus: 37 abertos, 12 no meu nome │ 
+ │2026-09-16 07:47:41 INFO source.chatpanel: sessão restaurada de session.bin (User CMD │ 
+ │2026-09-16 08:04:41 INFO tui: aumentou em Milldesk: abertos                           │ 
+ │2026-09-16 08:04:41 INFO tui: evento: chamado #4831 entrou: Impressora fiscal não imp │ 
+ │2026-09-16 08:08:41 WARNING source.milldesk: tentativa 1 falhou: timeout              │ 
+ │2026-09-16 08:08:41 INFO source.milldesk: tentativa 2 ok (2,1 s)                      │ 
+ │2026-09-16 08:11:41 INFO tui: evento: Diego Leone · PM Iaras: 1 nova mensagem         │ 
+ │2026-09-16 08:13:41 INFO tui: aumentou em e-mail: não lidos                           │ 
+ │2026-09-16 08:16:41 INFO source.email: 142 na caixa, 7 não lidos, 3 spam              │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                            ▏         │ 
+ ╰──────────────────────────────────────────────────────────────────────────────────────╯ 
+ f Filtro de nível  q Sair  f1 Dashboard  f2 E-mail  f3 Milldesk  f4 ChatPanel  f5 Log  f6

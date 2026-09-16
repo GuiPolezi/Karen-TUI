@@ -1,0 +1,30 @@
+ CMD ALL-IN-ONE  ·  Eventos                               Guilherme · 16/09/2026 08:16:52 
+ 9 evento(s) hoje · derivados das diferenças entre coletas · arquivo                      
+ logs/events-AAAA-MM-DD.jsonl  [x] limpa a tela                                           
+  Hora      Fonte      Evento                                                             
+  08:16:50  Milldesk   chamado #4833 entrou no seu nome: Novo: sistema de protocolo fora  
+  08:13:41  e-mail     e-mail novo de Fulano de Tal: Erro ao gerar relatório de empenhos  
+  08:11:41  ChatPanel  Diego Leone · PM Iaras: 1 nova mensagem                            
+  08:04:41  Milldesk   chamado #4831 entrou: Impressora fiscal não imprime cupom          
+  07:35:41  e-mail     e-mail novo de Maria Souza: RE: Acesso ao portal da transparência  
+  07:16:41  Milldesk   chamado #4829 mudou para Aguardando cliente                        
+  06:46:41  ChatPanel  conversa Ana Paula · CM Itu transferida para você                  
+  06:16:41  Milldesk   chamado #4788 saiu do seu nome                                     
+  06:06:41  ChatPanel  conversa Marcos · PM Boituva encerrada                             
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                   ▌      
+ x Limpar tela  q Sair  f1 Dashboard  f2 E-mail  f3 Milldesk  f4 ChatPanel  f5 Log  f6 Not

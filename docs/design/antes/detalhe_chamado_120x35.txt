@@ -1,0 +1,35 @@
+ CMD ALL-IN-ONE  ·  Dashboard                                                           Guilherme · 16/09/2026 08:16:45 
+ ╭─  ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────╮───╮ 
+ │ In│                                                                                                            │t… │ 
+ │   │  #4821  Backup noturno não executa desde sexta                                                             │e… │ 
+ │   │  Status: Em atendimento   Etapa: Atendimento   Prioridade: Alta   Urgência: Alta                           │L… │ 
+ │   │  Solicitante: Hércules Andrade   Técnico: Guilherme   Local: Câmara de Tatuí                               │   │ 
+ │   │  Categoria: Servidores / Backup   Departamento: TI   Tipo: Incidente                                       │   │ 
+ │   │  Abertura: 16/09/2026 05:16   Horas: 1,5000                                                                │   │ 
+ │   │  ────────────────────────────────────────────────────────────────────────────────────────────────────────  │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  SLA: 16/09/2026 09:58  ·  faltam 01h41                                                                    │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  Descrição                                                                                                 │   │ 
+ ╰───│  O job de backup noturno (Veeam) não roda desde sexta-feira. O log mostra "Unable to connect to            │4 ─╯ 
+ ╭─  │  repository". O repositório é o NAS da sala do servidor; ping responde, mas o compartilhamento SMB não     │───╮ 
+ │ Mi│  abre.                                                                                                     │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  Comunicações                                                                                              │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  16/09/2026 05:16:00  Hércules Andrade                                                                     │   │ 
+ │   │  Abri o chamado; segue print do erro em anexo.                                                             │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  16/09/2026 06:16:41  Guilherme                                                                            │   │ 
+ │   │  Verificando credenciais do serviço no NAS. Retorno até as 16h.                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  16/09/2026 07:51:41  Hércules Andrade                                                                     │   │ 
+ │   │  Ok, aguardo.                                                                                              │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  [Esc] voltar  [r] recarregar  [o] abrir no navegador  [y] copiar ID                                       │   │ 
+ │   │                                                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯   │ 
+ ╰─────────────────────────────────────────────────────────────────────────────────────────────────── 15s · 08:16:39 ─╯ 
+ q Sair  f1 Dashboard  f2 E-mail  f3 Milldesk  f4 ChatPanel  f5 Log  f6 Notas  f7 Eventos  f8 Saúde  r Atualizar  e Últi

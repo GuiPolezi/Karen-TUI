@@ -1,0 +1,30 @@
+ CMD ALL-IN-ONE  ·  Dashboard                             Guilherme · 16/09/2026 08:16:53 
+ ╭─ ╭───────────────────────────────────────────────────────────────────────────────╮───╮ 
+ │ I│                                                                               │   │ 
+ │  │  De:      Fulano de Tal <fulano@cm.sp.gov.br>                                 │   │ 
+ │  │  Assunto: Erro ao gerar relatório de empenhos                                 │   │ 
+ │  │  Data:    16/09/2026 08:13  (08:13)                                           │   │ 
+ │  │  ───────────────────────────────────────────────────────────────────────────  │   │ 
+ │  │                                                                               │   │ 
+ │  │  Bom dia,                                                                     │   │ 
+ │  │                                                                               │   │ 
+ │  │  Ao tentar gerar o relatório de empenhos do mês o sistema apresenta a         │   │ 
+ │  │  mensagem "Erro interno (500)" e não gera o PDF. Já tentei em outro           │   │ 
+ │  │  navegador.                                                                   │   │ 
+ ╰──│                                                                               │5 ─╯ 
+ ╭─ │  Podem verificar?                                                             │───╮ 
+ │ A│                                                                               │ … │ 
+ │ ⏱│  Atenciosamente,                                                              │h… │ 
+ │ H│  Fulano de Tal                                                                │   │ 
+ │  │  Contabilidade — Câmara Municipal                                             │   │ 
+ │  │                                                                               │   │ 
+ │  │  [Esc] voltar  [y] copiar remetente                                           │   │ 
+ │  │                                                                               │   │ 
+ │  │                                                                               │   │ 
+ │  │                                                                               │   │ 
+ │  │                                                                               │   │ 
+ │  │                                                                               │   │ 
+ ╰──│                                                                               │4 ─╯ 
+ ╭─ ╰───────────────────────────────────────────────────────────────────────────────╯───╮ 
+ │ Minhas conversas: 3   Não lidas: 1   ·   4 em atendimento por outros · 6 não lidas … │ 
+ q Sair  f1 Dashboard  f2 E-mail  f3 Milldesk  f4 ChatPanel  f5 Log  f6 Notas  f7 Eventos 

@@ -1,0 +1,30 @@
+ CMD ALL-IN-ONE  ·  Dashboard                             Guilherme · 16/09/2026 08:16:54 
+ ╭─ ╭────────────────────────────────────────────────────────────────────────────────╮──╮ 
+ │ I│                                                                                │  │ 
+ │  │  Diego Leone · PM Iaras  5515999990001   ● online   [Prefeitura]   Suporte     │  │ 
+ │  │  atendente: Guilherme   1 não lida(s)                                          │  │ 
+ │  │  ──────────────────────────────────────────────────────────────────────────    │  │ 
+ │  │                                                                                │  │ 
+ │  │  … mensagens mais antigas não carregadas (abra no navegador com o)             │  │ 
+ │  │                                                                                │  │ 
+ │  │  ── Conversa transferida para Guilherme ──                                     │  │ 
+ │  │                                                                                │  │ 
+ │  │  ▌ Diego Leone  16/09/2026 06:46                                               │  │ 
+ │  │    Bom dia! O FTP da prefeitura parou de responder de novo.                    │  │ 
+ ╰──│                                                                                │ ─╯ 
+ ╭─ │  ▐ você/empresa  16/09/2026 06:56                                              │──╮ 
+ │ A│    Bom dia, Diego. Vou olhar o firewall agora.                                 │… │ 
+ │ ⏱│                                                                                │… │ 
+ │ H│  ▐ você/empresa  16/09/2026 07:16                                              │  │ 
+ │  │    Liberei a porta 21 na regra de saída, testa aí por favor.                   │  │ 
+ │  │                                                                                │  │ 
+ │  │  ▌ Diego Leone  16/09/2026 07:46                                               │  │ 
+ │  │    Ainda não conecta. Print:                                                   │  │ 
+ │  │                                                                                │  │ 
+ │  │  ▌ Diego Leone  16/09/2026 07:47                                               │  │ 
+ │  │    [imagem]                                                                    │  │ 
+ │  │                                                                                │  │ 
+ ╰──│                                                                                │ ─╯ 
+ ╭─ ╰────────────────────────────────────────────────────────────────────────────────╯──╮ 
+ │ Minhas conversas: 3   Não lidas: 1   ·   4 em atendimento por outros · 6 não lidas … │ 
+ q Sair  f1 Dashboard  f2 E-mail  f3 Milldesk  f4 ChatPanel  f5 Log  f6 Notas  f7 Eventos 

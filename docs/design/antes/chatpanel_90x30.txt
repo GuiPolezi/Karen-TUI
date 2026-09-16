@@ -1,0 +1,30 @@
+ CMD ALL-IN-ONE  ·  ChatPanel                             Guilherme · 16/09/2026 08:16:51 
+ ╭─ 💬 CHATPANEL ───────────────────────────────────────────────────────────────────────╮ 
+ │ Minhas conversas: 3   Não lidas: 1   ·   4 em atendimento por outros · 6 não lidas … │ 
+ │     ●  08:11  Diego Leone · PM Iaras          [Prefeitura]  Suporte       Porta 21   │ 
+ │     ○  08:09  Hércules · CM Tatuí TI          [Câmara]      Suporte       Fabio: H   │ 
+ │     ○  07:16  Ana Paula · CM Itu              [Câmara]      Suporte       Obrigada   │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                 ▎    │ 
+ ╰───────────────────────────────────────────────────────────────────── 15s · 08:16:39 ─╯ 
+ q Sair  f1 Dashboard  f2 E-mail  f3 Milldesk  f4 ChatPanel  f5 Log  f6 Notas  f7 Eventos 

@@ -1,0 +1,30 @@
+ CMD ALL-IN-ONE  ·  Milldesk                              Guilherme · 16/09/2026 08:16:54 
+ ╭─ 🎫 MILLDESK ────────────────────────────────────────────────────────────────────────╮ 
+ │ Abertos no meu nome: 13  (todos: 37)  ·  Em atendimento 7 · Aguardando cliente 4 · … │ 
+ │ ⏱ SLA mais próximo: #4802 Certificado digital do prefeito vencendo · VENCIDO há 01h… │ 
+ │ Histórico: 1184 chamados · 23,4% de 5061  ·  ordem: SLA mais próximo                 │ 
+ │ bac                                                                                  │ 
+ │     #4821   16/09 05:16  Backup noturno não execu  Em atendimento        01h41       │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ │                                                                                      │ 
+ ╰───────────────────────────────────────────────────────────────────── 60s · 08:16:14 ─╯ 
+ f1 Dashboard  f2 E-mail  f3 Milldesk  f4 ChatPanel  f5 Log  f6 Notas  f7 Eventos  f8 Saúd

@@ -1,0 +1,35 @@
+ CMD ALL-IN-ONE  ·  Dashboard                                                           Guilherme · 16/09/2026 08:16:49 
+ ╭─ 📧 E-MAIL ─────────────────────────────────────────────╮╭─ 🎫 MILLDESK ───────────────────────────────────────────╮ 
+ │ Inbox: 142   Não lidos: 7   Spam: 3                     ││ Abertos no meu nome: 12  (todos: 37)  ·  Em atendiment… │ 
+ │     08:13        Fulano de Tal     Erro ao gerar rela   ││ ⏱ SLA mais próximo: #4802 Certificado digital do prefe… │ 
+ │     07:35        Maria Souza       RE: Acesso ao port   ││ Histórico: 1184 chamados · 23,4% de 5061  ·  ordem: SL… │ 
+ │     07:04        Suporte Milldesk  [#4831] Novo chama   ││     #4802   Certificado digit  Em atendimen  -01h05     │ 
+ │     05:16        Hércules Andrade  Certificado digita   ││     #4821   Backup noturno nã  Em atendimen  01h41      │ 
+ │     03:16        Diego Leone       Porta 21 continua    ││     #4831   Impressora fiscal  Em atendimen  05h59      │ 
+ │     15/09 06:16  Contabilidade     Fechamento do mês:   ││     #4744   Câmera do plenári  Aguardando c  23h59      │ 
+ │     15/09 02:16  Ana Paula         Solicitação de nov   ││     #4829   Acesso ao sistema  Aguardando c  1d 01h     │ 
+ │     14/09 08:16  GitHub            [cmd-all-in-one] D   ││     #4815   Lentidão no porta  Aguardando c  1d 23h   ▅ │ 
+ │                                                         ││     #4790   E-mail institucio  Aguardando c  2d 23h     │ 
+ │                                                         ││     #4798   Configurar VPN pa  Aguardando c  4d 23h     │ 
+ ╰──────────────────────────────────────── 30s · 08:16:35 ─╯╰──────────────────────────────────────── 60s · 08:16:14 ─╯ 
+ ╭─ 💬 CHATPANEL ─────────────────────────────────────────────────────────────────────────────────────────────────────╮ 
+ │ não configurado                                                                                                    │ 
+ │ CHATPANEL_URL vazio no .env                                                                                        │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ ╰─────────────────────────────────────────────────────────────────────────────────────────────────── 15s · --:--:-- ─╯ 
+                                                                                                                        

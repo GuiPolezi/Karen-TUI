@@ -1,0 +1,30 @@
+ CMD ALL-IN-ONE  ·  Saúde                                 Guilherme · 16/09/2026 08:16:53 
+  Fontes                                                                                  
+    Fonte        Status    Última coleta    Duração    Próximo ciclo    Detalhe           
+    e-mail       ok        há 3s            0.0s       em 26s           intervalo 30s     
+    Milldesk     ok        há 3s            0.0s       em 56s           intervalo 60s     
+    ChatPanel    ok        há 3s            0.0s       em 11s           intervalo 15s     
+                                                                                          
+  Milldesk: 0 chamada(s) no último minuto · cooldown 429: não                             
+  ChatPanel: logado como User CMD · ressincronização: desligada · session.bin: ausente    
+  Log: logs\app.log · 28 KB                                                               
+  Eventos hoje: 9                                                                         
+  Versões: textual 8.2.8                                                                  
+  Uptime: 0h00min   ·   atualizado 08:16:53                                               
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+ q Sair  f1 Dashboard  f2 E-mail  f3 Milldesk  f4 ChatPanel  f5 Log  f6 Notas  f7 Eventos 

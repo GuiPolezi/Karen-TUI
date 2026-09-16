@@ -1,0 +1,35 @@
+ CMD ALL-IN-ONE  ·  Dashboard                                                           Guilherme · 16/09/2026 08:16:48 
+ ╭─ 📧 E-MAIL ─────────────────────────────────────────────╮╭─ 🎫 MILLDESK ───────────────────────────────────────────╮ 
+ │ aguardando…                                             ││ Abertos no meu nome: 12  (todos: 37)  ·  Em atendiment… │ 
+ │                                                         ││ ⏱ SLA mais próximo: #4802 Certificado digital do prefe… │ 
+ │                                                         ││ Histórico: 1184 chamados · 23,4% de 5061  ·  ordem: SL… │ 
+ │                                                         ││     #4802   Certificado digit  Em atendimen  -01h05     │ 
+ │                                                         ││     #4821   Backup noturno nã  Em atendimen  01h41      │ 
+ │                                                         ││     #4831   Impressora fiscal  Em atendimen  05h59      │ 
+ │                                                         ││     #4744   Câmera do plenári  Aguardando c  23h59      │ 
+ │                                                         ││     #4829   Acesso ao sistema  Aguardando c  1d 01h     │ 
+ │                                                         ││     #4815   Lentidão no porta  Aguardando c  1d 23h   ▅ │ 
+ │                                                         ││     #4790   E-mail institucio  Aguardando c  2d 23h     │ 
+ │ ✖ timeout · aguardando 600s                             ││     #4798   Configurar VPN pa  Aguardando c  4d 23h     │ 
+ ╰──────────────────────────────────────── 30s · --:--:-- ─╯╰──────────────────────────────────────── 60s · 08:16:14 ─╯ 
+ ╭─ 💬 CHATPANEL ─────────────────────────────────────────────────────────────────────────────────────────────────────╮ 
+ │ aguardando…                                                                                                        │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │                                                                                                                    │ 
+ │ ✖ sessão expirada: faça o login (c) · aguardando 600s                                                              │ 
+ ╰─────────────────────────────────────────────────────────────────────────────────────────────────── 15s · --:--:-- ─╯ 
+                                                                                                                        

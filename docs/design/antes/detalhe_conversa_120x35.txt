@@ -1,0 +1,35 @@
+ CMD ALL-IN-ONE  ·  Dashboard                                                           Guilherme · 16/09/2026 08:16:46 
+ ╭─  ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────╮───╮ 
+ │ In│                                                                                                            │t… │ 
+ │   │  Diego Leone · PM Iaras  5515999990001   ● online   [Prefeitura]   Suporte   atendente: Guilherme   1 não  │e… │ 
+ │   │  lida(s)                                                                                                   │L… │ 
+ │   │  ────────────────────────────────────────────────────────────────────────────────────────────────────────  │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  … mensagens mais antigas não carregadas (abra no navegador com o)                                         │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  ── Conversa transferida para Guilherme ──                                                                 │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  ▌ Diego Leone  16/09/2026 06:46                                                                           │   │ 
+ │   │    Bom dia! O FTP da prefeitura parou de responder de novo.                                                │   │ 
+ ╰───│                                                                                                            │4 ─╯ 
+ ╭─  │  ▐ você/empresa  16/09/2026 06:56                                                                          │───╮ 
+ │ Mi│    Bom dia, Diego. Vou olhar o firewall agora.                                                             │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  ▐ você/empresa  16/09/2026 07:16                                                                          │   │ 
+ │   │    Liberei a porta 21 na regra de saída, testa aí por favor.                                               │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  ▌ Diego Leone  16/09/2026 07:46                                                                           │   │ 
+ │   │    Ainda não conecta. Print:                                                                               │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  ▌ Diego Leone  16/09/2026 07:47                                                                           │   │ 
+ │   │    [imagem]                                                                                                │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  ▌ Diego Leone  16/09/2026 08:11                                                                           │   │ 
+ │   │    Porta 21 continua fechada, consegue verificar hoje ainda?                                               │   │ 
+ │   │                                                                                                            │   │ 
+ │   │                                                                                                            │   │ 
+ │   │  [Esc] voltar  [r] recarregar  [o] abrir no navegador  [y] copiar número                                   │   │ 
+ │   │                                                                                                            │   │ 
+ │   ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯   │ 
+ ╰─────────────────────────────────────────────────────────────────────────────────────────────────── 15s · 08:16:39 ─╯ 
+ q Sair  f1 Dashboard  f2 E-mail  f3 Milldesk  f4 ChatPanel  f5 Log  f6 Notas  f7 Eventos  f8 Saúde  r Atualizar  e Últi

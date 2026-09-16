@@ -117,3 +117,29 @@ def test_secrets_are_masked_in_logs(clean_env, tmp_path: Path, caplog):
                                ("abcdef1776", "senha-secreta", "senha-do-chat"), None)
     assert SecretMaskFilter().filter(record) is True
     assert record.getMessage() == "GET https://x/api/****1776/ticketsByAgent senha=******** chat=********"
+
+
+def test_env_example_abre_com_as_fontes_secretas_nao_configuradas(clean_env, monkeypatch):
+    """O .env.example é o .env de quem acabou de instalar (app/firstrun.py o copia).
+
+    Comentário na mesma linha de uma variável vazia vira valor para o python-dotenv
+    (`EMAIL_APP_PASSWORD=  # preencher` = senha "# preencher"), e aí a fonte se diz
+    configurada e falha no login em vez de mostrar "não configurada". Por isso, no
+    exemplo, variável vazia tem o comentário na linha de cima.
+    """
+    import os
+
+    from app.paths import BUNDLE_DIR
+
+    antes = dict(os.environ)
+    try:
+        settings = load_settings(BUNDLE_DIR / ".env.example")
+    finally:  # load_dotenv escreve no ambiente; não deixa vazar para os outros testes
+        os.environ.clear()
+        os.environ.update(antes)
+    assert settings.tech_name
+    assert not settings.email.configured, "senha do e-mail não deveria vir preenchida"
+    assert not settings.milldesk.configured
+    assert settings.milldesk.masked_key == "(vazia)"
+    assert not settings.chatpanel.prefill_login
+    assert settings.urls.webmail == "" and settings.urls.milldesk == ""

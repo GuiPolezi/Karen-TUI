@@ -8,6 +8,9 @@ logs/
 prefs.json
 notes.md
 
+# gerados pelo build (scripts/build.ps1)
+packaging/*.ico
+
 # python
 __pycache__/
 *.py[cod]

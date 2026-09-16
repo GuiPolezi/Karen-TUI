@@ -97,6 +97,23 @@ def _playwright_version() -> str:
         return "desconhecida"
 
 
+def browsers_dir() -> Path:
+    """Onde o Playwright guarda os navegadores nesta máquina."""
+    override = os.environ.get("PLAYWRIGHT_BROWSERS_PATH", "").strip()
+    if override and override != "0":
+        return Path(override)
+    base = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA")
+    return (Path(base) if base else Path.home()) / "ms-playwright"
+
+
+def installed_browsers(directory: Path | None = None) -> list[str]:
+    """Pastas de Chromium já baixadas (para o diagnóstico do --verificar)."""
+    directory = browsers_dir() if directory is None else directory
+    if not directory.is_dir():
+        return []
+    return sorted(p.name for p in directory.glob("chromium*") if p.is_dir())
+
+
 def browser_ready(data_dir: Path | None = None, expected: str | None = None) -> bool:
     """O Chromium desta versão do Playwright já foi instalado nesta máquina?"""
     marker = (DATA_DIR if data_dir is None else data_dir) / BROWSER_MARKER

@@ -148,6 +148,25 @@ async def test_milldesk_screen_cycles_sort_with_s_and_saves_pref():
         assert "copiado" in app.last_message or "copie manualmente" in app.last_message
 
 
+async def test_resize_across_narrow_threshold_with_data_keeps_rows_and_selection():
+    """Regressão: trocar COLUMNS_COMPACT -> COLUMNS_NARROW com dados derrubava o app."""
+    app = make_app(sources={"milldesk": FakeMilldeskSource()})
+    async with app.run_test(size=(120, 30)) as pilot:
+        await wait_until(lambda: "milldesk" in app.states)
+        await pilot.pause()
+        panel = app.panel("milldesk")
+        panel.table.select_key("2")
+        await pilot.resize_terminal(80, 30)
+        await pilot.pause()
+        assert panel.table.keys == ["1", "2"]
+        assert panel.table.selected_key == "2"
+        assert [key for key, _, _ in panel.table.column_specs] == ["mark", "id", "subject", "sla"]
+        await pilot.resize_terminal(120, 30)
+        await pilot.pause()
+        assert panel.table.keys == ["1", "2"]
+        assert [key for key, _, _ in panel.table.column_specs] == ["mark", "id", "subject", "status", "sla"]
+
+
 # --- ChatPanel: "com outros" e filtro -----------------------------------------------------
 
 

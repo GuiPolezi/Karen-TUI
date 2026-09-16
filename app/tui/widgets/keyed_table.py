@@ -32,17 +32,25 @@ class KeyedTable(DataTable):
         self.column_specs = list(columns)
         self.keys: list[str] = []
         self._cells: dict[str, list[Any]] = {}
+        self._restore_key: str | None = None  # chave selecionada antes de rebuild_columns()
 
     def on_mount(self) -> None:
         self.rebuild_columns(self.column_specs)
 
     def rebuild_columns(self, columns: list[ColumnSpec]) -> None:
-        """Troca o conjunto de colunas (ex.: terminal estreito) e remonta as linhas."""
+        """Troca o conjunto de colunas (ex.: terminal estreito) e remonta as linhas.
+
+        Linhas cujo número de células não bate com as colunas novas são descartadas
+        (quem chamou re-renderiza em seguida); re-inseri-las derrubava o app ao
+        redimensionar o terminal com dados carregados.
+        """
+        self._restore_key = self.selected_key  # a seleção sobrevive à remontagem
         self.column_specs = list(columns)
         self.clear(columns=True)
         for key, label, width in self.column_specs:
             self.add_column(label, key=key, width=width)
-        rows = [(key, self._cells[key]) for key in self.keys]
+        rows = [(key, self._cells[key]) for key in self.keys
+                if len(self._cells[key]) == len(self.column_specs)]
         self.keys, self._cells = [], {}
         self.set_rows(rows)
 
@@ -57,7 +65,9 @@ class KeyedTable(DataTable):
 
     def set_rows(self, rows: list[Row]) -> None:
         new_keys = [key for key, _ in rows]
-        selected = self.selected_key
+        selected = self.selected_key or self._restore_key
+        if new_keys:
+            self._restore_key = None  # só consome quando há linhas para restaurar
         old_index = self.cursor_row if self.row_count else 0
         if new_keys == self.keys:
             for key, cells in rows:

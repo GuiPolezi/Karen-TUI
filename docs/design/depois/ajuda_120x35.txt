@@ -19,9 +19,9 @@
     ontem │    c            login ChatPanel                  r      recarregar                               │ 23h      
     14/09 │    m            silêncio 30 min                  o      abrir no navegador                       │          
           │    T            próximo tema                     y      copiar ID · número · remetente           │          
-   ◉ CHATP│    :            launcher                                                                         │ · há 1s  
+   ◉ CHATP│    :            launcher                                                                     ▂▂  │ · há 1s  
           │    ?            esta ajuda                                                                       │          
-    ●  08:│    q            sair                                                                         ▇▇  │r  1      
+    ●  08:│    q            sair                                                                             │r  1      
     ○  08:│                                                                                                  │d         
     ○  07:│  Launcher (:)                                                                                    │          
           │    termo  /  g termo                               pesquisa no motor padrão (Google)             │          

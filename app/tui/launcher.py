@@ -21,7 +21,7 @@ SEARCH_ENGINES = {
 MODE_ALIASES = {
     "dash": "dashboard", "dashboard": "dashboard", "email": "email", "mail": "email",
     "tickets": "milldesk", "md": "milldesk", "chats": "chatpanel", "cp": "chatpanel",
-    "log": "log", "notes": "notes", "notas": "notes",
+    "log": "log", "notes": "notes", "notas": "notes", "themes": "themes", "temas": "themes",
 }
 REFRESH_ALIASES = {"md": "milldesk", "milldesk": "milldesk", "email": "email", "mail": "email",
                    "cp": "chatpanel", "chat": "chatpanel", "chatpanel": "chatpanel"}
@@ -38,6 +38,8 @@ HELP_LINES = [
     ("fav add nome url · fav rm nome · fav", "gerencia/lista favoritos (prefs.json)"),
     ("email · tickets · chats · log · notes · dash", "troca de tela"),
     ("refresh  /  refresh md|email|cp", "atualiza tudo / uma fonte"),
+    ("theme · theme nome · theme next", "lista · aplica · próximo tema (T)"),
+    ("theme preview · theme export wt", "tela de temas (F9) · esquema para o Windows Terminal"),
     ("help", "esta lista"),
 ]
 
@@ -128,6 +130,18 @@ def parse_command(text: str, favorites: dict[str, str], urls: UrlSettings) -> Ac
         if source is None:
             return Action("error", "", "uso: refresh [md|email|cp]")
         return Action("refresh", source, source)
+
+    if head in ("theme", "tema"):
+        sub = rest.lower()
+        if not sub:
+            return Action("theme_list")
+        if sub in ("next", "próximo", "proximo"):
+            return Action("theme_next")
+        if sub == "preview":
+            return Action("goto", "themes", "themes")
+        if sub in ("export wt", "export"):
+            return Action("theme_export")
+        return Action("theme_set", rest.strip().lower(), rest.strip())
 
     # sem prefixo conhecido: pesquisa com o texto inteiro
     return Action("search", urls.search.replace("{q}", quote_plus(text)), f"Google: {text}")

@@ -1,0 +1,12 @@
+{
+  "font": {
+    "face": "Cascadia Code",
+    "size": 11
+  },
+  "padding": "4",
+  "useAcrylic": false,
+  "cursorShape": "bar",
+  "intenseTextStyle": "bold",
+  "scrollbarState": "hidden",
+  "colorScheme": "carbon"
+}

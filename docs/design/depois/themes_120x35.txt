@@ -1,0 +1,35 @@
+ ▍CMD ALL-IN-ONE  Temas                                  ● ● ●                                      Guilherme  08:14:20 
+                                                                                                                        
+  TEMAS  carbon                 │ ██ bg             #0e0f11     fundo          │ ▍▣ MILLDESK           60s · há 27s     
+                                │ ██ surface        #15171a     barras e pai…  │ 12 abertos · 1 vencido                 
+ carbon            embutido     │ ██ surface-raised #1e2126     linha seleci…  │                                        
+ phosphor          embutido     │ ██ border         #2a2e35     bordas e sep…  │ SLA ▸ #4821 Backup noturno   ▮▮▮▯  1…  
+ amber             embutido     │ ██ text           #d6d9de     texto          │                                        
+ paper             embutido     │ ██ text-muted     #8b929c     rótulos e ho…  │ ▍#4802  Certificado digital   -01h05   
+ terminal          embutido     │ ██ text-faint     #5e6570     separadores,…  │ ▎#4833  Protocolo fora do ar  03h59    
+ nord              textual      │ ██ accent         #4fc1e9     foco, teclas…  │  #4831  Impressora fiscal     05h59    
+ gruvbox           textual      │ ██ accent-soft    #4fc1e9 15% fundo da sel…  │  #4744  Câmera do plenário    23h59    
+ catppuccin-mocha  textual      │ ██ ok             #5cc46c     ok             │                                        
+ dracula           textual      │ ██ warn           #e0a83a     atenção        │ ✗ timeout · há 2 min                   
+ tokyo-night       textual      │ ██ danger         #e5533f     erro / venci…  │ ✓ nenhum chamado no seu nome           
+ monokai           textual      │ ██ mine           #4fc1e9     no meu nome    │ – não configurado · veja .env          
+ flexoki           textual      │ ██ other          #8b929c     de outros      │ aguardando 2m40   ◌ 27m                
+                                │                                              │                                        
+                                │ contraste ok (texto ≥ 4.5, secundário ≥ 3)   │ Esc voltar  ⏎ confirmar                
+                                │                                              │                                        
+                                │                                              │                                        
+                                │                                              │                                        
+                                │                                              │                                        
+                                │                                              │                                        
+                                │                                              │                                        
+                                │                                              │                                        
+                                │                                              │                                        
+                                │                                              │                                        
+                                │                                              │                                        
+                                │                                              │                                        
+                                │                                              │                                        
+                                │                                              │                                        
+                                │                                              │                                        
+                                │                                              │                                        
+                                │                                              │                                        
+ ↑↓ aplica ao vivo  ⏎ confirmar  Esc volta ao anterior  T próximo  : launcher  ? ajuda                                  

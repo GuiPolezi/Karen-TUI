@@ -7,13 +7,17 @@ Este é o único módulo de `app/tui` autorizado a conter cores literais (o test
 
 from __future__ import annotations
 
+import json
 import logging
+import re
 from dataclasses import replace
+from pathlib import Path
 
 from textual.color import Color
 from textual.theme import BUILTIN_THEMES, Theme
 
-from app.tui.tokens import Tokens, ensure_contrast
+from app.config import ROOT_DIR
+from app.tui.tokens import Tokens, check_contrast, ensure_contrast
 
 log = logging.getLogger("themes")
 
@@ -125,6 +129,136 @@ def register_themes(app, extra: dict[str, Tokens] | None = None, *,  # noqa: ANN
     for tokens in catalog.values():
         app.register_theme(build_theme(tokens))
     return catalog
+
+
+# --- temas do usuário (themes/*.json) ---------------------------------------------------
+
+THEMES_DIR = ROOT_DIR / "themes"
+USER_THEME_KEYS = {
+    "bg", "surface", "surface-raised", "border", "text", "text-muted", "text-faint",
+    "accent", "accent-soft", "ok", "warn", "danger", "mine", "other",
+}
+HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+
+def tokens_from_dict(name: str, data: dict) -> Tokens:
+    """Dict com os tokens da seção 4 (chaves com hífen) -> Tokens. Levanta ValueError."""
+    if not isinstance(data, dict):
+        raise ValueError("o JSON precisa ser um objeto com os tokens")
+    unknown = set(data) - USER_THEME_KEYS - {"name", "dark"}
+    if unknown:
+        raise ValueError(f"chaves desconhecidas: {', '.join(sorted(unknown))}")
+    required = ["bg", "surface", "text", "text-muted", "accent", "ok", "warn", "danger"]
+    missing = [key for key in required if key not in data]
+    if missing:
+        raise ValueError(f"faltam: {', '.join(missing)}")
+    colors = {key: value for key, value in data.items() if key in USER_THEME_KEYS}
+    for key, value in colors.items():
+        if key == "accent-soft":
+            continue  # aceita "#rrggbb 15%"
+        if not isinstance(value, str) or not HEX_RE.match(value.strip()):
+            raise ValueError(f"{key}: esperado #rrggbb, recebido {value!r}")
+    bg = colors["bg"].strip().lower()
+    text = colors["text"].strip().lower()
+    text_muted = colors["text-muted"].strip().lower()
+    surface = colors["surface"].strip().lower()
+    return Tokens(
+        name=name, dark=bool(data.get("dark", True)), source="usuário",
+        bg=bg, surface=surface,
+        surface_raised=colors.get("surface-raised", surface).strip().lower(),
+        border=colors.get("border", text_muted).strip().lower(),
+        text=text, text_muted=text_muted,
+        text_faint=colors.get("text-faint", text_muted).strip().lower(),
+        accent=colors["accent"].strip().lower(), ok=colors["ok"].strip().lower(),
+        warn=colors["warn"].strip().lower(), danger=colors["danger"].strip().lower(),
+        accent_soft=colors.get("accent-soft"), mine=colors.get("mine"), other=colors.get("other"),
+    )
+
+
+def load_user_themes(directory: Path | None = None) -> dict[str, Tokens]:
+    """Lê `themes/*.json`. Erro de parse ou de validação vira aviso no log e o arquivo é
+    ignorado; contraste ruim vira aviso, mas o tema entra."""
+    directory = THEMES_DIR if directory is None else directory
+    result: dict[str, Tokens] = {}
+    if not directory.is_dir():
+        return result
+    for path in sorted(directory.glob("*.json")):
+        name = path.stem.strip().lower()
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            tokens = tokens_from_dict(str(data.get("name", name) if isinstance(data, dict) else name), data)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            log.warning("tema %s ignorado: %s", path.name, exc)
+            continue
+        problems = check_contrast(tokens)
+        if problems:
+            log.warning("tema %s com contraste baixo: %s", path.name, "; ".join(problems))
+        result[tokens.name] = tokens
+    return result
+
+
+# --- esquema de cores do Windows Terminal -------------------------------------------------
+
+WT_DIR = ROOT_DIR / "docs" / "design" / "windows-terminal"
+WT_PROFILE_SNIPPET = {
+    "font": {"face": "Cascadia Code", "size": 11},
+    "padding": "4",
+    "useAcrylic": False,
+    "cursorShape": "bar",
+    "intenseTextStyle": "bold",
+    "scrollbarState": "hidden",
+    "colorScheme": "carbon",
+}
+
+
+def _hex_upper(value: str) -> str:
+    return value.split()[0].strip().upper()
+
+
+def windows_terminal_scheme(tokens: Tokens) -> dict[str, str]:
+    """Esquema `schemes[]` do settings.json do Windows Terminal a partir dos tokens.
+    As 16 cores ANSI são derivadas: red/green/yellow = danger/ok/warn, cyan/blue = accent."""
+    if tokens.ansi:
+        raise ValueError("o tema 'terminal' já usa as cores do próprio Windows Terminal")
+    accent = Color.parse(tokens.accent)
+    danger = Color.parse(tokens.danger)
+    text = Color.parse(tokens.text)
+    bg = Color.parse(tokens.bg)
+    purple = accent.blend(danger, 0.5).hex
+    blue = accent.blend(Color.parse("#3b82f6"), 0.5).hex
+    bright = lambda c: Color.parse(c).lighten(0.12).hex  # noqa: E731
+    return {
+        "name": tokens.name,
+        "background": _hex_upper(tokens.bg),
+        "foreground": _hex_upper(tokens.text),
+        "cursorColor": _hex_upper(tokens.accent),
+        "selectionBackground": _hex_upper(tokens.surface_raised),
+        "black": _hex_upper(tokens.bg if tokens.dark else tokens.text),
+        "red": _hex_upper(tokens.danger),
+        "green": _hex_upper(tokens.ok),
+        "yellow": _hex_upper(tokens.warn),
+        "blue": _hex_upper(blue),
+        "purple": _hex_upper(purple),
+        "cyan": _hex_upper(tokens.accent),
+        "white": _hex_upper(tokens.text_muted if tokens.dark else tokens.surface),
+        "brightBlack": _hex_upper(tokens.text_faint),
+        "brightRed": _hex_upper(bright(tokens.danger)),
+        "brightGreen": _hex_upper(bright(tokens.ok)),
+        "brightYellow": _hex_upper(bright(tokens.warn)),
+        "brightBlue": _hex_upper(bright(blue)),
+        "brightPurple": _hex_upper(bright(purple)),
+        "brightCyan": _hex_upper(bright(tokens.accent)),
+        "brightWhite": _hex_upper(text.lighten(0.1).hex if tokens.dark else bg.hex),
+    }
+
+
+def write_windows_terminal_scheme(tokens: Tokens, directory: Path | None = None) -> Path:
+    """Grava `<nome>.json` com o esquema (para colar em `schemes` do settings.json)."""
+    directory = WT_DIR if directory is None else directory
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / f"{tokens.name}.json"
+    path.write_text(json.dumps(windows_terminal_scheme(tokens), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return path
 
 
 def resolve_theme_name(preferred: str, catalog: dict[str, Tokens]) -> str:

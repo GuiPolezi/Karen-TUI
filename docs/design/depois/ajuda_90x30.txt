@@ -11,8 +11,8 @@
   │    F7        Eventos do dia                                    navegador           │  
   │    F8        Saúde das fontes             y                    copiar              │  
   │    F9        Temas                        u                    E-mail: só não      │  
-  │    Esc       voltar ao Dashboard                               lidos               │  
-  │                                           s                    Milldesk:       ▅▅  │  
+  │    Esc       voltar ao Dashboard                               lidos           ▆▆  │  
+  │                                           s                    Milldesk:           │  
   │  Geral                                                         ordenar             │  
   │    e            último e-mail             t                    ChatPanel: com      │  
   │    r · 1 2 3    atualizar tudo · uma                           outros              │  

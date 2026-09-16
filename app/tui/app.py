@@ -28,7 +28,13 @@ from app.prefs import PREFS_PATH, Prefs, load_prefs, save_prefs
 from app.sources.base import Source, SourceError
 from app.tui.icons import IconSet, is_legacy_console, resolve_icons
 from app.tui.launcher import Action, parse_command
-from app.tui.themes import CARBON, register_themes, resolve_theme_name
+from app.tui.themes import (
+    CARBON,
+    load_user_themes,
+    register_themes,
+    resolve_theme_name,
+    write_windows_terminal_scheme,
+)
 from app.tui.tokens import Tokens
 from app.tui.screens import (
     MODE_SCREENS,
@@ -90,6 +96,7 @@ class CmdAllInOneApp(App[None]):
         Binding("f6", "goto('notes')", "Notas", priority=True),
         Binding("f7", "goto('events')", "Eventos", priority=True),
         Binding("f8", "goto('health')", "Saúde", priority=True),
+        Binding("f9", "goto('themes')", "Temas", priority=True),
         Binding("l", "goto('log')", "Log", show=False),
         Binding("r", "refresh_all", "Atualizar", show=True),
         Binding("1", "refresh('email')", "Atualizar e-mail", show=False),
@@ -140,7 +147,8 @@ class CmdAllInOneApp(App[None]):
         # aparência: temas registrados, tema inicial (prefs > .env > carbon) e conjunto de ícones
         self.icons: IconSet = resolve_icons(settings.icons)
         self.legacy_console = self.icons.mode == "ascii" or (settings.icons == "auto" and is_legacy_console())
-        self.token_sets: dict[str, Tokens] = register_themes(self, legacy_console=self.legacy_console)
+        user_themes = load_user_themes() if prefs_path is not None else {}  # testes não leem themes/
+        self.token_sets: dict[str, Tokens] = register_themes(self, user_themes, legacy_console=self.legacy_console)
         self._initial_theme = resolve_theme_name(self.prefs.theme or settings.theme, self.token_sets)
 
     # --- ciclo de vida --------------------------------------------------------
@@ -189,6 +197,23 @@ class CmdAllInOneApp(App[None]):
         self.theme = name
         self.notify(f"tema: {name}")
         return True
+
+    def export_windows_terminal_scheme(self) -> Path | None:
+        """`theme export wt`: grava o esquema do tema atual em docs/design/windows-terminal/
+        e copia o JSON para a área de transferência."""
+        tokens = self.tokens
+        if tokens.ansi:
+            self.notify("o tema 'terminal' já usa as cores do Windows Terminal; nada a exportar", severity="warning")
+            return None
+        try:
+            path = write_windows_terminal_scheme(tokens)
+        except OSError as exc:
+            self.notify(f"não consegui gravar o esquema: {exc}", severity="error")
+            return None
+        self.copy_text(path.read_text(encoding="utf-8"), "esquema", quiet=True)
+        self.notify(f"esquema '{tokens.name}' em {path} (copiado): cole em \"schemes\" do settings.json "
+                    f"do Windows Terminal e use \"colorScheme\": \"{tokens.name}\" no perfil", timeout=12)
+        return path
 
     def action_next_theme(self) -> None:
         names = list(self.token_sets)
@@ -356,6 +381,9 @@ class CmdAllInOneApp(App[None]):
             self.pop_screen()
             return
         if self.current_mode != "dashboard":
+            cancel = getattr(self.screen, "cancel", None)  # ex.: Temas volta ao tema anterior
+            if cancel is not None:
+                cancel()
             self.action_goto("dashboard")
 
     # --- saúde ---------------------------------------------------------------------------
@@ -495,6 +523,23 @@ class CmdAllInOneApp(App[None]):
             self.save_prefs()
             self.notify(f"favorito '{action.arg}' removido" if removed else f"favorito '{action.arg}' não existe",
                         severity="information" if removed else "warning")
+            return False
+        if action.kind == "theme_list":
+            names = " · ".join(f"[{n}]" if n == self.theme else n for n in self.token_sets)
+            message = f"temas: {names}"
+            if launcher is not None:
+                launcher.set_message(message)
+            else:
+                self.notify(message, timeout=10)
+            return True
+        if action.kind == "theme_set":
+            self.set_theme(action.arg)
+            return False
+        if action.kind == "theme_next":
+            self.action_next_theme()
+            return False
+        if action.kind == "theme_export":
+            self.export_windows_terminal_scheme()
             return False
         if action.kind == "fav_list":
             if not self.prefs.favorites:

@@ -20,3 +20,7 @@ dist/
 
 # perfil falso usado pelos testes (session.bin gerado em tempo de teste)
 .p/
+
+# temas do usuário (themes/exemplo.json é versionado)
+themes/*.json
+!themes/exemplo.json

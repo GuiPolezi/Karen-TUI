@@ -1,0 +1,23 @@
+{
+  "name": "paper",
+  "background": "#F6F3EC",
+  "foreground": "#2B2D30",
+  "cursorColor": "#1F3A93",
+  "selectionBackground": "#E6E1D6",
+  "black": "#2B2D30",
+  "red": "#C62828",
+  "green": "#2E7D32",
+  "yellow": "#A85F00",
+  "blue": "#2D5EC4",
+  "purple": "#72315D",
+  "cyan": "#1F3A93",
+  "white": "#EFEBE2",
+  "brightBlack": "#8A8F95",
+  "brightRed": "#EC4D43",
+  "brightGreen": "#4F9C4E",
+  "brightYellow": "#CC7D27",
+  "brightBlue": "#577BE6",
+  "brightPurple": "#914E7A",
+  "brightCyan": "#4755B3",
+  "brightWhite": "#F6F3EC"
+}

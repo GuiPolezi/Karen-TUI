@@ -1,0 +1,23 @@
+{
+  "name": "carbon",
+  "background": "#0E0F11",
+  "foreground": "#D6D9DE",
+  "cursorColor": "#4FC1E9",
+  "selectionBackground": "#1E2126",
+  "black": "#0E0F11",
+  "red": "#E5533F",
+  "green": "#5CC46C",
+  "yellow": "#E0A83A",
+  "blue": "#45A1EF",
+  "purple": "#9A8A94",
+  "cyan": "#4FC1E9",
+  "white": "#8B929C",
+  "brightBlack": "#5E6570",
+  "brightRed": "#FF745B",
+  "brightGreen": "#7EE68B",
+  "brightYellow": "#FFC85A",
+  "brightBlue": "#6EC1FF",
+  "brightPurple": "#BAA9B4",
+  "brightCyan": "#76E2FF",
+  "brightWhite": "#F2F5FA"
+}

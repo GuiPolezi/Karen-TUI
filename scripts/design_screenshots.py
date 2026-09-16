@@ -95,7 +95,7 @@ async def capture_all(out: Path) -> None:
             _save(app, out, "dashboard_mudanca", width, height)
 
             for key, mode in (("f2", "email"), ("f3", "milldesk"), ("f4", "chatpanel"), ("f5", "log"),
-                              ("f6", "notes"), ("f7", "events"), ("f8", "health")):
+                              ("f6", "notes"), ("f7", "events"), ("f8", "health"), ("f9", "themes")):
                 await pilot.press(key)
                 await pilot.pause()
                 _save(app, out, mode, width, height)

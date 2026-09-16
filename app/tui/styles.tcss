@@ -391,6 +391,58 @@ HelpScreen {
     height: auto;
 }
 
+/* Temas (F9) ----------------------------------------------------------------- */
+
+#themes {
+    height: 1fr;
+    margin: 1 1 0 1;
+}
+
+#themes-left {
+    width: 30;
+    height: 1fr;
+    margin-right: 1;
+}
+
+#themes-title {
+    height: 1;
+    margin-bottom: 1;
+    padding: 0 1;
+}
+
+#themes-list {
+    height: 1fr;
+    border: none;
+    background: $bg;
+    padding: 0;
+}
+
+#themes-list:focus {
+    border: none;
+    background: $bg;
+}
+
+#themes-middle {
+    width: 46;
+    height: 1fr;
+    margin-right: 1;
+    padding: 0 1;
+    border-left: solid $border;
+}
+
+#themes-right {
+    width: 1fr;
+    height: 1fr;
+    padding: 0 1;
+    border-left: solid $border;
+}
+
+#themes-tokens, #themes-sample {
+    height: auto;
+    text-wrap: nowrap;
+    text-overflow: ellipsis;
+}
+
 /* Modais de detalhe (e-mail, chamado, conversa) --------------------------------- */
 
 DetailScreen {

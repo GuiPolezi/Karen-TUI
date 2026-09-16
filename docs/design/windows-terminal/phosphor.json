@@ -1,0 +1,23 @@
+{
+  "name": "phosphor",
+  "background": "#050A06",
+  "foreground": "#9FE8A2",
+  "cursorColor": "#33FF66",
+  "selectionBackground": "#102010",
+  "black": "#050A06",
+  "red": "#FF5C5C",
+  "green": "#5FD75F",
+  "yellow": "#D6E65A",
+  "blue": "#37C0AE",
+  "purple": "#99AD61",
+  "cyan": "#33FF66",
+  "white": "#5FAE63",
+  "brightBlack": "#3F7A42",
+  "brightRed": "#FF7E79",
+  "brightGreen": "#83F97E",
+  "brightYellow": "#F9FF7B",
+  "brightBlue": "#60E1CE",
+  "brightPurple": "#B9CD7F",
+  "brightCyan": "#66FF86",
+  "brightWhite": "#BAFFBD"
+}

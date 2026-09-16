@@ -1,0 +1,23 @@
+{
+  "name": "amber",
+  "background": "#0B0803",
+  "foreground": "#FFBD5C",
+  "cursorColor": "#FFCC33",
+  "selectionBackground": "#20180D",
+  "black": "#0B0803",
+  "red": "#FF5C5C",
+  "green": "#E0B040",
+  "yellow": "#FFE066",
+  "blue": "#9DA794",
+  "purple": "#FF9447",
+  "cyan": "#FFCC33",
+  "white": "#B8863D",
+  "brightBlack": "#7F5F2C",
+  "brightRed": "#FF7E79",
+  "brightGreen": "#FFD060",
+  "brightYellow": "#FFFF86",
+  "brightBlue": "#BDC7B4",
+  "brightPurple": "#FFB465",
+  "brightCyan": "#FFED57",
+  "brightWhite": "#FFD876"
+}

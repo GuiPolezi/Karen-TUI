@@ -1,0 +1,18 @@
+{
+  "name": "exemplo",
+  "dark": true,
+  "bg": "#101418",
+  "surface": "#161b21",
+  "surface-raised": "#1f262e",
+  "border": "#2b343d",
+  "text": "#d8dee6",
+  "text-muted": "#8d99a6",
+  "text-faint": "#5f6b78",
+  "accent": "#7cc7ff",
+  "accent-soft": "#7cc7ff 15%",
+  "ok": "#6cc26f",
+  "warn": "#e2b04a",
+  "danger": "#ef6b5f",
+  "mine": "#7cc7ff",
+  "other": "#8d99a6"
+}

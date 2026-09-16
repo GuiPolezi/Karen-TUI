@@ -20,6 +20,11 @@ A especificação completa está em `PROMPT_CMD_ALL_IN_ONE.md`.
 - [x] Fase 4 — ChatPanel (Playwright, Estratégia A, login humano integrado à TUI)
 - [x] Fase 5 — polimento (destaque + bell, painel de log, detalhe do e-mail, coleta
   incremental do Milldesk por causa do limite de requisições)
+- [x] Fase 6 — navegação e interatividade (8 telas, launcher, listas com cursor, detalhes
+  de e-mail/chamado/conversa, eventos, saúde)
+- [x] Fase 7 — design: tokens e temas (`carbon`, `phosphor`, `amber`, `paper`, `terminal` e
+  temas do Textual), TopBar com saúde das fontes, rodapé próprio, Dashboard sem bordas com
+  números grandes, estados desenhados, tela de temas (`F9`), esquemas para o Windows Terminal
 
 ## Requisitos
 
@@ -74,7 +79,7 @@ python -m app
 
 ### Telas e atalhos
 
-A TUI tem seis telas; os workers de coleta continuam rodando em qualquer uma delas, e a
+A TUI tem nove telas; os workers de coleta continuam rodando em qualquer uma delas, e a
 última tela aberta é lembrada em `prefs.json`.
 
 | Tecla | Ação |
@@ -86,7 +91,8 @@ A TUI tem seis telas; os workers de coleta continuam rodando em qualquer uma del
 | `F5` / `l` | Log: últimas 300 linhas de `logs/app.log` (`f` alterna o filtro de nível) |
 | `F6` | Notas: bloco de notas salvo em `notes.md` (autosave; `Ctrl+S` salva agora) |
 | `F7` | Eventos: linha do tempo do dia (e-mail novo, chamado que entrou/saiu do seu nome, conversa transferida, mensagem nova); `x` limpa a tela. Persistido em `logs/events-AAAA-MM-DD.jsonl` |
-| `F8` | Saúde: status de cada fonte, última coleta, duração, próximo ciclo, chamadas do Milldesk no último minuto e cooldown de 429, sessão do ChatPanel, tamanho do log, versões |
+| `F8` | Saúde: uma linha por fonte (ponto de status, última coleta, duração, próximo ciclo, latência dos últimos 30 ciclos), chamadas do Milldesk no último minuto e cooldown de 429, sessão do ChatPanel, tamanho do log, versões |
+| `F9` | Temas: lista navegável com preview ao vivo (`↑` `↓`), tokens e painel de exemplo; `Enter` confirma, `Esc` volta ao anterior |
 | `↑` `↓` `j` `k` `PgUp` `PgDn` `Home` `End` | mover o cursor na lista |
 | `Enter` | abrir o item selecionado: e-mail completo, detalhe do chamado (descrição, SLA regressivo, resolução, comunicações) ou a conversa do WhatsApp (mensagens, sem marcar como lida) |
 | `Esc` | fechar o detalhe, limpar o filtro ou voltar ao Dashboard |
@@ -97,7 +103,8 @@ A TUI tem seis telas; os workers de coleta continuam rodando em qualquer uma del
 | `e` | abrir o e-mail mais recente de qualquer tela |
 | `r` / `1` `2` `3` | atualizar tudo / uma fonte |
 | `c` | abrir a janela de login do ChatPanel |
-| `m` | modo silêncio por 30 minutos (sem bell/toast; ícone 🔇 no cabeçalho) |
+| `m` | modo silêncio por 30 minutos (sem bell/toast; o tempo restante aparece na barra superior) |
+| `T` | próximo tema, com preview imediato (ver "Aparência") |
 | `:` | launcher (linha de comando; ver abaixo) |
 | `?` | ajuda com atalhos e comandos |
 | `q` | sair |
@@ -119,29 +126,68 @@ Uma linha de comando dentro da TUI. `Enter` executa, `↑`/`↓` percorrem o his
 | `fav nome` · `fav add nome url` · `fav rm nome` · `fav` | favoritos em `prefs.json` |
 | `email`, `tickets`, `chats`, `log`, `notes`, `dash` | troca de tela |
 | `refresh` · `refresh md` | atualiza tudo · uma fonte |
+| `theme` · `theme nome` · `theme next` | lista os temas · aplica um · próximo (o mesmo que `T`) |
+| `theme preview` · `theme export wt` | tela de temas (`F9`) · grava o esquema do tema atual para o Windows Terminal e copia o JSON |
 | `help` | lista de comandos |
+
+Enquanto você digita, o launcher sugere os comandos que começam com o texto (no máximo 5).
 
 Limitação do sistema operacional: abrir o navegador tira o foco do terminal e o app não
 tem como trazê-lo de volta. No Windows Terminal, um atalho global (por exemplo o modo
 "quake" em `Win+\``) volta para a TUI com uma tecla.
 
-No painel Milldesk, o chamado com o SLA mais próximo aparece em linha própria com
-contagem regressiva (verde, amarelo abaixo de 4 h, vermelho abaixo de 30 min ou vencido).
+No painel Milldesk, o chamado com o SLA mais próximo aparece em linha própria
+(`SLA ▸ #id assunto ▮▮▮▯ faltam 1h41`): a cor fica só na barra e no tempo (verde,
+âmbar abaixo de 4 h, vermelho abaixo de 30 min ou vencido). Abaixo de 30 min o tempo
+pisca uma vez por segundo; `SLA_BLINK=false` no `.env` (ou `TEXTUAL_ANIMATIONS=none`)
+desliga.
 
 Ao voltar ao Dashboard depois de ficar em outra tela, um aviso resume o que mudou
 ("enquanto você estava fora: e-mail: não lidos · ChatPanel: conversas"). Itens novos ou
-com não lidas a mais ganham um marcador `●` por 3 segundos. O cursor da lista não se
+com não lidas a mais ganham um marcador `▎` na cor de destaque por 3 segundos, e o
+contador que subiu fica na cor de destaque pelo mesmo tempo. O cursor da lista não se
 perde quando o painel atualiza: a seleção é mantida pelo identificador do item.
 
 `NOTIFY_TOAST=true` (com `pip install winotify`) mostra também uma notificação do
-Windows quando um contador aumenta.
-
-Quando um contador aumenta entre dois ciclos (não lidos, chamados abertos, conversas ou
-não lidas do ChatPanel), o painel ganha borda grossa amarela por 3 segundos e o terminal
+Windows quando um contador aumenta. Quando um contador aumenta entre dois ciclos (não
+lidos, chamados abertos ou vencidos, conversas ou não lidas do ChatPanel), o terminal
 toca o bell. `NOTIFY_BELL=false` no `.env` desliga o som, mantendo o destaque.
 
-Em terminais com menos de 100 colunas, os painéis de E-mail e Milldesk empilham
-verticalmente.
+Estados têm desenho próprio: erro sem dados (`✗`, a mensagem e a tecla que tenta de
+novo), erro com dados antigos (a lista continua, com `✗ mensagem · há N min` no rodapé
+do painel), não configurado (`–` e a variável do `.env`), vazio (`✓ nenhum chamado no
+seu nome`), coletando (spinner ao lado do intervalo), cooldown de 429 (`aguardando
+2m40` no título do painel).
+
+Layout responsivo: com menos de 100 colunas os painéis de E-mail e Milldesk empilham;
+com 30 linhas ou mais os contadores do Dashboard viram números grandes; com menos de 25
+linhas o Dashboard mantém só contadores e a linha de SLA.
+
+## Aparência
+
+A TUI usa **tokens semânticos** (`bg`, `surface`, `text`, `text-muted`, `text-faint`,
+`accent`, `ok`, `warn`, `danger`...) em vez de cores: cada tema é uma paleta que preenche
+esses tokens. Uma única cor de destaque (`accent`) marca foco, seleção, teclas e o que
+mudou; verde/âmbar/vermelho aparecem só para estado (SLA, sessão, erro).
+
+| Onde | O quê |
+|---|---|
+| `THEME=carbon` no `.env` | tema padrão. Embutidos: `carbon` (quase-preto, destaque ciano), `phosphor` (verde CRT), `amber`, `paper` (claro), `terminal` (usa as 16 cores do próprio Windows Terminal) e os temas do Textual `nord`, `gruvbox`, `catppuccin-mocha`, `dracula`, `tokyo-night`, `monokai`, `flexoki` |
+| `T` · `theme nome` · `F9` | trocar de tema em tempo de execução (fica em `prefs.json`, que tem prioridade sobre o `.env`) |
+| `themes/*.json` | temas seus: copie `themes/exemplo.json`, troque as cores e reinicie. Arquivo inválido é ignorado com aviso no log; contraste baixo gera aviso, mas o tema entra |
+| `ICONS=auto` | `unicode` no Windows Terminal, `ascii` no conhost; `nerd` só se a fonte do terminal for uma Nerd Font |
+| `SLA_BLINK=true` | SLA abaixo de 30 min pisca |
+| `theme export wt` | grava `docs/design/windows-terminal/<tema>.json` (esquema para o `settings.json` do Windows Terminal) e copia o JSON |
+
+**Windows Terminal recomendado:** fonte `Cascadia Code` 11 (já vem instalada; para
+ícones Nerd Font, `CaskaydiaCove Nerd Font Mono` 11 e `ICONS=nerd`), `padding: 4`,
+`useAcrylic: false` (o acrílico apaga o texto secundário), `intenseTextStyle: "bold"`,
+`cursorShape: "bar"`, barra de rolagem oculta. O trecho pronto está em
+`docs/design/windows-terminal/perfil-sugerido.json`, com um esquema de cores por tema
+embutido. Quem prefere as cores do próprio terminal usa `THEME=terminal`.
+
+O guia de estilo (tokens, regras, anatomia das telas, estados) está em
+`docs/design/DIRECAO.md`; capturas de todas as telas em `docs/design/depois/`.
 
 ## E-mail (IMAP)
 

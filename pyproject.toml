@@ -1,6 +1,6 @@
 [project]
 name = "cmd-all-in-one"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Dashboard TUI de suporte: E-mail (IMAP) + Milldesk + ChatPanel em uma única tela"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -26,6 +26,9 @@ toast = [
 
 [project.scripts]
 app = "app.main:main"
+
+[tool.hatch.version]
+path = "app/__init__.py"
 
 [build-system]
 requires = ["hatchling"]

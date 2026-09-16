@@ -21,13 +21,14 @@ from textual.binding import Binding
 from textual.screen import ModalScreen
 from textual.widgets import Input
 
-from app import clock
+from app import __version__, clock
 from app.config import Settings
 from app.events import EventLog, diff_states
 from app.prefs import PREFS_PATH, Prefs, load_prefs, save_prefs
 from app.sources.base import Source, SourceError
 from app.tui.icons import IconSet, is_legacy_console, resolve_icons
-from app.update import UpdateStatus, check_updates
+from app.paths import DATA_DIR
+from app.update import UpdateStatus, check_updates, download_installer, run_installer
 from app.tui.launcher import Action, parse_command
 from app.tui.themes import (
     CARBON,
@@ -109,6 +110,7 @@ class CmdAllInOneApp(App[None]):
         Binding("T", "next_theme", "Próximo tema", show=False),
         Binding("colon", "launcher", "Launcher", show=True, key_display=":"),
         Binding("question_mark", "help", "Ajuda", show=True, key_display="?"),
+        Binding("ctrl+u", "update", "Atualizar programa", show=False),
     ]
 
     def __init__(
@@ -136,6 +138,7 @@ class CmdAllInOneApp(App[None]):
         self._away: dict[str, list[str]] = {}  # mudanças enquanto o Dashboard não estava na frente
         self._login_requested = False
         self._login_in_progress = False
+        self._updating = False  # Ctrl+U em andamento (baixando/instalando)
         self._login_on_start_used = False
         self.login_count = 0
         self.started_at = clock.epoch()
@@ -180,8 +183,59 @@ class CmdAllInOneApp(App[None]):
             log.info("atualização: %s", status.summary())
         elif status.available:
             log.info("atualização disponível: %s", status.summary())
-            self.notify(f"atualização disponível: {status.behind} commit(s) novos. Feche (q) e abra pelo atalho.",
-                        timeout=10)
+            self.notify(f"atualização disponível: {status.summary()}", timeout=12)
+
+    def action_update(self) -> None:
+        """Ctrl+U: baixa o instalador do release novo, fecha a TUI e instala.
+
+        Só faz sentido no executável; no repositório de desenvolvimento quem atualiza é o
+        `git pull` do `iniciar.cmd`. Quando o release não tem instalador, abre a página.
+        """
+        status = self.update_status
+        if self._updating:
+            self.notify("atualização já em andamento…")
+            return
+        if not status.available:
+            self.notify(f"atualização: {status.summary()}")
+            return
+        if not status.can_install:
+            self.notify(f"atualização: {status.summary()}", timeout=10)
+            self.open_url(status.page_url, "página do release")
+            return
+        self._updating = True
+        self.notify(f"baixando a versão {status.latest}… a TUI fecha sozinha no fim", timeout=8)
+        self.run_worker(self._download_and_install, name="update-install", thread=True, exit_on_error=False)
+
+    def _download_and_install(self) -> None:
+        """Roda numa thread: download de dezenas de MB não pode travar a TUI."""
+        status = self.update_status
+        marco = [0]
+
+        def progress(baixado: int, total: int) -> None:
+            if not total:
+                return
+            porcento = int(baixado * 100 / total)
+            if porcento >= marco[0] + 25:
+                marco[0] = porcento - porcento % 25
+                self.call_from_thread(self.notify, f"baixando atualização: {porcento}%")
+
+        try:
+            instalador = download_installer(status, progress=progress)
+        except Exception as exc:
+            log.warning("download da atualização falhou: %s", exc)
+            self._updating = False
+            self.call_from_thread(self.notify, f"não consegui baixar a atualização: {exc}", severity="error")
+            return
+        try:
+            run_installer(instalador)
+        except Exception as exc:
+            log.warning("não consegui iniciar o instalador: %s", exc)
+            self._updating = False
+            self.call_from_thread(self.notify, f"baixei em {instalador}, mas não consegui instalar: {exc}",
+                                  severity="error")
+            return
+        log.info("instalador disparado; fechando a TUI")
+        self.call_from_thread(self.exit)
 
     # --- aparência ----------------------------------------------------------------
 
@@ -283,7 +337,7 @@ class CmdAllInOneApp(App[None]):
         """Estados transitórios mostrados à direita da TopBar: (texto, token de cor)."""
         extras: list[tuple[str, str]] = []
         if self.update_status.available:
-            extras.append((f"{self.icons.update} {self.update_status.behind}", "accent"))
+            extras.append((f"{self.icons.update} {self.update_status.badge()}", "accent"))
         if self._login_in_progress:
             extras.append((f"{self.icons.login} login", "accent"))
         if self.silenced:
@@ -466,7 +520,7 @@ class CmdAllInOneApp(App[None]):
         try:
             import textual
 
-            versions = f"textual {textual.__version__}"
+            versions = f"CMD ALL-IN-ONE {__version__} · textual {textual.__version__}"
             try:
                 import playwright
 
@@ -487,6 +541,7 @@ class CmdAllInOneApp(App[None]):
             "events_today": len(self.event_log.events),
             "latency": {name: list(values) for name, values in self.latency.items()},
             "terminal": self.terminal_info(),
+            "data_dir": str(DATA_DIR),
             "update": self.update_status.summary() if self._update_enabled else "verificação desligada (UPDATE_CHECK=false)",
             "versions": versions,
             "uptime": f"{uptime // 3600}h{(uptime % 3600) // 60:02d}min",
@@ -538,6 +593,9 @@ class CmdAllInOneApp(App[None]):
             if action.copy:
                 self.copy_text(action.copy, "ID do chamado", quiet=True)
             self.open_url(action.arg, action.label)
+            return False
+        if action.kind == "update":
+            self.action_update()
             return False
         if action.kind == "ticket":
             self.open_ticket(int(action.arg))

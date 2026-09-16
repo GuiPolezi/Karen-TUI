@@ -40,13 +40,14 @@ HELP_LINES = [
     ("refresh  /  refresh md|email|cp", "atualiza tudo / uma fonte"),
     ("theme · theme nome · theme next", "lista · aplica · próximo tema (T)"),
     ("theme preview · theme export wt", "tela de temas (F9) · esquema para o Windows Terminal"),
+    ("atualizar", "verifica e instala a versão nova (Ctrl+U)"),
     ("help", "esta lista"),
 ]
 
 
 @dataclass
 class Action:
-    kind: str            # search | open | ticket | goto | refresh | fav_add | fav_rm | fav_list | help | error | empty
+    kind: str            # search | open | ticket | goto | refresh | fav_add | fav_rm | fav_list | update | help | error | empty
     arg: str = ""        # url, id, modo, nome da fonte, mensagem de erro...
     label: str = ""      # texto para o aviso ("Google: termo")
     copy: str = ""       # valor a copiar junto (ex.: ID do chamado no md!)
@@ -65,6 +66,9 @@ def parse_command(text: str, favorites: dict[str, str], urls: UrlSettings) -> Ac
 
     if head in ("help", "?", "ajuda"):
         return Action("help")
+
+    if head in ("atualizar", "update"):
+        return Action("update")
 
     if head in SEARCH_ENGINES:
         if not rest:

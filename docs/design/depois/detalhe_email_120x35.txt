@@ -1,35 +1,35 @@
  ▍CMD ALL-IN-ONE  Dashboard                              ● ● ●                                      Guilherme  08:14:20 
-     ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────╮     
-  ▍✉ │                                                                                                            │27s  
-     │  De:      Fulano de Tal <fulano@cm.sp.gov.br>                                                              │     
-  ╶╮ │  Assunto: Erro ao gerar relatório de empenhos                                                              │     
-   │ │  Data:    16/09/2026 08:11  (08:11)                                                                        │     
-  ╶┴╴│  ────────────────────────────────────────────────────────────────────────────────────────────────────────  │     
-    i│                                                                                                            │     
-     │  Bom dia,                                                                                                  │     
-   Fu│                                                                                                            │     
-   Er│  Ao tentar gerar o relatório de empenhos do mês o sistema apresenta a mensagem "Erro interno (500)" e não  │5    
-   Bo│  gera o PDF. Já tentei em outro navegador.                                                                 │     
-     │                                                                                                            │     
-   ▍0│  Podem verificar?                                                                                          │     
-    0│                                                                                                            │     
-    0│  Atenciosamente,                                                                                           │  ▁  
-    0│  Fulano de Tal                                                                                             │     
-    o│  Contabilidade — Câmara Municipal                                                                          │     
-    o│                                                                                                            │     
-    1│  Esc voltar  y copiar remetente                                                                            │     
-     │                                                                                                            │     
-   ◉ │                                                                                                            │ 1s  
-     │                                                                                                            │     
-    ●│                                                                                                            │     
-    ○│                                                                                                            │     
-    ○│                                                                                                            │     
-     │                                                                                                            │     
-     │                                                                                                            │     
-     │                                                                                                            │     
-     │                                                                                                            │     
-     │                                                                                                            │     
-     │                                                                                                            │     
-     ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯     
+          ╭──────────────────────────────────────────────────────────────────────────────────────────────────╮          
+  ▍✉ E-MAI│  de       Fulano de Tal <fulano@cm.sp.gov.br>                                                    │· há 27s  
+          │  assunto  Erro ao gerar relatório de empenhos                                                    │          
+  ╶╮ ╷ ╷╶─│  data     16/09/2026 08:11  · 08:11                                                              │          
+   │ ╰─┤┌─│  ──────────────────────────────────────────────────────────────────────────────────────────────  │          
+  ╶┴╴  ╵╰─│                                                                                                  │          
+    inbox │    Bom dia,                                                                                      │          
+          │                                                                                                  │          
+   Fulano │    Ao tentar gerar o relatório de empenhos do mês o sistema apresenta a mensagem "Erro           │o 1       
+   Erro ao│    interno (500)" e não gera o PDF. Já tentei em outro navegador.                                │ 01h05    
+   Bom dia│                                                                                                  │          
+          │    Podem verificar?                                                                              │1h05      
+   ▍07:33 │                                                                                                  │h41       
+    07:02 │    Atenciosamente,                                                                               │h59       
+    05:14 │    Fulano de Tal                                                                                 │h59    ▁  
+    03:14 │    Contabilidade — Câmara Municipal                                                              │h59       
+    ontem │                                                                                                  │ 01h      
+    ontem │                                                                                                  │ 23h      
+    14/09 │                                                                                                  │          
+          │                                                                                                  │          
+   ◉ CHATP│                                                                                                  │ · há 1s  
+          │                                                                                                  │          
+    ●  08:│                                                                                                  │r  1      
+    ○  08:│                                                                                                  │d         
+    ○  07:│                                                                                                  │          
+          │                                                                                                  │          
+          │                                                                                                  │          
+          │                                                                                                  │          
+          │                                                                                                  │          
+          │                                                                                                  │          
+          ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯          
+                                                                                                                        
   4 com outros técnicos · 6 não lidas na aba                                                                            
- ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  m silêncio  T tema  : launcher  ? ajuda       
+ Esc voltar  y copiar remetente                                                                                         

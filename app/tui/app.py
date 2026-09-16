@@ -12,6 +12,7 @@ import asyncio
 import logging
 import time
 import webbrowser
+from collections import deque
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +45,7 @@ log = logging.getLogger("tui")
 
 LOGIN_SOURCE = "chatpanel"  # única fonte com login humano (janela visível + captcha)
 SILENCE_MINUTES = 30
+LATENCY_CYCLES = 30         # ciclos guardados por fonte para a Sparkline da tela Saúde
 
 # nome da fonte -> (id do painel no Dashboard, rótulo, fase em que é implementada)
 SOURCE_PANELS: dict[str, tuple[str, str, int]] = {
@@ -132,6 +134,7 @@ class CmdAllInOneApp(App[None]):
         self.event_log = EventLog(settings.log_dir if prefs_path is not None else None)
         self.health_info: dict[str, dict[str, Any]] = {}  # por fonte: duração, próximo ciclo, última ok
         self.fetching: set[str] = set()                   # fontes coletando neste instante
+        self.latency: dict[str, deque[float]] = {}        # fonte -> duração dos últimos 30 ciclos (Sparkline do F8)
         self.cooldown_until: dict[str, float] = {}        # fonte -> epoch até o qual está em cooldown (429)
         self.error_kind: dict[str, str] = {}              # fonte -> "cooldown" | "expired" | "error"
         # aparência: temas registrados, tema inicial (prefs > .env > carbon) e conjunto de ícones
@@ -267,10 +270,20 @@ class CmdAllInOneApp(App[None]):
 
     # --- avisos ----------------------------------------------------------------
 
+    NOTIFICATION_TIMEOUT = 4.0  # segundos (spec: 4 s; nunca mais de 3 empilhados)
+    MAX_NOTIFICATIONS = 3
+
     def notify(self, message: str, **kwargs: Any) -> None:  # type: ignore[override]
         self.last_message = message
         self.messages.append(message)
         super().notify(message, **kwargs)
+        try:  # nunca mais de 3: a mais antiga sai
+            while len(self._notifications) > self.MAX_NOTIFICATIONS:
+                oldest = next(iter(self._notifications))
+                del self._notifications[oldest]
+            self._refresh_notifications()
+        except Exception:  # API interna do Textual: se mudar, só perde o limite
+            pass
 
     @property
     def silenced(self) -> bool:
@@ -334,8 +347,8 @@ class CmdAllInOneApp(App[None]):
     def action_escape(self) -> None:
         focused = self.focused
         if isinstance(focused, Input) and focused.has_class("panel-filter"):
-            panel = focused.parent
-            if isinstance(panel, BasePanel):
+            panel = next((node for node in focused.ancestors if isinstance(node, BasePanel)), None)
+            if panel is not None:
                 panel.clear_filter()
             return
         if isinstance(self.screen, ModalScreen):
@@ -407,6 +420,7 @@ class CmdAllInOneApp(App[None]):
             "log_path": str(log_path),
             "log_size_kb": log_size_kb,
             "events_today": len(self.event_log.events),
+            "latency": {name: list(values) for name, values in self.latency.items()},
             "versions": versions,
             "uptime": f"{uptime // 3600}h{(uptime % 3600) // 60:02d}min",
         }
@@ -732,6 +746,7 @@ class CmdAllInOneApp(App[None]):
             return float(source.interval)
         finally:
             self.fetching.discard(name)
+            self.latency.setdefault(name, deque(maxlen=LATENCY_CYCLES)).append(time.monotonic() - started)
 
         info.update(duration=time.monotonic() - started, next_at=clock.epoch() + source.interval, last_ok=clock.epoch())
         self.error_kind.pop(name, None)

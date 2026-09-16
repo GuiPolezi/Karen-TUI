@@ -193,11 +193,20 @@ BasePanel .panel-extra {
     text-overflow: ellipsis;
 }
 
+BasePanel .panel-filter-row {
+    height: 1;
+    margin-top: 1;
+}
+
+BasePanel .panel-filter-icon {
+    width: 2;
+}
+
 BasePanel .panel-filter {
+    width: 1fr;
     height: 1;
     border: none;
     padding: 0;
-    margin-top: 1;
     background: $surface;
 }
 
@@ -224,14 +233,13 @@ BasePanel .panel-foot {
 
 #log-status {
     height: 1;
-    padding: 0 1;
-    color: $text-muted;
+    margin: 1 2 0 2;
 }
 
 #log-lines {
     height: 1fr;
-    margin: 0 1;
-    border: round $border;
+    margin: 1 2 0 2;
+    background: $bg;
     scrollbar-size: 1 1;
 }
 
@@ -239,50 +247,69 @@ BasePanel .panel-foot {
 
 #notes-status {
     height: 1;
-    padding: 0 1;
-    color: $text-muted;
+    margin: 1 2 0 2;
 }
 
 #notes-text {
     height: 1fr;
-    margin: 0 1;
+    margin: 1 1 0 1;
+    border: none;
+    padding: 0 1;
+    background: $bg;
 }
 
-/* Launcher (:) e ajuda (?) ----------------------------------------------------- */
+#notes-text:focus {
+    border: none;
+}
+
+/* Launcher (:) — uma linha na base, acima do rodapé --------------------------------- */
 
 LauncherScreen {
-    align: center top;
+    align: left bottom;
     background: $bg 40%;
 }
 
 #launcher {
-    width: 80%;
+    width: 100%;
     height: auto;
-    margin-top: 2;
-    border: round $accent;
+    margin-bottom: 1;
     background: $surface;
     padding: 0 1;
 }
 
+#launcher-hint, #launcher-suggestions {
+    height: auto;
+    padding: 0 2;
+}
+
+#launcher-line {
+    height: 1;
+}
+
+#launcher-prompt {
+    width: 2;
+}
+
 #launcher-input {
+    width: 1fr;
+    height: 1;
     border: none;
     padding: 0;
     background: $surface;
 }
 
-#launcher-hint {
-    height: auto;
-    padding: 0 1;
-}
+/* Ajuda (?) ------------------------------------------------------------------- */
 
 HelpScreen {
     align: center middle;
-    background: $bg 60%;
+    background: $bg 85%;
 }
 
 #help {
-    width: 90%;
-    height: 90%;
+    width: 100;
+    max-width: 96%;
+    height: auto;
+    max-height: 92%;
     border: round $accent;
     background: $surface;
     padding: 1 2;
@@ -295,6 +322,10 @@ HelpScreen {
 #help-keys, #help-commands {
     width: 1fr;
     height: auto;
+}
+
+.help-group {
+    height: auto;
     margin-bottom: 1;
 }
 
@@ -302,65 +333,120 @@ HelpScreen {
     height: auto;
 }
 
-/* Eventos (F7) e Saúde (F8) --------------------------------------------------- */
+/* Eventos (F7) --------------------------------------------------------------- */
 
-#events-status, #health-sources, #health-extra {
+#events-status {
     height: auto;
-    padding: 0 1;
-    color: $text-muted;
+    margin: 1 2 0 2;
 }
 
 #events-table {
     height: 1fr;
-    margin: 0 1;
+    margin: 1 1 0 1;
     scrollbar-size: 1 1;
 }
 
+/* Saúde (F8) ----------------------------------------------------------------- */
+
 #health {
     height: 1fr;
-    margin: 0 1;
+    margin: 1 2 0 2;
+}
+
+#health-title, #health-columns {
+    height: 1;
 }
 
 #health-sources {
-    color: $text;
+    height: auto;
     margin-bottom: 1;
 }
 
+.health-row {
+    height: 1;
+}
+
+.health-dot { width: 3; text-align: center; }
+.health-name { width: 13; }
+.health-status { width: 18; }
+.health-last { width: 13; }
+.health-duration { width: 11; }
+.health-next { width: 11; }
+.health-spark { width: 24; height: 1; margin-right: 2; }
+.health-spark > .sparkline--max-color { color: $accent; }
+.health-spark > .sparkline--min-color { color: $accent 30%; }
+.health-detail { width: 1fr; }
+
 #health-extra {
-    color: $text;
+    height: auto;
 }
 
 /* Modais de detalhe (e-mail, chamado, conversa) --------------------------------- */
 
-ConversationDetailScreen, TicketDetailScreen, EmailDetailScreen {
+DetailScreen {
     align: center middle;
-    background: $bg 60%;
+    background: $bg 90%;
 }
 
-#conversation, #ticket-detail, #email-detail {
-    width: 92%;
+#detail {
+    width: 100;
+    max-width: 96%;
     height: 92%;
     border: round $accent;
     background: $surface;
-    padding: 1 2;
+    padding: 0 2;
 }
 
-#conversation-header, #ticket-header, #email-detail-header {
+.detail-header {
     height: auto;
-    margin-bottom: 1;
+    padding: 0;
     border-bottom: solid $border;
 }
 
-#conversation-messages, #email-detail-body {
-    height: auto;
+.detail-body {
+    height: 1fr;
+    padding: 1 2 0 2;
+    scrollbar-size: 1 1;
 }
 
-#ticket-sla, #ticket-body, #ticket-resolution, #ticket-communications {
+.detail-loading {
+    height: 3;
+    display: none;
+}
+
+.detail-text, #ticket-fields, #ticket-sla, #ticket-body, #ticket-resolution, #ticket-communications,
+#conversation-notice {
     height: auto;
     margin-bottom: 1;
 }
 
-#conversation-footer, #ticket-footer, #email-detail-footer {
+#conversation-messages {
     height: auto;
-    margin-top: 1;
+}
+
+.message-row {
+    height: auto;
+    margin-bottom: 1;
+}
+
+.message-row .message {
+    width: 80%;
+    height: auto;
+}
+
+.message-row.-mine {
+    align-horizontal: right;
+}
+
+.message-row.-mine .message {
+    text-align: right;
+}
+
+.message-row.-system {
+    align-horizontal: center;
+}
+
+.message-row.-system .message {
+    width: auto;
+    text-align: center;
 }

@@ -1,30 +1,30 @@
  ▍CMD ALL-IN-ONE  Dashboard               ● ● ●                       Guilherme  08:14:20 
-  ▍✉╭───────────────────────────────────────────────────────────────────────────────╮ 6s  
-  14│                                                                               │     
-    │  Atalhos                             Launcher (:)                             │     
-   F│    F1 / d               Dashboard      termo  /  g termo                      │1    
-   E│    F2                   E-mail (u:     ddg termo · yt termo                   │     
-   B│                         só não         md 1234                                │ag…  
-    │                         lidos)         md! 1234                               │     
-   ▍│    F3                   Milldesk       wa 5511999999999                       │     
-    │                         (s:            cp · mail · mdweb                      │  ▅  
-    │                         ordenar)       open url                               │     
-  +4│    F4                   ChatPanel      fav nome                               │     
-   ▣│                         (t: com        fav add nome url · fav rm nome ·…      │27s  
-  13│                         outros)        email · tickets · chats · log · …  ▁▁  │     
-    │    F5 / l               Log (f:        refresh  /  refresh md|email|cp        │     
-  Em│                         filtro de      help                                   │     
-  SL│                         nível)                                                │5    
-    │    F6                   Notas                                                 │     
-    │    F7                   Eventos do                                            │     
-    │                         dia (x:                                               │  ▆  
-    │                         limpar                                                │     
-    │                         tela)                                                 │     
-  +9│    F8                   Saúde das                                             │     
-    │                         fontes                                                │     
-   ◉│    ↑ ↓ j k PgUp PgDn    mover o                                               │ 1s  
-    │                         cursor                                                │     
-    │                                                                               │     
-    ╰───────────────────────────────────────────────────────────────────────────────╯  ▅  
+  ╭────────────────────────────────────────────────────────────────────────────────────╮  
+  │                                                                                    │  
+  │  Telas                                  Listas                                     │  
+  │    F1 / d    Dashboard                    ↑ ↓ j k PgUp PgDn    mover o cursor      │  
+  │    F2        E-mail                       Enter                abrir o item        │  
+  │    F3        Milldesk                     Tab                  trocar painel       │  
+  │    F4        ChatPanel                    /                    filtrar (Esc        │  
+  │    F5 / l    Log                                               limpa)              │  
+  │    F6        Notas                        o                    abrir no            │  
+  │    F7        Eventos do dia                                    navegador           │  
+  │    F8        Saúde das fontes             y                    copiar              │  
+  │    F9        Temas                        u                    E-mail: só não      │  
+  │    Esc       voltar ao Dashboard                               lidos               │  
+  │                                           s                    Milldesk:       ▅▅  │  
+  │  Geral                                                         ordenar             │  
+  │    e            último e-mail             t                    ChatPanel: com      │  
+  │    r · 1 2 3    atualizar tudo · uma                           outros              │  
+  │                 fonte                     f                    Log: filtro de      │  
+  │    c            login ChatPanel                                nível               │  
+  │    m            silêncio 30 min           x                    Eventos:            │  
+  │    T            próximo tema                                   limpar tela         │  
+  │    :            launcher                                                           │  
+  │    ?            esta ajuda              Detalhes                                   │  
+  │    q            sair                      Esc    voltar                            │  
+  │                                           r      recarregar                        │  
+  │                                                                                    │  
+  ╰────────────────────────────────────────────────────────────────────────────────────╯  
   +1 · F4   ·   4 com outros técnicos · 6 não lidas na aba                                
  ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  ? ajuda         

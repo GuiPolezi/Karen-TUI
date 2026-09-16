@@ -16,6 +16,12 @@ FooterItem = tuple[str, str]  # (tecla como aparece, descrição)
 GAP = "  "
 
 
+def format_items(items: list[FooterItem], icons: object) -> list[FooterItem]:
+    """Substitui `{nome}` pelo glifo do conjunto de ícones (`{key_enter}` -> `⏎`)."""
+    fields = {name: getattr(icons, name) for name in dir(icons) if not name.startswith("_")}
+    return [(key.format(**fields), label) for key, label in items]
+
+
 def fit_items(items: list[FooterItem], width: int, keep_last: bool = True) -> list[FooterItem]:
     """Subconjunto dos itens que cabe em `width` células: remove do fim, preservando o
     último item (ajuda) quando `keep_last`."""

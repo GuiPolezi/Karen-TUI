@@ -1,11 +1,11 @@
  ▍CMD ALL-IN-ONE  Dashboard                              ● ● ●                                      Guilherme  08:14:20 
                                                                                                                         
-  ▍✉ E-MAIL ╭──────────────────────────────────────────────────────────────────────────────────────────────╮s · há 27s  
-            │ md 48                                                                                        │            
-  ╶╮ ╷ ╷╶─╮ │                                                                                              │            
-   │ ╰─┤┌─┘ │                                                                                              │            
-  ╶┴╴  ╵╰─╴ │  Enter executa · ↑/↓ histórico · Esc fecha · help lista os comandos                          │            
-    inbox   ╰──────────────────────────────────────────────────────────────────────────────────────────────╯            
+  ▍✉ E-MAIL                                   30s · há 6s │    ▣ MILLDESK                                 60s · há 27s  
+                                                          │                                                             
+  ╶╮ ╷ ╷╶─╮    ╶─┐          ╶─╮                           │   ╶╮ ╶─╮                 ╶╮                                 
+   │ ╰─┤┌─┘      │           ─┤                           │    │  ─┤                  │                                 
+  ╶┴╴  ╵╰─╴      ╵          ╶─╯                           │   ╶┴╴╶─╯                 ╶┴╴                                
+    inbox      não lidos    spam                          │   abertos no meu nome    vencido                            
                                                           │                                                             
    Fulano de Tal <fulano@cm.sp.gov.br>            08:11   │   Em atendimento 7 · Aguardando cliente 4 · Pausado 1       
    Erro ao gerar relatório de empenhos                    │   SLA ▸ #4802 Certificado digita… ▮▮▮▮  vencido há 01h05    
@@ -27,9 +27,9 @@
                                                                                                                         
                                                                                                                         
                                                                                                                         
-                                                                                                                        
-                                                                                                                        
-                                                                                                                        
-                                                                                                                        
-  4 com outros técnicos · 6 não lidas na aba                                                                            
+   Enter executa · ↑↓ histórico · Esc fecha · help lista os comandos                                                    
+     md 1234  detalhe do chamado na TUI                                                                                 
+     md! 1234  Milldesk no navegador + copia o ID                                                                       
+     mdweb  abre o Milldesk no navegador                                                                                
+ : md 48                                                                                                                
  ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  m silêncio  T tema  : launcher  ? ajuda       

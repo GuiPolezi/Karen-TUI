@@ -1,11 +1,11 @@
  ▍CMD ALL-IN-ONE  Dashboard               ● ● ●                       Guilherme  08:14:20 
   ▍✉ E-MAIL                                                                  30s · há 6s  
-  142 inb╭──────────────────────────────────────────────────────────────────────╮         
-         │ md 48                                                                │         
-   Fulano│                                                                      │08:11    
-   Erro a│                                                                      │         
-   Bom di│  Enter executa · ↑/↓ histórico · Esc fecha · help lista os comandos  │mensag…  
-         ╰──────────────────────────────────────────────────────────────────────╯         
+  142 inbox · 7 não lidos · 3 spam                                                        
+                                                                                          
+   Fulano de Tal <fulano@cm.sp.gov.br>                                           08:11    
+   Erro ao gerar relatório de empenhos                                                    
+   Bom dia, ao tentar gerar o relatório de empenhos do mês o sistema apresenta a mensag…  
+                                                                                          
    ▍07:33   RE: Acesso ao portal da transparência                                         
     07:02   [#4831] Novo chamado atribuído a você                                      ▅  
     05:14   Certificado digital vencendo                                                  
@@ -22,9 +22,9 @@
     #4831   Impressora fiscal não imprime cupom                               05h59       
   +9 · F3                                                                                 
                                                                                           
-   ◉ CHATPANEL   3 conversas · 1 não lida                                    15s · há 1s  
-                                                                                          
-    ●  08:09  Diego Leone · PM Iar  Porta 21 continua fechada, consegue verificar  1      
-    ○  08:07  Hércules · CM Tatuí   Fabio: Hércules, consegue me mandar o print d      ▅  
-  +1 · F4   ·   4 com outros técnicos · 6 não lidas na aba                                
+   Enter executa · ↑↓ histórico · Esc fecha · help lista os comandos                      
+     md 1234  detalhe do chamado na TUI                                                   
+     md! 1234  Milldesk no navegador + copia o ID                                         
+     mdweb  abre o Milldesk no navegador                                                  
+ : md 48                                                                                  
  ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  ? ajuda         

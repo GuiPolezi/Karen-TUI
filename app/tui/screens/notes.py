@@ -1,8 +1,10 @@
-"""Tela Notas (F6): bloco de notas persistente em notes.md (raiz, gitignored), autosave."""
+"""Tela Notas (F6): bloco de notas persistente em notes.md (raiz, gitignored), autosave.
+`TextArea` sem borda e uma linha de status em text-faint ("salvo há 10s · 42 linhas")."""
 
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from pathlib import Path
 
 from rich.text import Text
@@ -11,11 +13,14 @@ from textual.binding import Binding
 from textual.timer import Timer
 from textual.widgets import Static, TextArea
 
+from app import clock
 from app.config import ROOT_DIR
 from app.tui.screens.base import ModeScreen
+from app.tui.widgets.base_panel import relative_age
 
 NOTES_PATH = ROOT_DIR / "notes.md"
 AUTOSAVE_SECONDS = 1.0
+STATUS_TICK_SECONDS = 1.0
 log = logging.getLogger("notes")
 
 
@@ -48,16 +53,41 @@ class NotesScreen(ModeScreen):
         self.path = path or NOTES_PATH
         self._timer: Timer | None = None
         self.dirty = False
+        self.saved_at: datetime | None = None
+        self.save_failed = False
 
     def body(self) -> ComposeResult:
-        yield Static(self._status(f"{self.path.name} · salva sozinho 1 s após parar de digitar"), id="notes-status")
+        yield Static("", id="notes-status")
         yield TextArea(load_notes(self.path), id="notes-text")
 
-    def _status(self, message: str) -> Text:
-        return Text(message, style=self.app.tokens.rich("text-faint"))  # type: ignore[attr-defined]
+    def on_mount(self) -> None:
+        super().on_mount()
+        self.refresh_status()
+        self.set_interval(STATUS_TICK_SECONDS, self.refresh_status)
+
+    def refresh_content(self) -> None:
+        self.refresh_status()
+
+    def refresh_status(self) -> None:
+        tokens, icons = self.app.tokens, self.app.icons  # type: ignore[attr-defined]
+        text = self.query_one("#notes-text", TextArea).text
+        lines = text.count("\n") + (1 if text and not text.endswith("\n") else 0)
+        status = Text(style=tokens.rich("text-faint"))
+        status.append(f"{self.path.name} {icons.sep} ")
+        if self.save_failed:
+            status.append(f"{icons.error} erro ao salvar (veja o log)", style=tokens.rich("danger"))
+        elif self.dirty:
+            status.append("editando…", style=tokens.rich("text-muted"))
+        elif self.saved_at is not None:
+            status.append(f"salvo {relative_age(self.saved_at)}")
+        else:
+            status.append("salva sozinho 1 s após parar de digitar")
+        status.append(f" {icons.sep} {lines} linha{'s' if lines != 1 else ''}")
+        self.query_one("#notes-status", Static).update(status)
 
     def on_text_area_changed(self, event: TextArea.Changed) -> None:
         self.dirty = True
+        self.refresh_status()
         if self._timer is not None:
             self._timer.stop()
         self._timer = self.set_timer(AUTOSAVE_SECONDS, self.action_save_now)
@@ -67,6 +97,7 @@ class NotesScreen(ModeScreen):
         text = self.query_one("#notes-text", TextArea).text
         ok = save_notes(text, self.path)
         self.dirty = not ok
-        self.query_one("#notes-status", Static).update(self._status(
-            f"{self.path.name} · {'salvo' if ok else 'ERRO ao salvar (veja o log)'} · {len(text)} caracteres"
-        ))
+        self.save_failed = not ok
+        if ok:
+            self.saved_at = clock.now()
+        self.refresh_status()

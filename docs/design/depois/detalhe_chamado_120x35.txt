@@ -1,35 +1,35 @@
  ▍CMD ALL-IN-ONE  Dashboard                              ● ● ●                                      Guilherme  08:14:20 
-     ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────╮     
-  ▍✉ │                                                                                                            │27s  
-     │  #4821  Backup noturno não executa desde sexta                                                             │     
-  ╶╮ │  Status: Em atendimento   Etapa: Atendimento   Prioridade: Alta   Urgência: Alta                           │     
-   │ │  Solicitante: Hércules Andrade   Técnico: Guilherme   Local: Câmara de Tatuí                               │     
-  ╶┴╴│  Categoria: Servidores / Backup   Departamento: TI   Tipo: Incidente                                       │     
-    i│  Abertura: 16/09/2026 05:14   Horas: 1,5000                                                                │     
-     │  ────────────────────────────────────────────────────────────────────────────────────────────────────────  │     
-   Fu│                                                                                                            │     
-   Er│  SLA: 16/09/2026 09:56  ·  faltam 01h41                                                                    │5    
-   Bo│                                                                                                            │     
-     │  Descrição                                                                                                 │     
-   ▍0│  O job de backup noturno (Veeam) não roda desde sexta-feira. O log mostra "Unable to connect to            │     
-    0│  repository". O repositório é o NAS da sala do servidor; ping responde, mas o compartilhamento SMB não     │     
-    0│  abre.                                                                                                     │  ▁  
-    0│                                                                                                            │     
-    o│  Comunicações                                                                                              │     
-    o│                                                                                                            │     
-    1│  16/09/2026 05:14:00  Hércules Andrade                                                                     │     
-     │  Abri o chamado; segue print do erro em anexo.                                                             │     
-   ◉ │                                                                                                            │ 1s  
-     │  16/09/2026 06:14:20  Guilherme                                                                            │     
-    ●│  Verificando credenciais do serviço no NAS. Retorno até as 16h.                                            │     
-    ○│                                                                                                            │     
-    ○│  16/09/2026 07:49:20  Hércules Andrade                                                                     │     
-     │  Ok, aguardo.                                                                                              │     
-     │                                                                                                            │     
-     │  Esc voltar  r recarregar  o abrir no navegador  y copiar ID                                               │     
-     │                                                                                                            │     
-     │                                                                                                            │     
-     │                                                                                                            │     
-     ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯     
+          ╭──────────────────────────────────────────────────────────────────────────────────────────────────╮          
+  ▍✉ E-MAI│  #4821  Backup noturno não executa desde sexta                                                   │· há 27s  
+          │  ──────────────────────────────────────────────────────────────────────────────────────────────  │          
+  ╶╮ ╷ ╷╶─│                                                                                                  │          
+   │ ╰─┤┌─│    status        Em atendimento       solicitante  Hércules Andrade                              │          
+  ╶┴╴  ╵╰─│    etapa         Atendimento          técnico      Guilherme                                     │          
+    inbox │    prioridade    Alta  urgência Alta  local        Câmara de Tatuí                               │          
+          │    categoria     Servidores / Backup  abertura     16/09/2026 05:14                              │          
+   Fulano │    departamento  TI                   tipo         Incidente                                     │o 1       
+   Erro ao│    horas         1,5000                                                                          │ 01h05    
+   Bom dia│                                                                                                  │          
+          │    SLA: 16/09/2026 09:56  ▮▮▮▯  faltam 01h41                                                     │1h05      
+   ▍07:33 │                                                                                                  │h41       
+    07:02 │    Descrição                                                                                     │h59       
+    05:14 │    O job de backup noturno (Veeam) não roda desde sexta-feira. O log mostra "Unable to           │h59    ▁  
+    03:14 │    connect to repository". O repositório é o NAS da sala do servidor; ping responde, mas o       │h59       
+    ontem │    compartilhamento SMB não abre.                                                                │ 01h      
+    ontem │                                                                                                  │ 23h      
+    14/09 │    Comunicações                                                                                  │          
+          │                                                                                                  │          
+   ◉ CHATP│    16/09/2026 05:14  Hércules Andrade                                                            │ · há 1s  
+          │    Abri o chamado; segue print do erro em anexo.                                                 │          
+    ●  08:│                                                                                                  │r  1      
+    ○  08:│    16/09/2026 06:14  Guilherme                                                                   │d         
+    ○  07:│    Verificando credenciais do serviço no NAS. Retorno até as 16h.                                │          
+          │                                                                                                  │          
+          │    16/09/2026 07:49  Hércules Andrade                                                            │          
+          │    Ok, aguardo.                                                                                  │          
+          │                                                                                                  │          
+          │                                                                                                  │          
+          ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯          
+                                                                                                                        
   4 com outros técnicos · 6 não lidas na aba                                                                            
- ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  m silêncio  T tema  : launcher  ? ajuda       
+ Esc voltar  r recarregar  o navegador  y copiar ID                                                                     

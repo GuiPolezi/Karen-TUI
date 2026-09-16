@@ -163,12 +163,15 @@ class BasePanel(Vertical):
                 yield DigitBlock(key, label)
         yield Static("", classes="panel-summary")
         yield Static("", classes="panel-extra")
-        yield Input(placeholder="filtrar… (Esc limpa)", classes="panel-filter")
+        with Horizontal(classes="panel-filter-row"):
+            yield Static("", classes="panel-filter-icon")
+            yield Input(placeholder="filtrar… (Esc limpa)", classes="panel-filter")
         yield KeyedTable(self._columns_for_width(), classes="panel-table", show_header=self.full)
         yield Static("", classes="panel-foot")
 
     def on_mount(self) -> None:
-        self.query_one(".panel-filter", Input).display = False
+        self.query_one(".panel-filter-row").display = False
+        self.query_one(".panel-filter-icon", Static).update(Text(self.icons.search, style=self.style("accent")))
         self._narrow = self._is_narrow()
         self._digits = None  # type: ignore[assignment]  # força _apply_layout a decidir
         self._apply_layout()
@@ -582,14 +585,13 @@ class BasePanel(Vertical):
             self._render_rows()
 
     def action_filter(self) -> None:
-        box = self.query_one(".panel-filter", Input)
-        box.display = True
-        box.focus()
+        self.query_one(".panel-filter-row").display = True
+        self.query_one(".panel-filter", Input).focus()
 
     def clear_filter(self) -> None:
         box = self.query_one(".panel-filter", Input)
         box.value = ""
-        box.display = False
+        self.query_one(".panel-filter-row").display = False
         self._filter = ""
         if self.state is not None:
             self._render_rows()

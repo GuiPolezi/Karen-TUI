@@ -6,7 +6,7 @@ from __future__ import annotations
 from textual.app import ComposeResult
 from textual.screen import Screen
 
-from app.tui.widgets.footer_bar import FooterBar, FooterItem
+from app.tui.widgets.footer_bar import FooterBar, FooterItem, format_items
 from app.tui.widgets.top_bar import TopBar
 
 # atalhos comuns a todas as telas de modo; `{nome}` é substituído pelo ícone do conjunto
@@ -34,9 +34,7 @@ class ModeScreen(Screen):
     # --- rodapé ---------------------------------------------------------------------
 
     def footer_items(self) -> list[FooterItem]:
-        icons = self.app.icons  # type: ignore[attr-defined]
-        fields = {name: getattr(icons, name) for name in dir(icons) if not name.startswith("_")}
-        return [(key.format(**fields), label) for key, label in [*self.FOOTER, *COMMON_FOOTER]]
+        return format_items([*self.FOOTER, *COMMON_FOOTER], self.app.icons)  # type: ignore[attr-defined]
 
     def refresh_footer(self) -> None:
         for footer in self.query(FooterBar):

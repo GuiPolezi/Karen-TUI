@@ -1,4 +1,5 @@
-"""Launcher (`:`): uma linha de comando dentro da TUI, com histórico (↑/↓) e ajuda (`?`)."""
+"""Launcher (`:`): uma linha na base da tela, acima do rodapé, com prompt `:` em accent,
+sugestões de comando conforme se digita (máximo 5), histórico (↑/↓) e ajuda (`?`)."""
 
 from __future__ import annotations
 
@@ -12,7 +13,34 @@ from textual.widgets import Input, Static
 
 from app.tui.launcher import HELP_LINES
 
-HINT = "Enter executa · ↑/↓ histórico · Esc fecha · help lista os comandos"
+HINT = "Enter executa · ↑↓ histórico · Esc fecha · help lista os comandos"
+MAX_SUGGESTIONS = 5
+
+# (comando como se digita, descrição curta) para as sugestões
+COMMANDS: list[tuple[str, str]] = [
+    ("g termo", "pesquisa no Google"), ("ddg termo", "pesquisa no DuckDuckGo"), ("yt termo", "pesquisa no YouTube"),
+    ("md 1234", "detalhe do chamado na TUI"), ("md! 1234", "Milldesk no navegador + copia o ID"),
+    ("mdweb", "abre o Milldesk no navegador"), ("mail", "abre o webmail"), ("cp", "abre o ChatPanel"),
+    ("wa 5511999999999", "abre wa.me com o número"), ("open url", "abre uma URL"),
+    ("fav nome", "abre um favorito"), ("fav add nome url", "salva um favorito"), ("fav rm nome", "remove um favorito"),
+    ("fav", "lista os favoritos"), ("email", "tela E-mail"), ("tickets", "tela Milldesk"), ("chats", "tela ChatPanel"),
+    ("log", "tela Log"), ("notes", "tela Notas"), ("dash", "Dashboard"),
+    ("refresh", "atualiza tudo"), ("refresh md", "atualiza uma fonte (md · email · cp)"),
+    ("theme", "lista os temas"), ("theme nome", "aplica um tema"), ("theme next", "próximo tema"),
+    ("theme preview", "tela de preview dos temas (F9)"), ("theme export wt", "esquema para o Windows Terminal"),
+    ("help", "lista completa dos comandos"),
+]
+
+
+def suggest(text: str, limit: int = MAX_SUGGESTIONS) -> list[tuple[str, str]]:
+    """Comandos cujo início casa com o que foi digitado (primeira palavra ou texto todo)."""
+    typed = text.strip().lower()
+    if not typed:
+        return []
+    head = typed.split(" ")[0]
+    matches = [(cmd, desc) for cmd, desc in COMMANDS
+               if cmd.lower().startswith(typed) or cmd.split(" ")[0].lower().startswith(head)]
+    return matches[:limit]
 
 
 class LauncherScreen(ModalScreen[None]):
@@ -28,19 +56,41 @@ class LauncherScreen(ModalScreen[None]):
         self._cursor = len(self.history)  # posição no histórico; len = linha nova
         self._draft = ""
 
+    @property
+    def tokens(self):  # noqa: ANN201
+        return self.app.tokens  # type: ignore[attr-defined]
+
     def compose(self) -> ComposeResult:
-        tokens = self.app.tokens  # type: ignore[attr-defined]
         with Vertical(id="launcher"):
-            yield Input(placeholder="comando… (ex.: g erro 500 · md 1234 · tickets)", id="launcher-input")
-            yield Static(Text(HINT, style=tokens.rich("text-faint")), id="launcher-hint")
+            yield Static(Text(HINT, style=self.tokens.rich("text-faint")), id="launcher-hint")
+            yield Static("", id="launcher-suggestions")
+            with Horizontal(id="launcher-line"):
+                yield Static(Text(":", style=self.tokens.rich("accent", bold=True)), id="launcher-prompt")
+                yield Input(placeholder="comando… (g termo · md 1234 · tickets · theme)", id="launcher-input")
 
     def on_mount(self) -> None:
+        self.query_one("#launcher-suggestions", Static).display = False
         self.query_one("#launcher-input", Input).focus()
 
     def set_message(self, message: str, error: bool = False) -> None:
-        tokens = self.app.tokens  # type: ignore[attr-defined]
-        style = tokens.rich("danger", bold=True) if error else tokens.rich("ok")
+        style = self.tokens.rich("danger", bold=True) if error else self.tokens.rich("ok")
         self.query_one("#launcher-hint", Static).update(Text(message, style=style))
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        tokens = self.tokens
+        matches = suggest(event.value)
+        box = self.query_one("#launcher-suggestions", Static)
+        if not matches:
+            box.display = False
+            return
+        text = Text()
+        for index, (command, description) in enumerate(matches):
+            if index:
+                text.append("\n")
+            text.append(f"  {command}", style=tokens.rich("text"))
+            text.append(f"  {description}", style=tokens.rich("text-muted"))
+        box.update(text)
+        box.display = True
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         # o App fecha este modal antes de executar ações que trocam de tela
@@ -64,22 +114,39 @@ class HelpScreen(ModalScreen[None]):
         Binding("question_mark", "dismiss", "Fechar", show=False),
     ]
 
-    SHORTCUTS = [
-        ("F1 / d", "Dashboard"), ("F2", "E-mail (u: só não lidos)"), ("F3", "Milldesk (s: ordenar)"),
-        ("F4", "ChatPanel (t: com outros)"), ("F5 / l", "Log (f: filtro de nível)"), ("F6", "Notas"),
-        ("F7", "Eventos do dia (x: limpar tela)"), ("F8", "Saúde das fontes"),
-        ("↑ ↓ j k PgUp PgDn", "mover o cursor"), ("Enter", "abrir o item"), ("Esc", "voltar / limpar filtro"),
-        ("Tab", "trocar painel"), ("/", "filtrar a lista"), ("o", "abrir no navegador"), ("y", "copiar"),
-        ("e", "último e-mail"), ("r · 1 2 3", "atualizar"), ("c", "login ChatPanel"),
-        ("m", "silêncio 30 min"), ("T", "próximo tema"), (":", "launcher"), ("?", "esta ajuda"), ("q", "sair"),
+    GROUPS: list[tuple[str, list[tuple[str, str]]]] = [
+        ("Telas", [
+            ("F1 / d", "Dashboard"), ("F2", "E-mail"), ("F3", "Milldesk"), ("F4", "ChatPanel"),
+            ("F5 / l", "Log"), ("F6", "Notas"), ("F7", "Eventos do dia"), ("F8", "Saúde das fontes"),
+            ("F9", "Temas"), ("Esc", "voltar ao Dashboard"),
+        ]),
+        ("Geral", [
+            ("e", "último e-mail"), ("r · 1 2 3", "atualizar tudo · uma fonte"), ("c", "login ChatPanel"),
+            ("m", "silêncio 30 min"), ("T", "próximo tema"), (":", "launcher"), ("?", "esta ajuda"), ("q", "sair"),
+        ]),
+        ("Listas", [
+            ("↑ ↓ j k PgUp PgDn", "mover o cursor"), ("Enter", "abrir o item"), ("Tab", "trocar painel"),
+            ("/", "filtrar (Esc limpa)"), ("o", "abrir no navegador"), ("y", "copiar"),
+            ("u", "E-mail: só não lidos"), ("s", "Milldesk: ordenar"), ("t", "ChatPanel: com outros"),
+            ("f", "Log: filtro de nível"), ("x", "Eventos: limpar tela"),
+        ]),
+        ("Detalhes", [
+            ("Esc", "voltar"), ("r", "recarregar"), ("o", "abrir no navegador"), ("y", "copiar ID · número · remetente"),
+        ]),
     ]
 
     def compose(self) -> ComposeResult:
+        tokens = self.app.tokens  # type: ignore[attr-defined]
         with VerticalScroll(id="help"):
             with Horizontal(id="help-columns"):
-                yield Static(self._table("Atalhos", self.SHORTCUTS), id="help-keys")
-                yield Static(self._table("Launcher (:)", HELP_LINES), id="help-commands")
-            yield Static(Text("Esc fecha", style=self.app.tokens.rich("text-faint")), id="help-footer")  # type: ignore[attr-defined]
+                with Vertical(id="help-keys"):
+                    for title, rows in self.GROUPS[:2]:
+                        yield Static(self._table(title, rows), classes="help-group")
+                with Vertical(id="help-commands"):
+                    for title, rows in self.GROUPS[2:]:
+                        yield Static(self._table(title, rows), classes="help-group")
+            yield Static(self._table("Launcher (:)", HELP_LINES), classes="help-group", id="help-launcher")
+            yield Static(Text("Esc fecha", style=tokens.rich("text-faint")), id="help-footer")
 
     def _table(self, title: str, rows: list[tuple[str, str]]) -> Table:
         tokens = self.app.tokens  # type: ignore[attr-defined]

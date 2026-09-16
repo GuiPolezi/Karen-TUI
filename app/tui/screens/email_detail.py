@@ -5,15 +5,16 @@ from __future__ import annotations
 from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import VerticalScroll
-from textual.screen import ModalScreen
 from textual.widgets import Static
 
 from app.state import LatestEmail
+from app.tui.screens.detail import DetailScreen, label_value_grid
 from app.tui.widgets.email_panel import format_email_date
 
 
-class EmailDetailScreen(ModalScreen[None]):
+class EmailDetailScreen(DetailScreen):
+    PREFIX = "email-detail"
+    FOOTER = [("{key_escape}", "voltar"), ("y", "copiar remetente")]
     BINDINGS = [
         Binding("escape", "dismiss", "Voltar"),
         Binding("e", "dismiss", "Voltar"),
@@ -26,41 +27,37 @@ class EmailDetailScreen(ModalScreen[None]):
         self.latest = latest
         self.loading_uid = loading_uid
 
-    @property
-    def tokens(self):  # noqa: ANN201
-        return self.app.tokens  # type: ignore[attr-defined]
+    def body_widgets(self) -> ComposeResult:
+        yield Static("", id="email-detail-text", classes="detail-text")
 
-    def compose(self) -> ComposeResult:
-        with VerticalScroll(id="email-detail"):
-            yield Static(self._header(), id="email-detail-header")
-            yield Static(self._body_text(), id="email-detail-body")
-            yield Static(Text("Esc voltar  y copiar remetente", style=self.tokens.rich("text-faint")),
-                         id="email-detail-footer")
+    def on_mount(self) -> None:
+        self.refresh_content()
+
+    def refresh_content(self) -> None:
+        self.query_one("#email-detail-header", Static).update(self._header())
+        self.query_one("#email-detail-text", Static).update(self._body_text())
+        self.set_busy(self.latest is None)
 
     def show(self, latest: LatestEmail) -> None:
-        """Preenche a tela quando o corpo chega (abriu com 'carregando…')."""
+        """Preenche a tela quando o corpo chega (abriu com o indicador de carga)."""
         self.latest = latest
-        if not self.query("#email-detail-header"):
-            return  # ainda não compôs: compose() já usa self.latest
-        self.query_one("#email-detail-header", Static).update(self._header())
-        self.query_one("#email-detail-body", Static).update(self._body_text())
+        if self.query("#email-detail-header"):
+            self.refresh_content()
 
-    def _header(self) -> Text:
-        label = self.tokens.rich("text-faint")
-        header = Text()
+    def _header(self):  # noqa: ANN202 — Table ou Text
+        tokens = self.tokens
         if self.latest is None:
-            header.append("carregando e-mail…", style=self.tokens.rich("text-muted"))
-            return header
+            return Text(f"carregando e-mail {self.loading_uid or ''}…", style=tokens.rich("text-muted"))
         latest = self.latest
         sender = latest.from_name or latest.from_addr
         if latest.from_name and latest.from_addr:
             sender = f"{latest.from_name} <{latest.from_addr}>"
         when = latest.date.strftime("%d/%m/%Y %H:%M") if latest.date else "--"
-        header.append("De:      ", style=label).append(sender + "\n", style=self.tokens.rich("text"))
-        header.append("Assunto: ", style=label).append(latest.subject + "\n", style=self.tokens.rich("text", bold=True))
-        header.append("Data:    ", style=label).append(f"{when}  ({format_email_date(latest.date)})",
-                                                        style=self.tokens.rich("text-muted"))
-        return header
+        return label_value_grid([
+            ("de", sender),
+            ("assunto", Text(latest.subject, style=tokens.rich("text", bold=True))),
+            ("data", Text(f"{when}  {self.icons.sep} {format_email_date(latest.date)}", style=tokens.rich("text-muted"))),
+        ], tokens, columns=1)
 
     def _body_text(self) -> Text:
         if self.latest is None:

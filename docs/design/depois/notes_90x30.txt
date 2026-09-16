@@ -1,30 +1,30 @@
  ▍CMD ALL-IN-ONE  Notas                   ● ● ●                       Guilherme  08:14:20 
- notes.md · salva sozinho 1 s após parar de digitar                                       
- ▊▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▎ 
- ▊ # Hoje                                                                               ▎ 
- ▊                                                                                      ▎ 
- ▊ - [ ] ligar para Diego (PM Iaras) sobre a porta 21                                   ▎ 
- ▊ - [x] renovar certificado CM Tatuí                                                   ▎ 
- ▊ - [ ] #4821 backup: testar credencial do serviço no NAS                              ▎ 
- ▊                                                                                      ▎ 
- ▊ ## Senhas temporárias                                                                ▎ 
- ▊ (nunca aqui — usar o cofre)                                                          ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊                                                                                      ▎ 
- ▊▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▎ 
+                                                                                          
+  notes.md · salva sozinho 1 s após parar de digitar · 8 linhas                           
+                                                                                          
+  # Hoje                                                                                  
+                                                                                          
+  - [ ] ligar para Diego (PM Iaras) sobre a porta 21                                      
+  - [x] renovar certificado CM Tatuí                                                      
+  - [ ] #4821 backup: testar credencial do serviço no NAS                                 
+                                                                                          
+  ## Senhas temporárias                                                                   
+  (nunca aqui — usar o cofre)                                                             
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
+                                                                                          
  ^s salvar agora  Esc dashboard  : launcher  ? ajuda                                      

@@ -1,30 +1,30 @@
  ▍CMD ALL-IN-ONE  Dashboard               ● ● ●                       Guilherme  08:14:20 
-  ▍✉╭────────────────────────────────────────────────────────────────────────────────╮6s  
-  14│                                                                                │    
-    │  #4821  Backup noturno não executa desde sexta                                 │    
-   F│  Status: Em atendimento   Etapa: Atendimento   Prioridade: Alta   Urgência:    │    
-   E│  Alta                                                                          │    
-   B│  Solicitante: Hércules Andrade   Técnico: Guilherme   Local: Câmara de         │g…  
-    │  Tatuí                                                                         │    
-   ▍│  Categoria: Servidores / Backup   Departamento: TI   Tipo: Incidente           │    
-    │  Abertura: 16/09/2026 05:14   Horas: 1,5000                                    │ ▅  
-    │  ──────────────────────────────────────────────────────────────────────────    │    
-  +4│                                                                                │    
-   ▣│  SLA: 16/09/2026 09:56  ·  faltam 01h41                                        │7s  
-  13│                                                                                │    
-    │  Descrição                                                                     │    
-  Em│  O job de backup noturno (Veeam) não roda desde sexta-feira. O log mostra      │    
-  SL│  "Unable to connect to repository". O repositório é o NAS da sala do           │    
-    │  servidor; ping responde, mas o compartilhamento SMB não abre.                 │    
-    │                                                                                │    
-    │  Comunicações                                                                  │ ▆  
-   ▎│                                                                                │    
-    │  16/09/2026 05:14:00  Hércules Andrade                                         │    
-  +9│  Abri o chamado; segue print do erro em anexo.                                 │    
-    │                                                                                │    
-   ◉│  16/09/2026 06:14:20  Guilherme                                                │1s  
-    │  Verificando credenciais do serviço no NAS. Retorno até as 16h.                │    
-    │                                                                                │    
-    ╰────────────────────────────────────────────────────────────────────────────────╯ ▅  
+  ╭────────────────────────────────────────────────────────────────────────────────────╮  
+  │  #4821  Backup noturno não executa desde sexta                                     │  
+  │  ────────────────────────────────────────────────────────────────────────────────  │  
+  │                                                                                    │  
+  │    status        Em atendimento       solicitante  Hércules Andrade                │  
+  │    etapa         Atendimento          técnico      Guilherme                       │  
+  │    prioridade    Alta  urgência Alta  local        Câmara de Tatuí                 │  
+  │    categoria     Servidores / Backup  abertura     16/09/2026 05:14                │  
+  │    departamento  TI                   tipo         Incidente                       │  
+  │    horas         1,5000                                                            │  
+  │                                                                                    │  
+  │    SLA: 16/09/2026 09:56  ▮▮▮▯  faltam 01h41                                       │  
+  │                                                                                    │  
+  │    Descrição                                                                       │  
+  │    O job de backup noturno (Veeam) não roda desde sexta-feira. O log mostra        │  
+  │    "Unable to connect to repository". O repositório é o NAS da sala do             │  
+  │    servidor; ping responde, mas o compartilhamento SMB não abre.                   │  
+  │                                                                                    │  
+  │    Comunicações                                                                    │  
+  │                                                                                    │  
+  │    16/09/2026 05:14  Hércules Andrade                                              │  
+  │    Abri o chamado; segue print do erro em anexo.                              ▂    │  
+  │                                                                                    │  
+  │    16/09/2026 06:14  Guilherme                                                     │  
+  │    Verificando credenciais do serviço no NAS. Retorno até as 16h.                  │  
+  ╰────────────────────────────────────────────────────────────────────────────────────╯  
+    ○  08:07  Hércules · CM Tatuí   Fabio: Hércules, consegue me mandar o print d      ▅  
   +1 · F4   ·   4 com outros técnicos · 6 não lidas na aba                                
- ↑↓ mover  ⏎ abrir  ⇥ painel  / filtrar  o navegador  y copiar  e e-mail  ? ajuda         
+ Esc voltar  r recarregar  o navegador  y copiar ID                                       

@@ -1,35 +1,35 @@
  ▍CMD ALL-IN-ONE  Log                                    ● ● ●                                      Guilherme  08:14:20 
- app.log · últimas 300 linhas · filtro: TODOS · 11 linhas                                                               
- ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮ 
- │2026-09-16 07:44:20 INFO app: CMD ALL-IN-ONE iniciado (textual 8.2.8)                                               │ 
- │2026-09-16 07:44:20 INFO source.email: conectado a imap.example.com:143 (STARTTLS, readonly)                        │ 
- │2026-09-16 07:45:20 INFO source.milldesk: ticketsByStatus: 37 abertos, 12 no meu nome                               │ 
- │2026-09-16 07:45:20 INFO source.chatpanel: sessão restaurada de session.bin (User CMD)                              │ 
- │2026-09-16 08:02:20 INFO tui: aumentou em Milldesk: abertos                                                         │ 
- │2026-09-16 08:02:20 INFO tui: evento: chamado #4831 entrou: Impressora fiscal não imprime cupom                     │ 
- │2026-09-16 08:06:20 WARNING source.milldesk: tentativa 1 falhou: timeout                                            │ 
- │2026-09-16 08:06:20 INFO source.milldesk: tentativa 2 ok (2,1 s)                                                    │ 
- │2026-09-16 08:09:20 INFO tui: evento: Diego Leone · PM Iaras: 1 nova mensagem                                       │ 
- │2026-09-16 08:11:20 INFO tui: aumentou em e-mail: não lidos                                                         │ 
- │2026-09-16 08:14:20 INFO source.email: 142 na caixa, 7 não lidos, 3 spam                                            │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- │                                                                                                                    │ 
- ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ 
+                                                                                                                        
+  app.log · últimas 300 linhas · filtro: TODOS · 11 linhas                                                              
+                                                                                                                        
+  2026-09-16 07:44:20 INFO app: CMD ALL-IN-ONE iniciado (textual 8.2.8)                                                 
+  2026-09-16 07:44:20 INFO source.email: conectado a imap.example.com:143 (STARTTLS, readonly)                          
+  2026-09-16 07:45:20 INFO source.milldesk: ticketsByStatus: 37 abertos, 12 no meu nome                                 
+  2026-09-16 07:45:20 INFO source.chatpanel: sessão restaurada de session.bin (User CMD)                                
+  2026-09-16 08:02:20 INFO tui: aumentou em Milldesk: abertos                                                           
+  2026-09-16 08:02:20 INFO tui: evento: chamado #4831 entrou: Impressora fiscal não imprime cupom                       
+  2026-09-16 08:06:20 WARNING source.milldesk: tentativa 1 falhou: timeout                                              
+  2026-09-16 08:06:20 INFO source.milldesk: tentativa 2 ok (2,1 s)                                                      
+  2026-09-16 08:09:20 INFO tui: evento: Diego Leone · PM Iaras: 1 nova mensagem                                         
+  2026-09-16 08:11:20 INFO tui: aumentou em e-mail: não lidos                                                           
+  2026-09-16 08:14:20 INFO source.email: 142 na caixa, 7 não lidos, 3 spam                                              
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
  ↑↓ rolar  f filtro de nível  End fim  : launcher  ? ajuda                                                              

@@ -204,7 +204,7 @@ def download_installer(status: UpdateStatus, dest_dir: Path | None = None,
 # a TUI fecha, ele instala em silêncio (o Restart Manager encerra o que sobrar) e reabre.
 UPDATE_SCRIPT = """@echo off
 rem Gerado pelo CMD ALL-IN-ONE para instalar a atualizacao com a TUI fechada.
-"{installer}" /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS
+"{installer}" /SILENT /SUPPRESSMSGBOXES /NORESTART /FORCECLOSEAPPLICATIONS /RESTARTAPPLICATIONS
 {relaunch}
 del "%~f0"
 """
@@ -237,7 +237,9 @@ def write_update_script(installer: Path, dest_dir: Path | None = None,
 def run_installer(installer: Path, dest_dir: Path | None = None) -> Path:
     """Dispara o script de atualização; quem chama deve fechar a TUI em seguida."""
     script = write_update_script(installer, dest_dir)
-    flags = (CREATE_NO_WINDOW | DETACHED_PROCESS) if sys.platform == "win32" else 0
+    # DETACHED_PROCESS sozinho: o script sobrevive ao fim da TUI e não pisca janela nenhuma
+    # (combinar com CREATE_NO_WINDOW não é documentado e pode falhar)
+    flags = DETACHED_PROCESS if sys.platform == "win32" else 0
     subprocess.Popen(["cmd", "/c", str(script)], creationflags=flags, close_fds=True)
     log.info("atualização disparada: %s", script)
     return script

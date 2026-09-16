@@ -10,7 +10,7 @@
 ;
 ; Compilar:  iscc /DAppVersion=0.1.0 packaging\instalador.iss
 ; A atualização automática chama este instalador com
-;   /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS
+;   /SILENT /SUPPRESSMSGBOXES /NORESTART /FORCECLOSEAPPLICATIONS /RESTARTAPPLICATIONS
 
 #ifndef AppVersion
   #define AppVersion "0.0.0"

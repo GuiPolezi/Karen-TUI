@@ -256,7 +256,7 @@ def test_script_de_atualizacao_instala_em_silencio_e_reabre(tmp_path):
     script = write_update_script(tmp_path / "Setup.exe", dest_dir=tmp_path, relaunch='start "" "tui.exe"')
     texto = script.read_text(encoding="utf-8")
     assert script.suffix == ".cmd"
-    assert "Setup.exe" in texto and "/SILENT" in texto and "/CLOSEAPPLICATIONS" in texto
+    assert "Setup.exe" in texto and "/SILENT" in texto and "/FORCECLOSEAPPLICATIONS" in texto
     assert 'start "" "tui.exe"' in texto
     assert "del " in texto  # o script se apaga no fim
 

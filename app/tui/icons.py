@@ -36,6 +36,7 @@ class IconSet:
     bar_off: str     # barra de SLA vazia
     mute: str        # silêncio (TopBar)
     login: str       # janela de login aberta (TopBar)
+    update: str      # atualização disponível no GitHub (TopBar)
     sep: str         # separador "·"
     arrow: str       # "Tag › Depto"
     key_up_down: str
@@ -48,19 +49,19 @@ class IconSet:
 NERD = IconSet(
     mode="nerd", email="", ticket="", chat="", online="", offline="",
     change="▎", focus="▍", error="✗", warn="!", ok="✓", empty="–", search="⌕", sla="▸", more="…",
-    bar_on="▮", bar_off="▯", mute="", login="", sep="·", arrow="›",
+    bar_on="▮", bar_off="▯", mute="", login="", update="", sep="·", arrow="›",
     key_up_down="↑↓", key_enter="⏎", key_tab="⇥", key_escape="Esc", spinner=SPINNER_BRAILLE,
 )
 UNICODE = IconSet(
     mode="unicode", email="✉", ticket="▣", chat="◉", online="●", offline="○",
     change="▎", focus="▍", error="✗", warn="!", ok="✓", empty="–", search="⌕", sla="▸", more="…",
-    bar_on="▮", bar_off="▯", mute="◌", login="⟳", sep="·", arrow="›",
+    bar_on="▮", bar_off="▯", mute="◌", login="⟳", update="⇡", sep="·", arrow="›",
     key_up_down="↑↓", key_enter="⏎", key_tab="⇥", key_escape="Esc", spinner=SPINNER_BRAILLE,
 )
 ASCII = IconSet(
     mode="ascii", email="@", ticket="#", chat="*", online="o", offline=".",
     change=">", focus="|", error="x", warn="!", ok="+", empty="-", search="?", sla=">", more="...",
-    bar_on="#", bar_off="-", mute="M", login="L", sep=".", arrow=">",
+    bar_on="#", bar_off="-", mute="M", login="L", update="^", sep=".", arrow=">",
     key_up_down="^v", key_enter="Enter", key_tab="Tab", key_escape="Esc", spinner=SPINNER_ASCII,
 )
 

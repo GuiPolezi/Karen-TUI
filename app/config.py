@@ -100,6 +100,7 @@ class Settings:
     theme: str = "carbon"      # THEME: tema padrão (prefs.json tem prioridade)
     icons: str = "auto"        # ICONS: nerd | unicode | ascii | auto
     sla_blink: bool = True     # SLA_BLINK: SLA < 30 min pisca
+    update_check: bool = True  # UPDATE_CHECK: ao abrir, git fetch e aviso se há commits novos
 
 
 class _Env:
@@ -192,6 +193,7 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
     theme = env.str("THEME", "carbon") or "carbon"
     icons = env.str("ICONS", "auto").lower() or "auto"
     sla_blink = env.bool("SLA_BLINK", True)
+    update_check = env.bool("UPDATE_CHECK", True)
     urls = UrlSettings(
         webmail=env.str("WEBMAIL_URL", "", required=False),
         milldesk=env.str("MILLDESK_WEB_URL", "", required=False),
@@ -242,4 +244,5 @@ def load_settings(env_path: Path = ENV_PATH) -> Settings:
         theme=theme,
         icons=icons,
         sla_blink=sla_blink,
+        update_check=update_check,
     )

@@ -77,6 +77,32 @@ Regras de validação:
 python -m app
 ```
 
+### Atalho na área de trabalho e atualização automática
+
+Dois cliques em `iniciar.cmd` (ou no atalho) abrem a TUI no **Windows Terminal**: o script
+faz `git fetch` (limite de 20 s) e `git pull --ff-only` se houver commits novos no GitHub,
+reinstala as dependências se o `pyproject.toml` mudou e só então roda `python -m app`.
+Sem internet, sem Git ou com alterações locais, ele avisa e abre a versão que já está na
+máquina. `ATUALIZAR=0` no ambiente pula a atualização.
+
+Para criar o atalho (uma vez):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\criar_atalho.ps1
+# com um perfil específico do Windows Terminal (o que tem o esquema de cores e a fonte):
+powershell -ExecutionPolicy Bypass -File scripts\criar_atalho.ps1 -Perfil "Windows PowerShell"
+```
+
+Dentro da TUI, ao abrir, um `git fetch` em segundo plano compara a versão local com o
+GitHub (nunca pede senha; sem credencial salva só registra no log). Se houver commits
+novos, aparece `⇡ N` na barra superior, um aviso, e a linha "Atualização" no `F8`.
+`UPDATE_CHECK=false` no `.env` desliga. Quem atualiza de fato é o `iniciar.cmd` na
+próxima abertura.
+
+Pré-requisito para atualizar sozinho: o Git precisa conseguir acessar o repositório sem
+perguntar nada (repositório público, ou credencial salva no Git Credential Manager pelo
+primeiro `git pull` feito à mão).
+
 ### Telas e atalhos
 
 A TUI tem nove telas; os workers de coleta continuam rodando em qualquer uma delas, e a

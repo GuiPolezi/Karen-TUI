@@ -27,6 +27,7 @@ from app.events import EventLog, diff_states
 from app.prefs import PREFS_PATH, Prefs, load_prefs, save_prefs
 from app.sources.base import Source, SourceError
 from app.tui.icons import IconSet, is_legacy_console, resolve_icons
+from app.update import UpdateStatus, check_updates
 from app.tui.launcher import Action, parse_command
 from app.tui.themes import (
     CARBON,
@@ -150,6 +151,9 @@ class CmdAllInOneApp(App[None]):
         user_themes = load_user_themes() if prefs_path is not None else {}  # testes não leem themes/
         self.token_sets: dict[str, Tokens] = register_themes(self, user_themes, legacy_console=self.legacy_console)
         self._initial_theme = resolve_theme_name(self.prefs.theme or settings.theme, self.token_sets)
+        # atualização: git fetch em thread ao abrir (só com prefs em disco = execução real, não testes)
+        self.update_status = UpdateStatus()
+        self._update_enabled = bool(settings.update_check and prefs_path is not None)
 
     # --- ciclo de vida --------------------------------------------------------
 
@@ -160,6 +164,24 @@ class CmdAllInOneApp(App[None]):
         self.switch_mode(mode)
         for name, source in self._sources.items():
             self._start_source(name, source)
+        if self._update_enabled:
+            self.run_worker(self._check_updates, name="update-check", thread=True, exit_on_error=False)
+
+    # --- atualização -------------------------------------------------------------
+
+    def _check_updates(self) -> None:
+        """Roda numa thread: git fetch pode levar segundos e não pode travar a TUI."""
+        status = check_updates()
+        self.call_from_thread(self.apply_update_status, status)
+
+    def apply_update_status(self, status: UpdateStatus) -> None:
+        self.update_status = status
+        if status.error:
+            log.info("atualização: %s", status.summary())
+        elif status.available:
+            log.info("atualização disponível: %s", status.summary())
+            self.notify(f"atualização disponível: {status.behind} commit(s) novos. Feche (q) e abra pelo atalho.",
+                        timeout=10)
 
     # --- aparência ----------------------------------------------------------------
 
@@ -260,6 +282,8 @@ class CmdAllInOneApp(App[None]):
     def topbar_extras(self) -> list[tuple[str, str]]:
         """Estados transitórios mostrados à direita da TopBar: (texto, token de cor)."""
         extras: list[tuple[str, str]] = []
+        if self.update_status.available:
+            extras.append((f"{self.icons.update} {self.update_status.behind}", "accent"))
         if self._login_in_progress:
             extras.append((f"{self.icons.login} login", "accent"))
         if self.silenced:
@@ -463,6 +487,7 @@ class CmdAllInOneApp(App[None]):
             "events_today": len(self.event_log.events),
             "latency": {name: list(values) for name, values in self.latency.items()},
             "terminal": self.terminal_info(),
+            "update": self.update_status.summary() if self._update_enabled else "verificação desligada (UPDATE_CHECK=false)",
             "versions": versions,
             "uptime": f"{uptime // 3600}h{(uptime % 3600) // 60:02d}min",
         }

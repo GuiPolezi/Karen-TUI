@@ -17,3 +17,6 @@ build/
 dist/
 .pytest_cache/
 .ruff_cache/
+
+# perfil falso usado pelos testes (session.bin gerado em tempo de teste)
+.p/

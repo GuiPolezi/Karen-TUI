@@ -13,7 +13,8 @@
 
 param(
     [switch]$PularTestes,
-    [switch]$PularInstalador
+    [switch]$PularInstalador,
+    [switch]$PularNavegador
 )
 
 $ErrorActionPreference = "Stop"
@@ -64,19 +65,24 @@ if ($saida -notmatch '"css_existe": true') { throw "o styles.tcss nao foi empaco
 if ($saida -match '"AUSENTE"') { throw "faltou alguma dependencia no pacote (veja o --verificar)" }
 
 # o erro classico do executavel: o Playwright procura o navegador dentro do pacote
-# (.local-browsers) em vez de %LOCALAPPDATA%\ms-playwright. So da para checar se esta
-# maquina ja tem os navegadores baixados; no CI nao tem, entao a checagem e pulada.
-$env:CMD_DATA_DIR = $dadosTeste
-$navegador = (& $exe --verificar --navegador) -join "`n"
-Remove-Item Env:\CMD_DATA_DIR
-if ($navegador -match '"baixados": \[\s*\]') {
-    Write-Host "sem navegador do Playwright nesta maquina: pulei o teste de abertura" -ForegroundColor Yellow
+# (.local-browsers) em vez de %LOCALAPPDATA%\ms-playwright. Precisa dos navegadores ja
+# baixados, entao no CI use -PularNavegador.
+if ($PularNavegador) {
+    Write-Host "teste de abertura do navegador pulado (-PularNavegador)" -ForegroundColor Yellow
 }
-elseif ($navegador -notmatch '"ok": true') {
-    Write-Host $navegador
-    throw "o executavel nao conseguiu abrir o Chromium (veja o erro acima)"
+else {
+    $env:CMD_DATA_DIR = $dadosTeste
+    $navegador = (& $exe --verificar --navegador) -join "`n"
+    Remove-Item Env:\CMD_DATA_DIR
+    if ($navegador -match '"baixados": \[\s*\]') {
+        Write-Host "sem navegador do Playwright nesta maquina: pulei o teste de abertura" -ForegroundColor Yellow
+    }
+    elseif ($navegador -notmatch '"ok": true') {
+        Write-Host $navegador
+        throw "o executavel nao conseguiu abrir o Chromium (veja o erro acima)"
+    }
+    else { Write-Host "navegador abre pelo executavel" -ForegroundColor Green }
 }
-else { Write-Host "navegador abre pelo executavel" -ForegroundColor Green }
 Write-Host "executável ok" -ForegroundColor Green
 
 # 6. instalador (Inno Setup)

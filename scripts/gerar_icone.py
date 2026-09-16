@@ -95,9 +95,25 @@ def png(tamanho: int, pixels: list[Pixel]) -> bytes:
             + bloco(b"IEND", b""))
 
 
-def ico(tamanhos=TAMANHOS) -> bytes:
-    """Junta os PNGs num .ico (o Windows aceita PNG dentro do .ico desde o Vista)."""
-    imagens = [png(t, desenhar(t)) for t in tamanhos]
+def dib(tamanho: int, pixels: list[Pixel]) -> bytes:
+    """Imagem clássica (BITMAPINFOHEADER + BGRA de baixo para cima + máscara AND).
+
+    Tamanho pequeno vai como DIB, não como PNG: é o formato que todo mundo lê, inclusive
+    compiladores antigos de instalador e caixas de diálogo legadas do Windows.
+    """
+    cabecalho = struct.pack("<IiiHHIIiiII", 40, tamanho, tamanho * 2, 1, 32, 0, 0, 0, 0, 0, 0)
+    corpo = bytearray()
+    for y in range(tamanho - 1, -1, -1):          # DIB é de baixo para cima
+        for x in range(tamanho):
+            r, g, b, a = pixels[y * tamanho + x]
+            corpo.extend((b, g, r, a))            # e em BGRA
+    mascara = bytes((((tamanho + 31) // 32) * 4) * tamanho)  # tudo zero: a transparência é o alfa
+    return cabecalho + bytes(corpo) + mascara
+
+
+def ico(tamanhos=TAMANHOS, limite_png: int = 64) -> bytes:
+    """Junta as imagens num .ico: DIB até `limite_png`, PNG acima (256x256 só cabe assim)."""
+    imagens = [png(t, desenhar(t)) if t > limite_png else dib(t, desenhar(t)) for t in tamanhos]
     cabecalho = struct.pack("<HHH", 0, 1, len(imagens))
     offset = len(cabecalho) + 16 * len(imagens)
     entradas = bytearray()

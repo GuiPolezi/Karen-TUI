@@ -33,6 +33,7 @@ from textual.timer import Timer
 from textual.widgets import DataTable, Digits, Input, Static
 
 from app import clock
+from app.tui.icons import spinner_frame
 from app.tui.widgets.keyed_table import ColumnSpec, KeyedTable, Row
 
 WAITING_TEXT = "aguardando a primeira coleta…"
@@ -132,7 +133,6 @@ class BasePanel(Vertical):
         self._digits = False
         self._waiting: str | None = WAITING_TEXT
         self._not_configured_hint: str | None = None
-        self._spinner_frame = 0
 
     # --- tokens e ícones ----------------------------------------------------------
 
@@ -465,16 +465,14 @@ class BasePanel(Vertical):
             text.append(f"{icons.error} {relative_age(self._error_since)}", style=tokens.rich("danger"))
             text.append(f"  {self.interval}s", style=tokens.rich("text-faint"))
         elif fetching:
-            frames = icons.spinner
             text.append(f"{self.interval}s {icons.sep} ", style=tokens.rich("text-faint"))
-            text.append(frames[self._spinner_frame % len(frames)], style=tokens.rich("accent"))
+            text.append(spinner_frame(icons.spinner), style=tokens.rich("accent"))
         else:
             text.append(f"{self.interval}s {icons.sep} {relative_age(self._last_update)}", style=tokens.rich("text-faint"))
         self.query_one(".panel-meta", Static).update(text)
 
     def _tick_meta(self) -> None:
-        self._spinner_frame += 1
-        self._render_meta()
+        self._render_meta()  # o quadro do spinner vem do relógio, não de um contador
 
     def _summary_line(self) -> Text:
         """'142 inbox · 7 não lidos · 3 spam' com os contadores quentes em accent."""

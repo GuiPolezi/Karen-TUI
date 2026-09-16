@@ -103,3 +103,22 @@ async def open_launcher(pilot) -> None:  # noqa: ANN001
 
 def test_launcher_open(snap_compare):
     assert snap_compare(demo_app(), terminal_size=(120, 35), run_before=open_launcher)
+
+
+async def test_tela_com_fonte_coletando_nao_muda_entre_execucoes():
+    """Mesma tela, duas renderizações, texto idêntico.
+
+    O spinner da fonte coletando vinha de um contador de ticks, então o quadro capturado
+    dependia de quantas vezes o timer tinha rodado: `test_dashboard_errors` falhava ~5 em
+    10 aqui e derrubou o primeiro build da v0.2.0 no CI. Agora o quadro vem de
+    `app.clock`, que os testes congelam.
+    """
+    from tests.helpers import screen_text
+
+    async def render() -> str:
+        app = demo_app(email_error="timeout", chat_expired=True)
+        async with app.run_test(size=(120, 35)) as pilot:
+            await ready(pilot)
+            return screen_text(app, 120, 35)
+
+    assert await render() == await render()

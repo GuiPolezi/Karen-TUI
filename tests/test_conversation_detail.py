@@ -83,8 +83,11 @@ async def test_enter_opens_conversation_and_state_change_reloads():
 
         header = str(app.screen.query_one("#conversation-header", Static).content)
         assert "Ana - CM Itu" in header and "551" in header and "não lida(s)" in header
-        text = screen_text(app, 120, 36)  # a tela rola até o fim: últimas mensagens visíveis
-        assert "Resposta 4 do técnico" in text and "Conversa transferida 14:48" in text
+        # a tela rola até o fim em call_after_refresh: espera o scroll, não só um frame
+        # (com um pause só, numa máquina lenta a última mensagem ainda não estava visível)
+        await wait_until(lambda: "Resposta 4 do técnico" in screen_text(app, 120, 36))
+        text = screen_text(app, 120, 36)
+        assert "Conversa transferida 14:48" in text
         assert len(app.screen.detail.messages) == 11
 
         # mensagem nova na conversa aberta (não lidas mudam no estado) → recarrega sozinha

@@ -13,6 +13,21 @@ from dataclasses import dataclass, fields
 
 SPINNER_BRAILLE = "⠋⠙⠹⠸⠼⠴⠦⠧"
 SPINNER_ASCII = "|/-\\"
+SPINNER_PERIOD = 0.5  # segundos por quadro (o mesmo ritmo dos timers que redesenham)
+
+
+def spinner_frame(frames: str, moment: float | None = None) -> str:
+    """Quadro do spinner pela hora do app, não por um contador de ticks.
+
+    Com um contador, o quadro capturado dependia de quantas vezes o timer tinha rodado até
+    ali — o que muda de máquina para máquina e fazia `test_dashboard_errors` falhar de vez
+    em quando (foi o que quebrou o primeiro build da v0.2.0 no CI). Pelo relógio, um
+    relógio congelado (`app.clock.freeze`) congela também a animação.
+    """
+    from app import clock  # import tardio: icons é carregado muito cedo
+
+    instante = clock.epoch() if moment is None else moment
+    return frames[int(instante / SPINNER_PERIOD) % len(frames)]
 
 
 @dataclass(frozen=True)

@@ -1,8 +1,10 @@
 name: Publicar release
 
-# Dispara ao empurrar uma tag v* (ex.: v0.2.0) ou na mão pela aba Actions.
-# Monta o executável no Windows, roda os testes e anexa o instalador ao release —
-# é dele que o Ctrl+U dentro da TUI baixa a atualização.
+# Dispara ao empurrar uma tag v* (ex.: v0.2.0) ou na mão pela aba Actions (útil para testar
+# o pipeline sem gastar um número de versão: sem tag, ele monta e guarda o artefato, mas
+# não publica release nenhum).
+#
+# Cada fase é um passo separado de propósito: quando falha, o nome do passo já diz onde.
 
 on:
   push:
@@ -38,18 +40,41 @@ jobs:
           if ($versao -ne $tag) {
             throw "a tag $tag nao bate com app.__version__ ($versao): atualize app/__init__.py"
           }
-          "versao=$versao" >> $env:GITHUB_OUTPUT
         shell: pwsh
+
+      - name: Testes
+        run: .venv\Scripts\python -m pytest -q
+        shell: pwsh
+
+      - name: Guardar o relatório de snapshots quando os testes falham
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-snapshots
+          path: snapshot_report.html
+          if-no-files-found: ignore
+
+      - name: Executável
+        # o teste de abrir o Chromium fica de fora: o runner não tem os navegadores do
+        # Playwright baixados (quem faz esse teste é o build local)
+        run: powershell -ExecutionPolicy Bypass -File scripts\build.ps1 -PularTestes -PularInstalador -PularNavegador
 
       - name: Garantir o Inno Setup
         run: |
-          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
-            choco install innosetup --no-progress -y
-          }
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup --no-progress -y }
+          & $iscc /? | Select-Object -First 1
         shell: pwsh
 
-      - name: Build (testes + executável + instalador)
-        run: powershell -ExecutionPolicy Bypass -File scripts\build.ps1
+      - name: Instalador
+        run: |
+          $versao = (.venv\Scripts\python -c "import app; print(app.__version__)").Trim()
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$versao" "packaging\instalador.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup falhou com codigo $LASTEXITCODE" }
+          Get-ChildItem dist\CMD-ALL-IN-ONE-Setup-*.exe | ForEach-Object {
+            "{0} ({1:N0} MB)" -f $_.Name, ($_.Length / 1MB)
+          }
+        shell: pwsh
 
       - name: Guardar o resultado como artefato
         uses: actions/upload-artifact@v4

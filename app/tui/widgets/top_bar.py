@@ -14,6 +14,7 @@ from textual.containers import Horizontal
 from textual.widgets import Static
 
 from app import clock
+from app.tui.icons import spinner_frame
 
 APP_TITLE = "CMD ALL-IN-ONE"
 SOURCE_ORDER = ("email", "milldesk", "chatpanel")
@@ -39,7 +40,6 @@ class HealthDot(Static):
         self.source = source
         self.state = "wait"
         self.detail = ""
-        self._frame = 0
 
     def set_state(self, state: str, detail: str) -> None:
         self.state, self.detail = state, detail
@@ -47,9 +47,7 @@ class HealthDot(Static):
         tokens = self.app.tokens  # type: ignore[attr-defined]
         icon_name, token = DOT_STYLE.get(state, DOT_STYLE["wait"])
         if icon_name is None:
-            frames = icons.spinner
-            glyph = frames[self._frame % len(frames)]
-            self._frame += 1
+            glyph = spinner_frame(icons.spinner)
         else:
             glyph = getattr(icons, icon_name)
         self.update(Text(glyph, style=tokens.rich(token)))

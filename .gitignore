@@ -19,6 +19,7 @@ __pycache__/
 build/
 dist/
 .pytest_cache/
+snapshot_report.html
 .ruff_cache/
 
 # perfil falso usado pelos testes (session.bin gerado em tempo de teste)

@@ -31,8 +31,9 @@ DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 DisableDirPage=auto
 PrivilegesRequired=lowest
-ArchitecturesAllowed=x64compatible
-ArchitecturesInstallIn64BitMode=x64compatible
+; sem ArchitecturesAllowed de propósito: "x64compatible" só existe do Inno 6.3 para cima e
+; o compilador da máquina de build pode ser mais antigo. O executável é x64 e roda por
+; emulação no ARM64; numa máquina 32 bits ele simplesmente não abriria.
 OutputDir=..\dist
 OutputBaseFilename=CMD-ALL-IN-ONE-Setup-{#AppVersion}
 SetupIconFile=cmd-all-in-one.ico

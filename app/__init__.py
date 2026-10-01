@@ -6,4 +6,4 @@ carimba no executÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡vel e `app/update.py`
 
 from __future__ import annotations
 
-__version__ = "0.2.4"
+__version__ = "0.2.5"

@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from app.sources.base import Source
-from app.state import EmailState, EmailSummary, LatestEmail
+from app.state import ChatItem, ChatPanelState, EmailState, EmailSummary, LatestEmail
 from tests.helpers import fake_settings, make_app, screen_text, wait_until
 
 
@@ -106,6 +106,50 @@ async def test_unconfigured_source_does_not_start_worker():
         assert "não configurado" in app.last_message
         await pilot.press("2")
         assert "Fase 2" in app.last_message
+
+
+class FakeChatSource(Source[ChatPanelState]):
+    """Devolve os estados na ordem; o último se repete."""
+
+    name = "chatpanel"
+
+    def __init__(self, states: list[ChatPanelState]):
+        super().__init__(interval=60, timeout=1.0)
+        self.states = states
+        self.calls = 0
+
+    async def fetch(self) -> ChatPanelState:
+        self.calls += 1
+        return self.states.pop(0) if len(self.states) > 1 else self.states[0]
+
+
+async def test_state_with_error_keeps_rows_and_warns_once():
+    """Estado que chega COM erro (ex.: sessão do ChatPanel caiu no servidor): as linhas
+    continuam na tela, o painel fica em erro e o aviso vira toast só quando o erro aparece."""
+    chat = ChatItem(number="551", name="Cliente", time="10:00", last_message="oi", unread=1, agent="Guilherme")
+    ok = ChatPanelState(mine=[chat], mine_unread=1, logged_user="TUI")
+    lost = ChatPanelState(mine=[chat], mine_unread=1, logged_user="TUI", error="sessão caiu no servidor: pressione c")
+    source = FakeChatSource([ok, lost, lost])
+    app = make_app(sources={"chatpanel": source})
+    async with app.run_test(size=(120, 30)) as pilot:
+        await wait_until(lambda: "chatpanel" in app.states)
+        await pilot.pause()
+        assert not app.panel("chatpanel").has_class("error")
+
+        await pilot.press("3")
+        await wait_until(lambda: source.calls == 2 and app.errors.get("chatpanel"))
+        await pilot.pause()
+        panel = app.panel("chatpanel")
+        assert panel.has_class("error")
+        assert panel.table.keys == ["551"]  # a conversa continua listada
+        assert "sessão caiu no servidor" in screen_text(app, 120, 30)
+        warned = [m for m in app.messages if "sessão caiu no servidor" in m]
+        assert len(warned) == 1 and "ChatPanel" in warned[0]
+
+        await pilot.press("3")
+        await wait_until(lambda: source.calls == 3)
+        await pilot.pause()
+        assert len([m for m in app.messages if "sessão caiu no servidor" in m]) == 1  # mesmo erro: sem novo toast
 
 
 async def test_full_email_screen_shares_state_and_opens_detail_on_enter():

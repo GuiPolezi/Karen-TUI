@@ -31,6 +31,13 @@ fechar: o socket do headless vira o atual e a queda do socket da janela não des
 Consequência: fechar a TUI desloga o usuário dedicado; ao abrir de novo, a janela de
 login aparece (uma vez por execução).
 
+Sessão perdida com a página aberta: a mesma regra vale no meio do dia (queda de rede,
+PC suspenso, outro login com o usuário dedicado). O #int_username continua no DOM, então
+`fetch()` não percebe; quem percebe é a ressincronização, que confirma a sessão antes de
+trocar listas com conversa por respostas vazias (ver RESYNC_JS). Nesse caso o DOM não é
+tocado, a lista segue pelos eventos do socket e o estado sai com `error=SESSION_LOST` até
+o próximo login (`c`).
+
 Leitura de conversa (Fase 6.3, medido em 15/09/2026 — docs/CHATPANEL_CONVERSA.md): o app
 faz `POST inc_chat_view.php {number}` dentro da página, SEM changeTheInfo, e parseia a
 resposta (`parse_conversation_html`). Na sessão do usuário dedicado isso não marca a
@@ -66,6 +73,8 @@ from app.sources.base import Source, SourceError, describe_error
 from app.state import ChatItem, ChatMessage, ChatPanelState, ConversationDetail
 
 SESSION_EXPIRED = "sessão expirada — pressione c para fazer login (ou rode scripts/chatpanel_login.py)"
+# sessão morta no servidor com a página ainda aberta: a lista segue só pelos eventos do socket
+SESSION_LOST = "sessão caiu no servidor: pressione c para refazer o login (até lá, transferências podem não aparecer)"
 LOGIN_HINT = "pressione c (ou rode scripts/chatpanel_login.py) para salvar a sessão"
 LOGIN_TIMEOUT = 300.0  # segundos que a janela de login fica aberta esperando a pessoa
 COOKIE_LIFETIME_DAYS = 30  # cookies de sessão do painel (sem validade) ganham esta validade no perfil
@@ -93,10 +102,20 @@ LOGIN_PASSWORD_SELECTOR = "#password"
 # até a última página, do jeito que o botão do painel faz. Modo "full": antes disso recarrega
 # a 1ª página de cada lista como o painel faz ao limpar a busca (searchActiveusServices /
 # searchActiveotServices). Só leitura de listas; ver docstring do módulo sobre a sessão.
+#
+# Sessão morta (medido em 15/09/2026; o log de eventos de 01/10/2026 mostra o mesmo padrão
+# com o usuário dedicado): os endpoints de lista devolvem VAZIO e a página cai no login, mas
+# o socket segue entregando eventos e o DOM continua certo. Trocar o HTML nesse estado apaga
+# as conversas a cada ciclo (elas só voltam na mensagem seguinte e somem de novo no ciclo
+# seguinte). Por isso o modo "full" busca as 1ªs páginas ANTES de mexer no DOM e,
+# se nenhuma lista trouxe conversa mas o DOM tem, confirma a sessão com um GET da própria
+# página (#int_username presente = viva). Sem confirmação o DOM fica como está.
+# Resultado: `session` = "alive" | "dead" | "unknown" (ausente se não deu para concluir nada)
+# e `kept` = listas que não foram trocadas por causa disso.
 RESYNC_MAX_PAGES = 30
 RESYNC_JS = r"""
 async (mode) => {
-  const result = {ok: 0, failed: 0, pages: 0};
+  const result = {ok: 0, failed: 0, pages: 0, kept: 0};
   if (typeof $ !== "function") { result.failed = 2; result.reason = "sem jQuery"; return result; }
   const MAX_PAGES = %d;
   const lists = [
@@ -116,12 +135,35 @@ async (mode) => {
     const nums = m[1].match(/\d+/g);
     return nums ? nums.reduce((a, b) => a + parseInt(b, 10), 0) : null;
   };
+  const fail = (e) => { result.failed++; result.reason = String(e && e.message || e); };
+  const hasChats = (html) => /id=["']chat_/.test(String(html));
+  const boxHtml = (l) => { const el = document.getElementById(l.box.slice(1)); return el ? el.innerHTML : ""; };
+  // true = logado, false = caiu no login, null = sem resposta (não dá para saber).
+  // cache: false para a resposta nunca vir da cópia em cache da carga da página
+  const sessionAlive = () => new Promise((resolve) => $.ajax({
+    type: "GET", url: location.href, dataType: "text", cache: false, timeout: 15000,
+    success: (html) => resolve(/id=["']int_username["']/.test(String(html))),
+    error: () => resolve(null),
+  }));
+  if (mode === "full") {
+    const fresh = [];
+    for (const l of lists) {
+      try { l.html = await post(l.url, {qsearch: ""}); fresh.push(l); } catch (e) { fail(e); }
+    }
+    if (fresh.some((l) => hasChats(l.html))) {
+      result.session = "alive";
+    } else if (fresh.some((l) => hasChats(boxHtml(l)))) {
+      const alive = await sessionAlive();
+      result.session = alive === true ? "alive" : alive === false ? "dead" : "unknown";
+      if (alive !== true) { result.kept = fresh.length; return result; }
+    }
+  }
   for (const l of lists) {
     try {
       if (mode === "full") {
-        const html = await post(l.url, {qsearch: ""});
+        if (!("html" in l)) continue;  // a 1ª página desta lista falhou: fica como está
         $("#" + l.bottom).remove();
-        $(l.box).html(html);
+        $(l.box).html(l.html);
         result.ok++;
       }
       for (let i = 0; i < MAX_PAGES; i++) {
@@ -135,8 +177,7 @@ async (mode) => {
         result.pages++;
       }
     } catch (e) {
-      result.failed++;
-      result.reason = String(e && e.message || e);
+      fail(e);
     }
   }
   return result;
@@ -370,6 +411,7 @@ class ChatPanelSource(Source[ChatPanelState]):
         self._page: Any = None
         self._last_resync: float | None = None  # time.monotonic() da última carga das listas
         self._resync_blocked = False  # True se o app está logado com o mesmo usuário do técnico
+        self._session_lost = False    # True se a sessão morreu no servidor com a página aberta
 
     @property
     def configured(self) -> bool:
@@ -389,6 +431,9 @@ class ChatPanelSource(Source[ChatPanelState]):
                 await self._teardown()
                 raise SessionExpiredError(SESSION_EXPIRED)
         self._check_logged_user(state.logged_user)
+        if self._session_lost:
+            # o DOM (mantido pelo socket) continua valendo; o estado sai com o aviso
+            state.error = SESSION_LOST
         return state
 
     def _check_logged_user(self, logged_user: str) -> None:
@@ -447,6 +492,7 @@ class ChatPanelSource(Source[ChatPanelState]):
         result = result or {}
         failed = int(result.get("failed", 0))
         pages = int(result.get("pages", 0))
+        self._note_session(str(result.get("session") or ""), int(result.get("kept", 0)))
         if failed:
             self.log.warning("ressincronização das listas (%s): %d lista(s) falharam (%s)",
                              mode, failed, result.get("reason", "erro HTTP"))
@@ -455,6 +501,26 @@ class ChatPanelSource(Source[ChatPanelState]):
         if pages >= RESYNC_MAX_PAGES:
             self.log.warning("ChatPanel: limite de %d páginas extras atingido; pode haver conversas fora da tela",
                              RESYNC_MAX_PAGES)
+
+    def _note_session(self, verdict: str, kept: int) -> None:
+        """Veredito do RESYNC_JS sobre a sessão no servidor. "dead": as listas não foram
+        trocadas e o estado passa a sair com SESSION_LOST; "alive" desfaz; "unknown" só registra."""
+        if verdict == "dead":
+            if not self._session_lost:
+                self.log.warning(
+                    "sessão do ChatPanel caiu no servidor (listas vazias e a página cai no login); "
+                    "%d lista(s) mantida(s) pelos eventos do socket até o próximo login", kept,
+                )
+            self._session_lost = True
+        elif verdict == "alive":
+            if self._session_lost:
+                self.log.info("sessão do ChatPanel voltou a responder; ressincronização normal")
+            self._session_lost = False
+        elif verdict == "unknown":
+            self.log.warning(
+                "ressincronização: listas vieram vazias e não deu para confirmar a sessão; "
+                "%d lista(s) mantida(s) como estavam", kept,
+            )
 
     async def _ensure_page(self) -> Any:
         if self._page is not None and not self._page.is_closed():
@@ -626,6 +692,7 @@ class ChatPanelSource(Source[ChatPanelState]):
         context, self._context = self._context, None
         playwright, self._playwright = self._playwright, None
         self._page = None
+        self._session_lost = False  # navegador novo (ou novo login): o próximo ciclo reavalia
         for closer in (
             (context.close if context is not None else None),
             (playwright.stop if playwright is not None else None),

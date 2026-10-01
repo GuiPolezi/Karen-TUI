@@ -191,11 +191,13 @@ def test_resync_due_respects_interval_and_zero_disables():
 class FakePage:
     """Página falsa: evaluate() simula o RESYNC_JS trocando o HTML das listas."""
 
-    def __init__(self, html_before: str, html_after: str = "", fail: bool = False, pages: int = 0):
+    def __init__(self, html_before: str, html_after: str = "", fail: bool = False, pages: int = 0,
+                 result: dict | None = None):
         self.html = html_before
         self.html_after = html_after
         self.fail = fail
         self.pages = pages
+        self.result = result  # resposta do RESYNC_JS; None = ressincronização normal
         self.evaluations = 0
         self.modes: list[str] = []
 
@@ -208,6 +210,10 @@ class FakePage:
         assert "control-atende-on-us.php" in script and "viewMoreActiveotChats" in script
         if self.fail:
             raise RuntimeError("Execution context was destroyed")
+        if self.result is not None:
+            if self.result.get("ok"):
+                self.html = self.html_after
+            return self.result
         if mode == "full":
             self.html = self.html_after
         return {"ok": 2 if mode == "full" else 0, "failed": 0, "pages": self.pages}
@@ -274,6 +280,67 @@ async def test_resync_failure_keeps_reading_current_dom(caplog):
     assert fake.evaluations == 1
     assert len(state.mine) == 1  # falha na ressincronização não derruba a leitura
     assert any("ressincronização" in r.getMessage() for r in caplog.records)
+
+
+DEAD = {"ok": 0, "failed": 0, "pages": 0, "kept": 2, "session": "dead"}
+ALIVE = {"ok": 2, "failed": 0, "pages": 0, "kept": 0, "session": "alive"}
+
+
+async def test_dead_server_session_keeps_conversations_and_flags_the_state(caplog):
+    """Sessão morta no servidor com a página aberta: o socket mantém o DOM certo, mas os
+    endpoints devolvem vazio. A conversa no meu nome não pode sumir; o estado avisa."""
+    from app.sources.chatpanel import SESSION_LOST
+
+    html = page(others_box=li("551", "Cliente", agent="Guilherme", unread=1), user="TUI")
+    fake = FakePage(html, page(user="TUI"), result=dict(DEAD))
+    source = ResyncSource(fake)
+
+    state = await source.fetch()
+    assert [c.number for c in state.mine] == ["551"]
+    assert state.error == SESSION_LOST
+    assert "pressione c" in SESSION_LOST
+    warnings = [r for r in caplog.records if "caiu no servidor" in r.getMessage()]
+    assert len(warnings) == 1
+
+    source._last_resync = None  # ciclo de ressincronização seguinte, sessão ainda morta
+    state = await source.fetch()
+    assert [c.number for c in state.mine] == ["551"]
+    assert state.error == SESSION_LOST
+    assert len([r for r in caplog.records if "caiu no servidor" in r.getMessage()]) == 1  # avisa uma vez
+
+
+async def test_state_error_clears_when_the_session_answers_again():
+    html = page(others_box=li("551", "Cliente", agent="Guilherme"), user="TUI")
+    fake = FakePage(html, html, result=dict(DEAD))
+    source = ResyncSource(fake)
+    assert (await source.fetch()).error is not None
+
+    fake.result = dict(ALIVE)
+    source._last_resync = None
+    state = await source.fetch()
+    assert state.error is None
+    assert [c.number for c in state.mine] == ["551"]
+
+
+async def test_unconfirmed_session_keeps_dom_without_declaring_it_lost(caplog):
+    html = page(others_box=li("551", "Cliente", agent="Guilherme"), user="TUI")
+    fake = FakePage(html, page(user="TUI"), result={**DEAD, "session": "unknown"})
+    state = await ResyncSource(fake).fetch()
+    assert [c.number for c in state.mine] == ["551"]
+    assert state.error is None  # não deu para saber: sem alarme falso
+    assert any("não deu para confirmar" in r.getMessage() for r in caplog.records)
+
+
+async def test_error_stays_between_resyncs_and_is_forgotten_on_teardown():
+    html = page(others_box=li("551", "Cliente", agent="Guilherme"), user="TUI")
+    fake = FakePage(html, html, result=dict(DEAD))
+    source = ResyncSource(fake)
+    await source.fetch()
+    state = await source.fetch()  # ciclo sem ressincronização (intervalo não venceu)
+    assert fake.evaluations == 1
+    assert state.error is not None
+    await source._teardown()  # novo login / navegador novo: começa sem o aviso
+    assert source._session_lost is False
 
 
 async def test_resync_warns_when_page_limit_is_hit(caplog):

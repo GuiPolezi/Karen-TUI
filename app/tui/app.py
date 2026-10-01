@@ -905,6 +905,11 @@ class CmdAllInOneApp(App[None]):
     def _publish(self, name: str, state: Any) -> None:
         previous = self.states.get(name)
         self.states[name] = state
+        if state.error and state.error != self.errors.get(name):
+            # estado que chega com aviso (ex.: sessão do ChatPanel caiu): toast só quando aparece
+            label = SOURCE_PANELS.get(name, (name, name, 0))[1]
+            log.warning("fonte %s: %s", name, state.error)
+            self.notify(f"{label}: {state.error}", severity="warning", timeout=15)
         self.errors[name] = state.error
         panels = self.panels.get(name, [])
         for panel in panels:

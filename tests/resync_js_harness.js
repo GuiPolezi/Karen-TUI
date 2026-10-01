@@ -1,11 +1,15 @@
 // Executa o RESYNC_JS real (app/sources/chatpanel.py) num DOM/jQuery falsos, com um
-// "servidor" paginado. Uso: node tests/resync_js_harness.js <arquivo-com-o-js> <modo>
+// "servidor" paginado. Uso: node tests/resync_js_harness.js <arquivo-com-o-js> <modo> [cenário]
 // Imprime JSON: {result, boxes: {box-atende-chats, box-atendeothers-chats}, calls}.
+// Cenários: normal (padrão) | dead (sessão morta: listas vazias e a página cai no login) |
+// empty-alive (listas vazias de verdade, sessão viva) | probe-error (listas vazias e a
+// consulta da sessão falha) | empty-dom (listas vazias e DOM já sem conversas).
 "use strict";
 const fs = require("fs");
 
 const js = fs.readFileSync(process.argv[2], "utf8");
 const mode = process.argv[3] || "full";
+const scenario = process.argv[4] || "normal";
 
 // --- servidor falso: 2 listas, 3 páginas na "us" e 1 na "ot" ------------------------
 const li = (n, agent) => `<li class="checkforactive" id="chat_${n}"><a><span class="avatar"></span>` +
@@ -29,6 +33,23 @@ const boxes = { "box-atende-chats": "", "box-atendeothers-chats": "" };
 // estado inicial "como a página carregou": só a 1ª página de cada lista
 boxes["box-atende-chats"] = server["control-atende-on-us.php"][1];
 boxes["box-atendeothers-chats"] = server["control-atende-on-ot.php"][1];
+
+// --- cenários de sessão: depois da carga, o servidor passa a devolver listas vazias ----
+const PAGE_URL = "https://x/chat.php";
+const pages = {
+  alive: '<html><input type="hidden" id="int_username" value="TUI"><input type="hidden" id="int_username_st" value="1"></html>',
+  // o id parecido (int_username_st) não pode ser confundido com o do usuário logado
+  login: '<html><form><input id="user"><input type="password" id="password"><input id="captcha">' +
+    '<input type="hidden" id="int_username_st" value="0"></form></html>',
+};
+if (scenario !== "normal") {
+  server["control-atende-on-us.php"] = { 1: "" };
+  server["control-atende-on-ot.php"] = { 1: "" };
+}
+if (scenario === "empty-dom") {  // nada no DOM e nada no servidor: não há o que proteger
+  boxes["box-atende-chats"] = "";
+  boxes["box-atendeothers-chats"] = "";
+}
 
 function findFooter(id) {
   for (const box of Object.keys(boxes)) {
@@ -57,7 +78,13 @@ function $(sel) {
   }
   throw new Error("seletor não suportado: " + sel);
 }
-$.ajax = ({ url, data, success, error }) => {
+$.ajax = ({ type, url, data, cache, success, error }) => {
+  if (type === "GET") {  // consulta da sessão: a própria página (viva) ou a tela de login (morta)
+    calls.push({ url, page: 0, cache });
+    const html = scenario === "probe-error" ? undefined : scenario === "dead" ? pages.login : pages.alive;
+    setTimeout(() => (html === undefined ? error() : success(html)), 0);
+    return;
+  }
   const page = data.qpage || 1;
   calls.push({ url, page });
   const html = server[url] && server[url][page];
@@ -66,6 +93,7 @@ $.ajax = ({ url, data, success, error }) => {
 
 globalThis.$ = $;
 globalThis.document = document;  // o RESYNC_JS usa os dois como globais
+globalThis.location = { href: PAGE_URL };
 const fn = eval("(" + js + ")");
 fn.call({ $, document }, mode).then((result) => {
   console.log(JSON.stringify({ result, boxes, calls }));

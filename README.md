@@ -362,6 +362,10 @@ servidor. Com um usuário criado só para a TUI:
   depender de mensagem nova (nenhuma das duas gera evento de socket; validado em
   15/09/2026). `0` desliga;
 - o usuário dedicado só enxerga conversas dos **departamentos em que está cadastrado**;
+- o usuário dedicado é **um por instalação**: dois apps (ou um app e um navegador) com o
+  mesmo usuário derrubam a sessão um do outro. Quando isso acontece com o painel aberto, o
+  app não troca mais as listas por respostas vazias: mantém as conversas, avisa "sessão
+  caiu no servidor" e espera o login (`c`);
 - seu login no navegador e o do app deixam de se derrubar.
 
 **Ler uma conversa (`Enter`).** O app faz, dentro da página, a mesma requisição que o
@@ -495,6 +499,8 @@ o projeto, em `CLAUDE.md`.
 ## Solução de problemas
 
 - **"sessão expirada — pressione c para fazer login"** no painel do ChatPanel — A sessão salva não vale mais. Causa mais comum: alguém fez login com o mesmo usuário em outro navegador (o ChatPanel aceita uma sessão por usuário). Pressione `c` e refaça o login. Sem login, o app tenta de novo a cada 2 minutos.
+
+- **"sessão caiu no servidor: pressione c para refazer o login"** no rodapé do painel do ChatPanel — A sessão do app foi derrubada no servidor com o painel aberto (outro login com o mesmo usuário dedicado, queda de rede, PC suspenso). As conversas continuam aparecendo pelas mensagens novas, mas transferências e reatribuições não chegam até você refazer o login com `c`. Se acontecer várias vezes no dia, verifique se mais alguém (ou outra instalação do app) está usando o mesmo usuário do ChatPanel: ele aceita uma sessão por usuário, então cada instalação precisa do seu.
 
 - **"janela de login fechada antes de completar o login"** ou **"tempo esgotado (300s)..."** — A janela do Chromium foi fechada ou ficou 5 minutos sem login. Pressione `c` de novo.
 

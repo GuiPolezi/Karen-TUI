@@ -435,9 +435,12 @@ class BasePanel(Vertical):
 
     @property
     def focused_within(self) -> bool:
+        # o foco da TELA do painel, não `app.focused`: com uma modal por cima (ou outro modo
+        # na frente) o foco do app é de outra tela, e o painel perderia o marcador só quando
+        # fosse redesenhado, o que deixava a tela dependente da ordem dos eventos
         try:
-            focused = self.app.focused
-        except Exception:  # app encerrando: não há mais tela
+            focused = self.screen.focused
+        except Exception:  # app encerrando ou painel fora da árvore: não há tela
             return False
         return focused is not None and self in focused.ancestors_with_self
 

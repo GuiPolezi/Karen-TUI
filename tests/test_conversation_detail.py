@@ -104,6 +104,35 @@ async def test_enter_opens_conversation_and_state_change_reloads():
         assert app.current_mode == "chatpanel"
 
 
+async def test_panel_behind_modal_keeps_focus_markers_when_rerendered():
+    """Com a modal aberta, `app.focused` aponta para ela. O painel de trás usava isso para
+    desenhar os marcadores de foco, então perdia o ▍ se fosse redesenhado (novo ciclo da
+    fonte, resize) com a modal aberta e a tela dependia da ordem dos eventos: foi o que
+    derrubou `test_conversation_detail_modal` no build da v0.2.3. O foco que vale é o da
+    tela do painel."""
+    source = FakeChatSource()
+    app = make_app(sources={"chatpanel": source})
+    async with app.run_test(size=(120, 36)) as pilot:
+        await wait_until(lambda: "chatpanel" in app.states)
+        await pilot.press("f4")
+        await pilot.pause()
+        panel = app.screen.query_one("#chatpanel-full")
+        focus = app.icons.focus
+        assert panel.focused_within and panel.summary_text.startswith(focus)
+
+        await pilot.press("enter")
+        await wait_until(lambda: source.conversation_calls == ["551"])
+        await pilot.pause()
+        assert isinstance(app.screen, ConversationDetailScreen)
+        assert panel.focused_within  # a tela do painel continua com o foco nele
+
+        app.refresh_panels("chatpanel")  # o mesmo que um novo ciclo da fonte faz
+        await pilot.pause()
+        assert panel.summary_text.startswith(focus)
+        first_row = panel.table.get_row_at(0)
+        assert str(first_row[0]).startswith(focus)  # marcador do cursor na linha selecionada
+
+
 async def test_conversation_error_is_shown_without_crashing():
     source = FakeChatSource(fail=True)
     app = make_app(sources={"chatpanel": source})

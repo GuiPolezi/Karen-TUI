@@ -1,9 +1,9 @@
-"""CMD ALL-IN-ONE Ã¢â‚¬â€ dashboard TUI de suporte.
+"""CMD ALL-IN-ONE ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â dashboard TUI de suporte.
 
-A versÃƒÂ£o vive aqui e ÃƒÂ© a ÃƒÂºnica fonte: o `pyproject.toml` a lÃƒÂª (hatch), o instalador a
-carimba no executÃƒÂ¡vel e `app/update.py` a compara com o ÃƒÂºltimo release do GitHub.
+A versÃƒÆ’Ã‚Â£o vive aqui e ÃƒÆ’Ã‚Â© a ÃƒÆ’Ã‚Âºnica fonte: o `pyproject.toml` a lÃƒÆ’Ã‚Âª (hatch), o instalador a
+carimba no executÃƒÆ’Ã‚Â¡vel e `app/update.py` a compara com o ÃƒÆ’Ã‚Âºltimo release do GitHub.
 """
 
 from __future__ import annotations
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"

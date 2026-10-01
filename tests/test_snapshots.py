@@ -76,15 +76,46 @@ def test_ticket_detail_modal(snap_compare):
     assert snap_compare(demo_app(), terminal_size=(120, 35), run_before=open_ticket)
 
 
+async def until(predicate, what: str, timeout: float = 10.0) -> None:  # noqa: ANN001
+    """Espera uma condição observável; estourar o tempo é falha com nome, não captura torta."""
+    deadline = asyncio.get_running_loop().time() + timeout
+    while not predicate():
+        if asyncio.get_running_loop().time() > deadline:
+            raise AssertionError(f"tempo esgotado esperando: {what}")
+        await asyncio.sleep(0.02)
+
+
+def list_fitted(screen) -> bool:  # noqa: ANN001
+    """A lista da tela cheia já foi medida e cabe no painel (sem barra horizontal)."""
+    tables = screen.query(".panel-table")
+    if not tables:
+        return False
+    table = tables.first()
+    return (table.size.width > 0 and table.row_count > 0 and not table.show_horizontal_scrollbar
+            and table.virtual_size.width <= table.size.width)
+
+
+def conversation_shown(screen) -> bool:  # noqa: ANN001
+    """Modal da conversa com todas as mensagens montadas e medidas, rolada até o fim."""
+    detail = getattr(screen, "detail", None)
+    if screen.__class__.__name__ != "ConversationDetailScreen" or not detail:
+        return False
+    rows = list(screen.query(".message-row"))
+    if len(rows) != len(detail.messages) or not all(row.size.height > 0 for row in rows):
+        return False
+    scroll = screen.query_one("#conversation-scroll")
+    return scroll.scroll_y == scroll.max_scroll_y
+
+
 async def open_conversation(pilot) -> None:  # noqa: ANN001
+    # Condições observáveis em vez de um número fixo de pausas: no CI a modal abria com a
+    # tela de trás ainda assentando e a captura saía diferente (v0.2.3 e v0.2.4).
     await ready(pilot)
     await pilot.press("f4")
+    await until(lambda: list_fitted(pilot.app.screen), "lista do F4 ajustada ao painel")
     await pilot.pause()
     await pilot.press("enter")
-    for _ in range(50):
-        if pilot.app.screen.__class__.__name__ == "ConversationDetailScreen" and getattr(pilot.app.screen, "detail", None):
-            break
-        await asyncio.sleep(0.02)
+    await until(lambda: conversation_shown(pilot.app.screen), "conversa aberta com as mensagens montadas")
     await pilot.pause()
     await pilot.pause()
 

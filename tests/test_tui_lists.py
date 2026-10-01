@@ -264,6 +264,37 @@ async def test_dashboard_toggles_others_with_t_and_scrolls_when_many():
             assert panel.table.keys == ["551"]
 
 
+async def test_full_list_never_overflows_while_columns_are_being_fitted():
+    """Ao abrir a tela cheia, a coluna flexível nascia com largura automática (o maior
+    texto), a tabela estourava o painel e a barra horizontal ligava até o ajuste de colunas
+    rodar. Abrindo uma modal nesse intervalo, a tela de trás ficava com a barra na última
+    linha: foi a diferença do `test_conversation_detail_modal` no CI (v0.2.3 e v0.2.4)."""
+    from app.tui import demo
+
+    app = make_app(sources=demo.demo_sources())  # mensagens longas, como no uso real
+    async with app.run_test(size=(120, 35)) as pilot:
+        await wait_until(lambda: "chatpanel" in app.states)
+        await pilot.pause()
+        app.switch_mode("chatpanel")
+        await wait_until(lambda: bool(app.screen.query("#chatpanel-full .panel-table")))
+        table = app.screen.query_one("#chatpanel-full").table
+        born = list(table.column_specs)
+
+        scrollbar: list[bool] = []
+        widths: list[tuple[int, int]] = []  # (largura virtual, largura da área) a cada mudança
+        table.watch(table, "show_horizontal_scrollbar", lambda shown: scrollbar.append(shown))
+        table.watch(table, "virtual_size", lambda size: widths.append((size.width, table.size.width)))
+        fitted = lambda: table.size.width > 0 and dict((k, w) for k, _, w in table.column_specs)["message"] > 8  # noqa: E731
+        await wait_until(fitted)
+        await pilot.pause()
+
+        assert not any(scrollbar)  # a barra horizontal nunca chegou a ligar
+        assert all(virtual <= area for virtual, area in widths if area > 0)
+        assert all(width is not None for _, _, width in born)  # a causa: nascer sem largura
+        assert table.virtual_size.width <= table.size.width
+        assert table.row_count == 3 and table.selected_key  # a lista em si continua igual
+
+
 async def test_notes_screen_autosaves(tmp_path: Path):
     from app.tui.screens import notes as notes_module
 

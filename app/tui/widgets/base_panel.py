@@ -41,6 +41,7 @@ FLASH_SECONDS = 3.0
 MARK_SECONDS = 3.0
 NARROW_WIDTH = 100
 META_TICK_SECONDS = 0.5
+FLEX_MIN_WIDTH = 8  # largura mínima (e a de nascimento) da coluna sem largura fixa
 NO_MARK = Text("")
 
 SummaryKey = tuple[str, str]  # (chave do contador, rótulo)
@@ -167,8 +168,16 @@ class BasePanel(Vertical):
             yield Static("", classes="panel-filter-icon")
             yield Input(placeholder="filtrar… (Esc limpa)", classes="panel-filter")
         yield Static("", classes="panel-placeholder")
-        yield KeyedTable(self._columns_for_width(), classes="panel-table", show_header=self.full)
+        yield KeyedTable(self._initial_columns(), classes="panel-table", show_header=self.full)
         yield Static("", classes="panel-foot")
+
+    def _initial_columns(self) -> list[ColumnSpec]:
+        """Colunas com que a tabela nasce: a flexível começa na largura mínima e cresce no
+        `_fit_columns`. Com largura automática ela nascia do tamanho do maior texto, a
+        tabela estourava o painel e a barra horizontal ligava até o ajuste rodar (e ficava
+        na tela de trás se uma modal abrisse nesse intervalo)."""
+        return [(key, label, width if width is not None else FLEX_MIN_WIDTH)
+                for key, label, width in self._columns_for_width()]
 
     def on_mount(self) -> None:
         self.query_one(".panel-filter-row").display = False
@@ -243,7 +252,7 @@ class BasePanel(Vertical):
             return
         fixed = sum(w for _, _, w in columns if w is not None)
         padding = 2 * len(columns) + 1  # 1 de espaço em cada lado da célula + barra de rolagem
-        flexible = max(8, width - fixed - padding)
+        flexible = max(FLEX_MIN_WIDTH, width - fixed - padding)
         fitted = [(key, label, w if w is not None else flexible) for key, label, w in columns]
         if fitted != table.column_specs:
             table.rebuild_columns(fitted)

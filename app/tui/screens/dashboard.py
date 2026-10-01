@@ -37,7 +37,12 @@ class DashboardScreen(ModeScreen):
     BINDINGS = [
         Binding("tab", "app.focus_next", "Próximo painel", show=False),
         Binding("shift+tab", "app.focus_previous", "Painel anterior", show=False),
+        # o painel do ChatPanel tem o mesmo `t`, mas só com o foco nele; aqui vale em qualquer painel
+        Binding("t", "toggle_others", "Com outros", show=False),
     ]
+
+    def action_toggle_others(self) -> None:
+        self.query_one("#chatpanel", ChatPanelPanel).action_toggle_others()
 
     def body(self) -> ComposeResult:
         settings = self.app.settings  # type: ignore[attr-defined]

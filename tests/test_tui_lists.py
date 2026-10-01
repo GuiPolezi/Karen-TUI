@@ -199,7 +199,7 @@ async def test_chatpanel_screen_toggles_others_and_filters():
         await pilot.pause()
         assert app.prefs.chatpanel_show_others is True
         assert panel.table.keys == ["551", "552", "553"]
-        assert app.panel("chatpanel").table.keys == ["551", "552"]  # o Dashboard nunca mostra outros
+        assert app.panel("chatpanel").table.keys == ["551", "552", "553"]  # o Dashboard segue a mesma preferência
 
         await pilot.press("slash")
         await pilot.pause()
@@ -213,6 +213,55 @@ async def test_chatpanel_screen_toggles_others_and_filters():
         await pilot.press("escape")
         await pilot.pause()
         assert app.current_mode == "dashboard"
+
+
+class ManyOthersChatSource(Source[ChatPanelState]):
+    name = "chatpanel"
+
+    def __init__(self):
+        super().__init__(interval=60, timeout=1.0)
+
+    async def fetch(self) -> ChatPanelState:
+        mine = [ChatItem("551", "Ana - CM Itu", "10:00", "oi", agent="Guilherme")]
+        others = [ChatItem(str(600 + i), f"Contato {i} - PM Cidade Muito Comprida {i}", "09:40",
+                           "mensagem bem comprida " * 6, unread=i % 3, agent="Fabio") for i in range(60)]
+        return ChatPanelState(mine=mine, others_count=len(others), others=others,
+                              logged_user="User CMD", updated_at=datetime(2026, 9, 15, 10, 0))
+
+
+async def test_dashboard_toggles_others_with_t_and_scrolls_when_many():
+    """`t` vale no Dashboard com o foco em qualquer painel; lista longa rola, não estoura."""
+    for size in [(120, 30), (80, 30), (120, 20)]:
+        app = make_app(sources={"chatpanel": ManyOthersChatSource()})
+        async with app.run_test(size=size) as pilot:
+            await wait_until(lambda: "chatpanel" in app.states)
+            await pilot.pause()
+            panel = app.panel("chatpanel")
+            app.prefs.chatpanel_show_others = False
+            app.refresh_panels("chatpanel")
+            await pilot.pause()
+            assert panel.table.keys == ["551"]
+            assert not panel.focused_within  # o foco inicial é o painel de e-mail
+            await pilot.press("t")
+            await pilot.pause()
+            assert app.prefs.chatpanel_show_others is True
+            assert len(panel.table.keys) == 61
+            table = panel.table
+            assert table.show_vertical_scrollbar and not table.show_horizontal_scrollbar
+            assert table.virtual_size.height > table.size.height > 0
+            # nada sai da tela: painel, lista e rodapé continuam dentro da área visível
+            foot = panel.query_one(".panel-foot")
+            for widget in (panel, table, foot, app.screen.query_one("#footer")):
+                assert app.screen.region.contains_region(widget.region), (size, widget)
+            assert foot.region.height == 1 and "F4" in str(foot.render())
+            table.focus()
+            await pilot.press(*["j"] * 60)
+            await pilot.pause()
+            assert table.selected_key == "659" and table.scroll_y > 0  # o cursor leva a rolagem junto
+            await pilot.press("t")  # com o foco no próprio painel a tecla também alterna (uma vez só)
+            await pilot.pause()
+            assert app.prefs.chatpanel_show_others is False
+            assert panel.table.keys == ["551"]
 
 
 async def test_notes_screen_autosaves(tmp_path: Path):

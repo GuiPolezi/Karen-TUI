@@ -40,17 +40,16 @@ class ChatPanelPanel(BasePanel):
     @property
     def show_others(self) -> bool:
         prefs = getattr(self.app, "prefs", None)
-        return bool(self.full and prefs is not None and prefs.chatpanel_show_others)
+        return bool(prefs is not None and prefs.chatpanel_show_others)
 
     def foot_text(self, state: ChatPanelState) -> Text | None:
         icons = self.icons
         text = Text(no_wrap=True, overflow="ellipsis")
         text.append(f"{state.others_count} com outros técnicos {icons.sep} {state.total_unread_tab} não lidas na aba",
                     style=self.style("text-faint"))
-        if self.full:
-            text.append(f"   {icons.sep}   t ", style=self.style("text-faint"))
-            text.append("esconder" if self.show_others else "mostrar", style=self.style("text-muted"))
-            text.append(" com outros", style=self.style("text-faint"))
+        text.append(f"   {icons.sep}   t ", style=self.style("text-faint"))
+        text.append("esconder" if self.show_others else "mostrar", style=self.style("text-muted"))
+        text.append(" com outros", style=self.style("text-faint"))
         return text
 
     def items(self, state: ChatPanelState) -> list[tuple[ChatItem, bool]]:
@@ -99,7 +98,7 @@ class ChatPanelPanel(BasePanel):
 
     def action_toggle_others(self) -> None:
         prefs = getattr(self.app, "prefs", None)
-        if prefs is None or not self.full:
+        if prefs is None:
             return
         prefs.chatpanel_show_others = not prefs.chatpanel_show_others
         self.app.save_prefs()  # type: ignore[attr-defined]

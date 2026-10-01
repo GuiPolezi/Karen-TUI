@@ -21,7 +21,7 @@ log = logging.getLogger("prefs")
 class Prefs:
     last_screen: str = "dashboard"
     milldesk_sort: str = "sla"            # sla | data | status
-    chatpanel_show_others: bool = False   # mostrar "com outros técnicos" na tela F4
+    chatpanel_show_others: bool = False   # mostrar "com outros técnicos" (Dashboard e F4)
     email_only_unseen: bool = False
     favorites: dict[str, str] = field(default_factory=dict)  # launcher: nome -> url
     history: list[str] = field(default_factory=list)          # launcher: últimos comandos
